@@ -4,7 +4,8 @@ version = "0.0.1"
 requires-python = ">=3.11"
 dependencies = [
     "ijson", 
-    "pydantic"
+    "pydantic",
+    "pyarrow",
 ]
 
 [project.optional-dependencies]
