@@ -36,6 +36,6 @@ def _read_json(path: Path, json_path: str | None) -> Iterator[Any]:
 
 def _stream_json(fp, json_path: str | None) -> Iterator[Any]:
     if json_path:
-        yield from ijson.items(fp, json_path)
+        yield from ijson.items(fp, json_path, use_float=True)
     else:
         yield json.load(fp)
