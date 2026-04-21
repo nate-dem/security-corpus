@@ -7,6 +7,7 @@ import pyarrow.parquet as pq
 
 from ingest.connectors.base import NormalizedData
 
+_STRIPPED_SUFFIXES = [".json", ".gz"]
 
 def write_parquet(
     normalized_records: Iterable[NormalizedData],
@@ -24,7 +25,20 @@ def write_parquet(
     if not rows:
         return 0
     
-    output_path = output_dir / f"source_id={source}" / f"{input_path.stem}.parquet"
+    stem = input_path.name
+    suffixes = []
+
+    # collect all suffixes that need to be stripped 
+    for suffix in input_path.suffixes:
+        if suffix in stem:
+            suffixes.append(suffix)
+
+    # remove all found suffixes in reverse order so that each element is actually the current suffix when it's checked
+    for suffix in reversed(suffixes):
+        if suffix in _STRIPPED_SUFFIXES:
+            stem = stem.removesuffix(suffix)
+
+    output_path = output_dir / f"source_id={source}" / f"{stem}.parquet"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
     table = pa.Table.from_pylist(rows)
