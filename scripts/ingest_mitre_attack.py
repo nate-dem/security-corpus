@@ -1,7 +1,6 @@
 from pathlib import Path
 from ingest.pipeline import ingest_and_store
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 def main():
     raw_dir = Path("data/mitre-attack/raw")

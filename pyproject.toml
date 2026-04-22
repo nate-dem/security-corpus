@@ -3,7 +3,8 @@ name = "security-corpus"
 version = "0.0.1"
 requires-python = ">=3.11"
 dependencies = [
-    "ijson", 
+    "ijson",
+    "lxml",
     "pydantic",
     "pyarrow",
 ]

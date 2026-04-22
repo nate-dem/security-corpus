@@ -1,0 +1,12 @@
+{
+    "id": "66",
+    "name": "SQL Injection",
+    "abstraction": "Standard",
+    "status": "Stable",
+    "description": "This attack exploits target software that constructs SQL statements based on user input. An attacker crafts input strings so that when the target software constructs SQL statements based on the input, the resulting SQL statement performs actions other than those the application intended.",
+    "extended_description": "This can allow the attacker to read, modify, or delete data from the database, and in some cases execute system commands.",
+    "likelihood_of_attack": "High",
+    "typical_severity": "High",
+    "related_cwe_ids": ["CWE-89", "CWE-1286"],
+    "raw_xml": "<Attack_Pattern xmlns=\"http://capec.mitre.org/capec-3\" ID=\"66\" Name=\"SQL Injection\" Abstraction=\"Standard\" Status=\"Stable\"><Description>This attack exploits target software that constructs SQL statements based on user input.</Description></Attack_Pattern>"
+}

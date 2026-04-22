@@ -7,7 +7,7 @@ import pyarrow.parquet as pq
 
 from ingest.connectors.base import NormalizedData
 
-_STRIPPED_SUFFIXES = [".json", ".gz"]
+_STRIPPED_SUFFIXES = [".json", ".gz", ".xml"]
 
 def write_parquet(
     normalized_records: Iterable[NormalizedData],
