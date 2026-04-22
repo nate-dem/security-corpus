@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Iterator
 
 from ingest.connectors.base import Connector, NormalizedData
+from ingest.connectors.cisa_kev import CisaKevConnector
 from ingest.connectors.mitre_attack import MitreAttackConnector
 from ingest.connectors.nvd import NVDConnector
 from ingest.writers import write_parquet
@@ -10,6 +11,7 @@ from ingest.writers import write_parquet
 _CONNECTORS: dict[str, Connector] = {
     "nvd": NVDConnector(),
     "mitre-attack": MitreAttackConnector(),
+    "cisa-kev": CisaKevConnector(),
 }
 
 def ingest(path: Path, source: str) -> Iterator[NormalizedData]:
