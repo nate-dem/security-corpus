@@ -13,6 +13,11 @@ dev = [
     "pytest",
 ]
 
+[tool.pytest.ini_options]
+markers = [
+    "data_quality: tests that run against ingested Parquet output (slow, requires bulk load)",
+]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"

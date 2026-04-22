@@ -8,7 +8,7 @@ class NormalizedData(BaseModel):
     # -- REQUIRED --
 
     # identification
-    record_id: str
+    record_id: str 
     source_id: str
     source_record_id: str
 

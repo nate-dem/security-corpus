@@ -208,3 +208,6 @@ __marimo__/
 
 # Data sources
 data/
+
+# Claude
+.claude/

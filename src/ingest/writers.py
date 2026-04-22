@@ -26,7 +26,7 @@ def write_parquet(
         return 0
     
     stem = input_path.name
-    suffixes = []
+    suffixes = [] 
 
     # collect all suffixes that need to be stripped 
     for suffix in input_path.suffixes:
