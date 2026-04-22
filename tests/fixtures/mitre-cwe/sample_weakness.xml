@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Weakness_Catalog xmlns="http://cwe.mitre.org/cwe-7">
+  <Weaknesses>
+    <Weakness ID="79" Name="Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')" Abstraction="Base" Structure="Simple" Status="Stable">
+      <Description>The product does not neutralize or incorrectly neutralizes user-controllable input before it is placed in output that is used as a web page that is served to other users.</Description>
+      <Extended_Description>Cross-site scripting (XSS) vulnerabilities occur when user-controllable input is not sufficiently sanitized before being placed into output used as a web page served to other users.</Extended_Description>
+      <Related_Weaknesses>
+        <Related_Weakness Nature="ChildOf" CWE_ID="74" View_ID="1000" Ordinal="Primary"/>
+        <Related_Weakness Nature="PeerOf" CWE_ID="352" View_ID="1000"/>
+      </Related_Weaknesses>
+      <Applicable_Platforms>
+        <Language Class="Not Language-Specific" Prevalence="Undetermined"/>
+        <Technology Class="Web Based" Prevalence="Often"/>
+      </Applicable_Platforms>
+      <Modes_Of_Introduction>
+        <Introduction>
+          <Phase>Implementation</Phase>
+        </Introduction>
+        <Introduction>
+          <Phase>Architecture and Design</Phase>
+        </Introduction>
+      </Modes_Of_Introduction>
+      <Likelihood_Of_Exploit>High</Likelihood_Of_Exploit>
+      <Common_Consequences>
+        <Consequence>
+          <Scope>Confidentiality</Scope>
+          <Scope>Integrity</Scope>
+          <Impact>Execute Unauthorized Code or Commands</Impact>
+        </Consequence>
+        <Consequence>
+          <Scope>Confidentiality</Scope>
+          <Impact>Read Application Data</Impact>
+        </Consequence>
+      </Common_Consequences>
+      <Content_History>
+        <Submission>
+          <Submission_Name>PLOVER</Submission_Name>
+          <Submission_Date>2006-07-19</Submission_Date>
+        </Submission>
+        <Modification>
+          <Modification_Name>CWE Content Team</Modification_Name>
+          <Modification_Organization>MITRE</Modification_Organization>
+          <Modification_Date>2024-02-29</Modification_Date>
+          <Modification_Comment>updated Mapping_Notes</Modification_Comment>
+        </Modification>
+        <Modification>
+          <Modification_Name>CWE Content Team</Modification_Name>
+          <Modification_Organization>MITRE</Modification_Organization>
+          <Modification_Date>2025-01-15</Modification_Date>
+          <Modification_Comment>updated Applicable_Platforms</Modification_Comment>
+        </Modification>
+      </Content_History>
+    </Weakness>
+  </Weaknesses>
+</Weakness_Catalog>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Weakness_Catalog xmlns="http://cwe.mitre.org/cwe-7">
+  <Categories>
+    <Category ID="1001" Name="SFP Secondary Cluster: Use of an Improper API" Status="Incomplete">
+      <Summary>This category identifies Software Fault Patterns (SFPs) within the Use of an Improper API cluster (SFP3).</Summary>
+      <Relationships>
+        <Has_Member CWE_ID="111" View_ID="888"/>
+        <Has_Member CWE_ID="242" View_ID="888"/>
+      </Relationships>
+      <Content_History>
+        <Submission>
+          <Submission_Name>CWE Content Team</Submission_Name>
+          <Submission_Organization>MITRE</Submission_Organization>
+          <Submission_Date>2014-07-29</Submission_Date>
+        </Submission>
+        <Modification>
+          <Modification_Name>CWE Content Team</Modification_Name>
+          <Modification_Organization>MITRE</Modification_Organization>
+          <Modification_Date>2023-06-29</Modification_Date>
+          <Modification_Comment>updated Mapping_Notes</Modification_Comment>
+        </Modification>
+      </Content_History>
+    </Category>
+  </Categories>
+</Weakness_Catalog>

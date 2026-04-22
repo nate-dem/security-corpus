@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Weakness_Catalog xmlns="http://cwe.mitre.org/cwe-7">
+  <Views>
+    <View ID="1000" Name="Research Concepts" Type="Graph" Status="Draft">
+      <Objective>This view is intended to facilitate research into weaknesses, including their inter-dependencies, and can be leveraged to systematically identify theoretical gaps within CWE.</Objective>
+      <Members>
+        <Has_Member CWE_ID="284" View_ID="1000"/>
+        <Has_Member CWE_ID="664" View_ID="1000"/>
+      </Members>
+      <Content_History>
+        <Submission>
+          <Submission_Name>CWE Content Team</Submission_Name>
+          <Submission_Organization>MITRE</Submission_Organization>
+          <Submission_Date>2008-04-11</Submission_Date>
+        </Submission>
+        <Modification>
+          <Modification_Name>CWE Content Team</Modification_Name>
+          <Modification_Organization>MITRE</Modification_Organization>
+          <Modification_Date>2023-06-29</Modification_Date>
+          <Modification_Comment>updated Mapping_Notes</Modification_Comment>
+        </Modification>
+      </Content_History>
+    </View>
+  </Views>
+</Weakness_Catalog>

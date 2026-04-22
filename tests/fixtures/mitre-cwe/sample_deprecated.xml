@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Weakness_Catalog xmlns="http://cwe.mitre.org/cwe-7">
+  <Weaknesses>
+    <Weakness ID="1187" Name="DEPRECATED: Use of Uninitialized Resource" Abstraction="Base" Structure="Simple" Status="Deprecated">
+      <Description>This entry has been deprecated because it was a duplicate of CWE-908. All content has been transferred to CWE-908.</Description>
+      <Content_History>
+        <Submission>
+          <Submission_Name>CWE Content Team</Submission_Name>
+          <Submission_Organization>MITRE</Submission_Organization>
+          <Submission_Date>2019-03-25</Submission_Date>
+        </Submission>
+      </Content_History>
+    </Weakness>
+    <Weakness ID="79" Name="Cross-site Scripting" Abstraction="Base" Structure="Simple" Status="Stable">
+      <Description>XSS vulnerability.</Description>
+      <Content_History>
+        <Submission>
+          <Submission_Name>PLOVER</Submission_Name>
+          <Submission_Date>2006-07-19</Submission_Date>
+        </Submission>
+      </Content_History>
+    </Weakness>
+  </Weaknesses>
+</Weakness_Catalog>

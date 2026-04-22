@@ -5,6 +5,7 @@ from ingest.connectors.base import Connector, NormalizedData
 from ingest.connectors.capec import CapecConnector
 from ingest.connectors.cisa_kev import CisaKevConnector
 from ingest.connectors.mitre_attack import MitreAttackConnector
+from ingest.connectors.mitre_cwe import MitreCweConnector
 from ingest.connectors.nvd import NVDConnector
 from ingest.writers import write_parquet
 
@@ -14,6 +15,7 @@ _CONNECTORS: dict[str, Connector] = {
     "mitre-attack": MitreAttackConnector(),
     "cisa-kev": CisaKevConnector(),
     "capec": CapecConnector(),
+    "mitre-cwe": MitreCweConnector(),
 }
 
 def ingest(path: Path, source: str) -> Iterator[NormalizedData]:
