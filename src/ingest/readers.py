@@ -4,23 +4,23 @@ from pathlib import Path
 from typing import Any, Iterator
 
 import ijson
+from lxml import etree
 
 
-def read(path: Path, json_path: str | None = None) -> Iterator[Any]:
+def read(path: Path, json_path: str | None = None, xml_tag: str | None = None) -> Iterator[Any]:
     """Stream parsed objects from a file. Currently supports the following file types:
         - .json.gz
         - .json
-    
-    For JSON files, `json_path` is an ijson path expression (e.g.
-    'vulnerabilities.item' in NVD CVE data) selecting which array to stream records from.
-    If omitted, the entire document is yielded as a single object.
+        - .xml
     """
     suffixes = path.suffixes
-    
+
     if suffixes[-2:] == [".json", ".gz"]:
         yield from _read_json_gz(path, json_path)
     elif suffixes[-1:] == [".json"]:
         yield from _read_json(path, json_path)
+    elif suffixes[-1:] == [".xml"]:
+        yield from _read_xml(path, xml_tag)
     else:
         raise ValueError(
             f"Unsupported format: {path.name} (suffixes={suffixes})"
@@ -39,3 +39,16 @@ def _stream_json(fp, json_path: str | None) -> Iterator[Any]:
         yield from ijson.items(fp, json_path, use_float=True)
     else:
         yield json.load(fp)
+
+
+def _read_xml(path: Path, xml_tag: str | None) -> Iterator[Any]:
+    if not xml_tag:
+        raise ValueError("xml_tag is required for XML files")
+
+    context = etree.iterparse(str(path), events=("end",), tag=xml_tag)
+    for _event, elem in context:
+        yield elem
+        # free memory: clear this element and drop parent references
+        elem.clear()
+        while elem.getprevious() is not None:
+            del elem.getparent()[0]
