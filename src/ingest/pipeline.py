@@ -8,6 +8,7 @@ from ingest.connectors.mitre_attack import MitreAttackConnector
 from ingest.connectors.mitre_cwe import MitreCweConnector
 from ingest.connectors.nvd import NVDConnector
 from ingest.connectors.sigma import SigmaConnector
+from ingest.connectors.stackexchange_infosec import StackExchangeInfosecConnector
 from ingest.writers import write_parquet
 
 
@@ -18,6 +19,7 @@ _CONNECTORS: dict[str, Connector] = {
     "capec": CapecConnector(),
     "mitre-cwe": MitreCweConnector(),
     "sigma": SigmaConnector(),
+    "stackexchange-infosec": StackExchangeInfosecConnector(),
 }
 
 def ingest(path: Path, source: str) -> Iterator[NormalizedData]:

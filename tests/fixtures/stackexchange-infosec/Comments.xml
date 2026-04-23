@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<comments>
+  <row Id="501" PostId="100" Score="3" Text="Great question, I've been wondering the same thing." CreationDate="2015-03-10T16:00:00.000" UserId="202" />
+  <row Id="502" PostId="101" Score="1" Text="Can you elaborate on the certificate chain validation?" CreationDate="2015-03-10T17:00:00.000" UserId="201" />
+</comments>

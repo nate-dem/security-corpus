@@ -28,7 +28,7 @@ _EXCLUDED_DIRS = {
     "images",
 }
 
-_SKIP_STATUSES = frozenset({"deprecated"})
+_SKIP_STATUSES = {"deprecated"}
 
 _ATTACK_TECHNIQUE_RE = re.compile(r"^attack\.t(\d+(?:\.\d+)?)$", re.IGNORECASE)
 
