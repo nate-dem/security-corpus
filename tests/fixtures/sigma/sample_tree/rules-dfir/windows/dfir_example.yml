@@ -1,0 +1,18 @@
+title: DFIR Windows Example
+id: 11111111-2222-3333-4444-555555555555
+status: stable
+description: |
+    Example DFIR rule for testing path derivation.
+author: Test Author
+date: 2025-06-01
+tags:
+    - attack.execution
+    - attack.t1059.001
+logsource:
+    product: windows
+    service: powershell
+detection:
+    selection:
+        EventID: 4104
+    condition: selection
+level: high

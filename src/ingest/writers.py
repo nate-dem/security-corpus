@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Iterable
 import json
+from datetime import date, datetime
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -46,9 +47,14 @@ def write_parquet(
     
     return len(rows)
 
+def _json_default(obj):
+    if isinstance(obj, (date, datetime)):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
 def _record_to_row(normalized_record: NormalizedData) -> dict:
     """Convert NormalizedData into a Parquet-friendly dict."""
     data = normalized_record.model_dump()
     # get the raw data of the normalized format
-    data["raw"] = json.dumps(data["raw"])
+    data["raw"] = json.dumps(data["raw"], default=_json_default)
     return data

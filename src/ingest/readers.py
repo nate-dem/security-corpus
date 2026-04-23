@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 import ijson
+import yaml
 from lxml import etree
 
 
@@ -12,6 +13,7 @@ def read(path: Path, json_path: str | None = None, xml_tag: str | None = None) -
         - .json.gz
         - .json
         - .xml
+        - .yml / .yaml
     """
     suffixes = path.suffixes
 
@@ -21,6 +23,8 @@ def read(path: Path, json_path: str | None = None, xml_tag: str | None = None) -
         yield from _read_json(path, json_path)
     elif suffixes[-1:] == [".xml"]:
         yield from _read_xml(path, xml_tag)
+    elif suffixes[-1:] in ([".yml"], [".yaml"]):
+        yield from _read_yaml(path)
     else:
         raise ValueError(
             f"Unsupported format: {path.name} (suffixes={suffixes})"
@@ -39,6 +43,11 @@ def _stream_json(fp, json_path: str | None) -> Iterator[Any]:
         yield from ijson.items(fp, json_path, use_float=True)
     else:
         yield json.load(fp)
+
+
+def _read_yaml(path: Path) -> Iterator[Any]:
+    with open(path, "rb") as f:
+        yield yaml.safe_load(f)
 
 
 def _read_xml(path: Path, xml_tag: str | None) -> Iterator[Any]:

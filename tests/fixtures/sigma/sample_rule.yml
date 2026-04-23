@@ -1,0 +1,24 @@
+title: AWS Bucket Deleted
+id: 39c9f26d-6e3b-4dbb-9c7a-4154b0281112
+status: experimental
+description: |
+    Detects the deletion of S3 buckets in AWS CloudTrail logs.
+references:
+    - https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html
+author: Ivan Saakov, Nasreddine Bencherchali
+date: 2025-10-19
+modified: 2025-10-20
+tags:
+    - attack.defense-evasion
+    - attack.t1485
+    - attack.t1566.001
+logsource:
+    product: aws
+    service: cloudtrail
+detection:
+    selection_event_name:
+        eventName: 'DeleteBucket'
+    condition: selection_event_name
+falsepositives:
+    - During maintenance operations legitimate S3 bucket deletions may occur
+level: medium

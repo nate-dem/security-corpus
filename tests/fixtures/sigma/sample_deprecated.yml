@@ -1,0 +1,15 @@
+title: Deprecated Rule Example
+id: aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+status: deprecated
+description: |
+    This rule has been deprecated and should be skipped.
+author: Test Author
+date: 2024-01-01
+logsource:
+    product: windows
+    service: sysmon
+detection:
+    selection:
+        EventID: 1
+    condition: selection
+level: low
