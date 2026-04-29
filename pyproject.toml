@@ -8,6 +8,8 @@ dependencies = [
     "pydantic",
     "pyarrow",
     "beautifulsoup4",
+    "markdownify",
+    "tiktoken",
 ]
 
 [project.optional-dependencies]
