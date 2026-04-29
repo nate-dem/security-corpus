@@ -2,45 +2,49 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
-from ingest.connectors.base import NormalizedData
+from ingest.connectors.base import VulnerabilityData
 from ingest.readers import read
+from ingest.utils import compute_content_hash, compute_token_count, PUBLIC_DOMAIN
 
 
 class NVDConnector:
     source_id = "nvd"
-    
+
     def iter_records(self, path: Path) -> Iterator[dict]:
         """Stream raw CVE records from an NVD JSON feed file."""
         yield from read(path, json_path="vulnerabilities.item")
-    
-    def normalize(self, record: dict) -> NormalizedData:
+
+    def normalize(self, record: dict) -> VulnerabilityData:
         """Convert one NVD CVE record into the canonical schema."""
         cve = record["cve"]
         cve_id = cve["id"]
-        
-        return NormalizedData(
+        content = _extract_english_description(cve.get("descriptions", []))
+
+        return VulnerabilityData(
             # identification
             record_id=f"nvd:{cve_id}",
             source_id=self.source_id,
             source_record_id=cve_id,
-            
+
             # main data
-            content=_extract_english_description(cve.get("descriptions", [])),
+            content=content,
+            content_length=compute_token_count(content),
+            content_hash=compute_content_hash(content),
             raw=record,
-            
+
             # metadata
             ingested_at=datetime.now(timezone.utc),
-            
-            # security-specific
+            license=PUBLIC_DOMAIN,
+
+            # vulnerability-specific
+            cve_id=cve_id,
             severity=_extract_severity(cve.get("metrics", {})),
             cvss_score=_extract_cvss_score(cve.get("metrics", {})),
             cwe_ids=_extract_cwe_ids(cve.get("weaknesses", [])),
-            
+
             # optional metadata
             published_at=_parse_datetime(cve.get("published")),
-            modified_at=_parse_datetime(cve.get("lastModified")),
             source_url=f"https://nvd.nist.gov/vuln/detail/{cve_id}",
-            language="en",
         )
 
 # Precedence order for picking a CVSS score when multiple versions are present.
@@ -85,6 +89,7 @@ def _extract_cwe_ids(weaknesses: list[dict]) -> list[str]:
             if value.startswith("CWE-") and value not in cwe_ids:
                 cwe_ids.append(value)
     return cwe_ids
+
 
 def _parse_datetime(value: str | None) -> datetime | None:
     """Parse NVD's timestamps; return None if missing or not able to parse."""

@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from ingest.connectors.base import NormalizedData
+from ingest.connectors.base import NormalizedData, VulnerabilityData
 from ingest.connectors.nvd import NVDConnector
 
 
@@ -10,8 +10,9 @@ SAMPLE_CVE = json.loads(
     (Path(__file__).parent / "fixtures" / "nvd" / "sample_cve.json").read_text()
 )
 
-def test_normalize_returns_normalized_data():
+def test_normalize_returns_vulnerability_data():
     result = NVDConnector().normalize(SAMPLE_CVE)
+    assert isinstance(result, VulnerabilityData)
     assert isinstance(result, NormalizedData)
     assert result.record_id.startswith("nvd:")
     assert result.source_id == "nvd"
@@ -30,3 +31,13 @@ def test_normalize_filters_nvd_pseudo_cwes():
 def test_normalize_preserves_raw():
     result = NVDConnector().normalize(SAMPLE_CVE)
     assert result.raw == SAMPLE_CVE
+
+def test_normalize_populates_new_fields():
+    result = NVDConnector().normalize(SAMPLE_CVE)
+    assert result.content_hash is not None
+    assert result.content_length is not None
+    assert result.content_length > 0
+    assert result.license is not None
+    assert result.cve_id == SAMPLE_CVE["cve"]["id"]
+
+
