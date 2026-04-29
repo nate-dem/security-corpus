@@ -2,18 +2,15 @@ from pathlib import Path
 
 import yaml
 
-from ingest.connectors.base import NormalizedData
-from ingest.connectors.sigma import (
-    SigmaConnector,
-    _extract_attack_technique_ids,
-)
+from ingest.connectors.base import NormalizedData, DetectionRuleData
+from ingest.connectors.sigma import SigmaConnector
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sigma"
 
 SAMPLE_RULE = yaml.safe_load((FIXTURES / "sample_rule.yml").read_bytes())
 
 
-def test_normalize_returns_valid_normalized_data():
+def test_normalize_returns_detection_rule_data():
     record = dict(SAMPLE_RULE)
     record.update(
         rule_category="cloud/aws/cloudtrail",
@@ -21,6 +18,7 @@ def test_normalize_returns_valid_normalized_data():
         relative_path="rules/cloud/aws/cloudtrail/sample_rule.yml",
     )
     result = SigmaConnector().normalize(record)
+    assert isinstance(result, DetectionRuleData)
     assert isinstance(result, NormalizedData)
     assert result.record_id == "sigma:39c9f26d-6e3b-4dbb-9c7a-4154b0281112"
     assert result.source_id == "sigma"
@@ -40,15 +38,6 @@ def test_normalize_maps_description_title_date():
     assert result.published_at.year == 2025
     assert result.published_at.month == 10
     assert result.published_at.day == 19
-
-
-def test_extract_attack_technique_ids():
-    tags = ["attack.defense-evasion", "attack.t1486", "attack.t1566.001", "cve.2021-44228"]
-    result = _extract_attack_technique_ids(tags)
-    assert result == ["T1486", "T1566.001"]
-
-    assert _extract_attack_technique_ids([]) == []
-    assert _extract_attack_technique_ids(["attack.defense-evasion", "cve.2021-44228"]) == []
 
 
 def test_iter_records_skips_deprecated():
@@ -80,7 +69,7 @@ def test_path_metadata_derivation():
     assert dfir["relative_path"] == "rules-dfir/windows/dfir_example.yml"
 
 
-def test_normalize_preserves_raw_tags_and_attack_ids():
+def test_normalize_populates_detection_rule_fields():
     record = dict(SAMPLE_RULE)
     record.update(
         rule_category="cloud/aws/cloudtrail",
@@ -88,21 +77,13 @@ def test_normalize_preserves_raw_tags_and_attack_ids():
         relative_path="rules/cloud/aws/cloudtrail/sample_rule.yml",
     )
     result = SigmaConnector().normalize(record)
-    # Original tags preserved
-    assert result.raw["tags"] == SAMPLE_RULE["tags"]
-    # Extracted technique IDs added
-    assert "T1485" in result.raw["attack_technique_ids"]
-    assert "T1566.001" in result.raw["attack_technique_ids"]
+    assert result.rule_id == str(SAMPLE_RULE["id"])
+    assert result.rule_format == "sigma"
+    assert result.rule_source is not None  # YAML text of the rule
+    assert result.content_hash is not None
+    assert result.content_length is not None
+    assert result.license is not None
+    # raw is not set for Sigma (dropped per schema rules)
+    assert result.raw is None
 
 
-def test_normalize_leaves_vuln_fields_empty():
-    record = dict(SAMPLE_RULE)
-    record.update(
-        rule_category="",
-        rule_source_dir="rules",
-        relative_path="rules/sample_rule.yml",
-    )
-    result = SigmaConnector().normalize(record)
-    assert result.severity is None
-    assert result.cvss_score is None
-    assert result.cwe_ids == []

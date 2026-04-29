@@ -1,11 +1,13 @@
 import logging
-import re
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
-from ingest.connectors.base import NormalizedData
+import yaml
+
+from ingest.connectors.base import DetectionRuleData
 from ingest.readers import read
+from ingest.utils import compute_content_hash, compute_token_count, DETECTION_RULE_LICENSE_LGPL_2_1
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +31,6 @@ _EXCLUDED_DIRS = {
 }
 
 _SKIP_STATUSES = {"deprecated"}
-
-_ATTACK_TECHNIQUE_RE = re.compile(r"^attack\.t(\d+(?:\.\d+)?)$", re.IGNORECASE)
-
 
 class SigmaConnector:
     source_id = "sigma"
@@ -64,31 +63,37 @@ class SigmaConnector:
                     record.update(metadata)
                     yield record
 
-    def normalize(self, record: dict) -> NormalizedData:
+    def normalize(self, record: dict) -> DetectionRuleData:
         """Convert one Sigma rule dict into the normalized schema."""
         rule_id = str(record["id"])
         description = str(record.get("description", "")).strip()
         published_at = _coerce_datetime(record.get("date"))
-        modified_at = _coerce_datetime(record.get("modified")) or published_at
 
-        tags = record.get("tags") or []
-        attack_ids = _extract_attack_technique_ids(tags)
+        # Reconstruct the YAML rule text for rule_source
+        rule_source = yaml.dump(
+            {k: v for k, v in record.items()
+             if k not in ("rule_category", "rule_source_dir", "relative_path")},
+            default_flow_style=False,
+            allow_unicode=True,
+        )
 
-        raw = dict(record)
-        raw["attack_technique_ids"] = attack_ids
-
-        return NormalizedData(
+        return DetectionRuleData(
             record_id=f"sigma:{rule_id}",
             source_id=self.source_id,
             source_record_id=rule_id,
             content=description,
+            content_length=compute_token_count(description),
+            content_hash=compute_content_hash(description),
             title=record.get("title"),
-            raw=raw,
             ingested_at=datetime.now(timezone.utc),
+            license=DETECTION_RULE_LICENSE_LGPL_2_1,
             published_at=published_at,
-            modified_at=modified_at,
             source_url=f"https://github.com/SigmaHQ/sigma/blob/master/{record.get('relative_path', '')}",
-            language="en",
+            # detection rule fields
+            rule_id=rule_id,
+            rule_format="sigma",
+            rule_level=str(record.get("level", "")).lower() or None,
+            rule_source=rule_source,
         )
 
 
@@ -109,24 +114,6 @@ def _derive_path_metadata(yml_path: Path, repo_root: Path, rule_dir_name: str) -
         "rule_source_dir": rule_dir_name,
         "relative_path": str(relative_path),
     }
-
-
-def _extract_attack_technique_ids(tags: list[str]) -> list[str]:
-    """Extract and normalize ATT&CK technique IDs from Sigma tags.
-
-    E.g. ['attack.defense-evasion', 'attack.t1486', 'attack.t1566.001']
-    → ['T1486', 'T1566.001']
-    """
-    seen: set[str] = set()
-    result: list[str] = []
-    for tag in tags:
-        m = _ATTACK_TECHNIQUE_RE.match(tag)
-        if m:
-            canonical = f"T{m.group(1)}"
-            if canonical not in seen:
-                seen.add(canonical)
-                result.append(canonical)
-    return result
 
 
 def _coerce_datetime(value: str | date | datetime | None) -> datetime | None:
