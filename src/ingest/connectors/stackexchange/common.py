@@ -104,19 +104,10 @@ def detect_code_in_html(html: str) -> bool:
     return "<code" in html
 
 
-def extract_closure(attrs: dict) -> tuple[bool, str | None]:
+def extract_closure(attrs: dict) -> bool:
     """Extract closure status from SE post attributes.
 
-    Returns (closed, closure_reason).
-
-    closed is True if ClosedDate is present in the post attributes.
-    closure_reason is always None — SE data dumps don't include closure
-    reasons in Posts.xml directly. Reasons are in PostHistory.xml
-    (PostHistoryTypeId 10), which would require a separate parsing pass.
+    Returns closed where closed is True if ClosedDate is present in the post attributes.
     """
     closed = "ClosedDate" in attrs
-    # RESEARCHER: closure_reason requires parsing PostHistory.xml
-    # (PostHistoryTypeId 10). Currently returns None. Evaluate whether
-    # the additional pass is worth the complexity for filtering value.
-    closure_reason = None
-    return closed, closure_reason
+    return closed

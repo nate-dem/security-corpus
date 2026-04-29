@@ -57,7 +57,6 @@ class QAThreadData(NormalizedData):
     answer_count: int | None = None
     has_accepted_answer: bool | None = None
     closed: bool | None = None
-    closure_reason: str | None = None
     tags: list[str] = Field(default_factory=list)
 
 
