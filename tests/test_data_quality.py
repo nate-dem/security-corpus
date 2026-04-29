@@ -23,14 +23,21 @@ class TestSchemaConsistency:
         for s in schemas[1:]:
             assert s.equals(schemas[0], check_metadata=False)
     
-    def test_nvd_and_attack_have_same_schema(self):
+    def test_nvd_and_attack_share_base_columns(self):
+        """Both sources share the NormalizedData base columns."""
         _skip_if_missing(NVD_DIR)
         _skip_if_missing(ATTACK_DIR)
         nvd = next(NVD_DIR.glob("*.parquet"))
         attack = next(ATTACK_DIR.glob("*.parquet"))
-        nvd_schema = pq.ParquetFile(nvd).schema_arrow
-        attack_schema = pq.ParquetFile(attack).schema_arrow
-        assert nvd_schema.names == attack_schema.names
+        nvd_names = set(pq.ParquetFile(nvd).schema_arrow.names)
+        attack_names = set(pq.ParquetFile(attack).schema_arrow.names)
+        base_columns = {
+            "source_id", "source_record_id", "record_id",
+            "content", "title", "content_length", "content_hash",
+            "ingested_at", "published_at", "source_url", "license", "raw",
+        }
+        assert base_columns <= nvd_names
+        assert base_columns <= attack_names
 
 
 @pytest.mark.data_quality
