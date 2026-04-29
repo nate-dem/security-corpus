@@ -2,11 +2,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
-from ingest.connectors.base import NormalizedData
+from ingest.connectors.base import KnowledgeBaseData
 from ingest.readers import read
+from ingest.utils import compute_content_hash, compute_token_count, MITRE_TERMS
 
 
-# meaningful STIX object types corresponding to ATT&CK techniques 
+# meaningful STIX object types corresponding to ATT&CK techniques
 _MEANINGFUL_TYPES = {
     "attack-pattern",
     "intrusion-set",
@@ -31,21 +32,27 @@ class MitreAttackConnector:
                 continue
             yield obj
 
-    def normalize(self, record: dict) -> NormalizedData:
+    def normalize(self, record: dict) -> KnowledgeBaseData:
         """Convert one STIX object into the normalized schema."""
         external_id = _extract_attack_id(record)
-        return NormalizedData(
+        content = record.get("description", "")
+
+        return KnowledgeBaseData(
             record_id=f"mitre-attack:{external_id}",
             source_id=self.source_id,
             source_record_id=external_id,
-            content=record.get("description", ""),
+            content=content,
+            content_length=compute_token_count(content),
+            content_hash=compute_content_hash(content),
             title=record.get("name"),
             raw=record,
             ingested_at=datetime.now(timezone.utc),
+            license=MITRE_TERMS,
             published_at=_parse_datetime(record.get("created")),
-            modified_at=_parse_datetime(record.get("modified")),
             source_url=_extract_attack_url(record),
-            language="en",
+            # knowledge base fields
+            framework="attack",
+            category_id=external_id,
         )
 
 
@@ -72,7 +79,7 @@ def _find_mitre_reference(record: dict) -> dict | None:
             return ref
     return None
 
-    
+
 def _parse_datetime(value: str | None) -> datetime | None:
     """Parse STIX timestamps (remove trailing 'Z'); return None if missing."""
     if not value:

@@ -4,8 +4,9 @@ from typing import Iterator
 
 from lxml import etree
 
-from ingest.connectors.base import NormalizedData
+from ingest.connectors.base import KnowledgeBaseData
 from ingest.readers import read
+from ingest.utils import compute_content_hash, compute_token_count, MITRE_TERMS
 
 
 _NS = "http://cwe.mitre.org/cwe-7"
@@ -34,7 +35,7 @@ class MitreCweConnector:
                 record["record_type"] = record_type
                 yield record
 
-    def normalize(self, record: dict) -> NormalizedData:
+    def normalize(self, record: dict) -> KnowledgeBaseData:
         """Convert one CWE record dict into the normalized schema."""
         cwe_id = f"CWE-{record['id']}"
 
@@ -44,20 +45,23 @@ class MitreCweConnector:
             content = f"{content}\n\n{extended}" if content else extended
 
         published_at = _parse_date(record.get("submission_date"))
-        modified_at = _parse_date(record.get("modification_date")) or published_at
 
-        return NormalizedData(
+        return KnowledgeBaseData(
             record_id=f"mitre-cwe:{cwe_id}",
             source_id=self.source_id,
             source_record_id=cwe_id,
             content=content,
+            content_length=compute_token_count(content),
+            content_hash=compute_content_hash(content),
             title=record.get("name"),
             raw=record,
             ingested_at=datetime.now(timezone.utc),
+            license=MITRE_TERMS,
             published_at=published_at,
-            modified_at=modified_at,
             source_url=f"https://cwe.mitre.org/data/definitions/{record['id']}.html",
-            language="en",
+            # knowledge base fields
+            framework="cwe",
+            category_id=cwe_id,
         )
 
 # stored in raw field of NormalizedData class
@@ -72,12 +76,10 @@ def _elem_to_dict(elem: etree._Element) -> dict:
         "description": _extract_text(elem, "Description") or _extract_text(elem, "Summary") or _extract_text(elem, "Objective"),
         "extended_description": _extract_text(elem, "Extended_Description"),
         "likelihood_of_exploit": _extract_text(elem, "Likelihood_Of_Exploit"),
-        "related_weakness_ids": _extract_related_weakness_ids(elem),
         "common_consequences": _extract_common_consequences(elem),
         "applicable_platforms": _extract_applicable_platforms(elem),
         "modes_of_introduction": _extract_modes_of_introduction(elem),
         "submission_date": _extract_submission_date(elem),
-        "modification_date": _extract_latest_modification_date(elem),
         "raw_xml": etree.tostring(elem, encoding="unicode"),
     }
 
@@ -88,21 +90,6 @@ def _extract_text(elem: etree._Element, child_tag: str) -> str:
     if child is None:
         return ""
     return "".join(child.itertext()).strip()
-
-
-def _extract_related_weakness_ids(elem: etree._Element) -> list[str]:
-    """Extract related weakness IDs as a deduplicated list like ['CWE-20', 'CWE-74']."""
-    ids: list[str] = []
-    parent = elem.find(f"{{{_NS}}}Related_Weaknesses")
-    if parent is None:
-        return ids
-    for rw in parent.findall(f"{{{_NS}}}Related_Weakness"):
-        cwe_id = rw.get("CWE_ID")
-        if cwe_id:
-            formatted = f"CWE-{cwe_id}"
-            if formatted not in ids:
-                ids.append(formatted)
-    return ids
 
 
 def _extract_common_consequences(elem: etree._Element) -> list[dict]:
@@ -158,29 +145,6 @@ def _extract_submission_date(elem: etree._Element) -> str | None:
     if submission is None:
         return None
     return submission.findtext(f"{{{_NS}}}Submission_Date", default=None)
-
-
-def _extract_latest_modification_date(elem: etree._Element) -> str | None:
-    """Extract the latest modification date from Content_History."""
-    history = elem.find(f"{{{_NS}}}Content_History")
-    if history is None:
-        return None
-    modifications = history.findall(f"{{{_NS}}}Modification")
-    if not modifications:
-        return None
-    dates = [
-        m.findtext(f"{{{_NS}}}Modification_Date", default="")
-        for m in modifications
-    ]
-    parsed = []
-    for d in dates:
-        try:
-            parsed.append((datetime.strptime(d, "%Y-%m-%d"), d))
-        except (ValueError, TypeError):
-            continue
-    if not parsed:
-        return None
-    return max(parsed)[1]
 
 
 def _parse_date(date_str: str | None) -> datetime | None:

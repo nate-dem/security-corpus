@@ -1,10 +1,10 @@
 import json
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from lxml import etree
 
-from ingest.connectors.base import NormalizedData
+from ingest.connectors.base import NormalizedData, KnowledgeBaseData
 from ingest.connectors.capec import CapecConnector
 
 
@@ -13,8 +13,9 @@ SAMPLE_PATTERN = json.loads(
 )
 
 
-def test_normalize_returns_valid_normalized_data():
+def test_normalize_returns_knowledge_base_data():
     result = CapecConnector().normalize(SAMPLE_PATTERN)
+    assert isinstance(result, KnowledgeBaseData)
     assert isinstance(result, NormalizedData)
     assert result.record_id == "capec:CAPEC-66"
     assert result.source_id == "capec"
@@ -28,19 +29,23 @@ def test_normalize_maps_description_and_title():
     assert SAMPLE_PATTERN["extended_description"] in result.content
 
 
-def test_normalize_extracts_cwe_ids():
+def test_normalize_sets_framework_and_category():
     result = CapecConnector().normalize(SAMPLE_PATTERN)
-    assert result.cwe_ids == ["CWE-89", "CWE-1286"]
-
-
-def test_normalize_maps_severity():
-    result = CapecConnector().normalize(SAMPLE_PATTERN)
-    assert result.severity == "high"
+    assert result.framework == "capec"
+    assert result.category_id == "CAPEC-66"
 
 
 def test_normalize_sets_source_url():
     result = CapecConnector().normalize(SAMPLE_PATTERN)
     assert result.source_url == "https://capec.mitre.org/data/definitions/66.html"
+
+
+def test_normalize_populates_new_fields():
+    result = CapecConnector().normalize(SAMPLE_PATTERN)
+    assert result.content_hash is not None
+    assert result.content_length is not None
+    assert result.content_length > 0
+    assert result.license is not None
 
 
 def test_iter_records_filters_deprecated_and_obsolete():
