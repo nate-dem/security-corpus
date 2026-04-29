@@ -8,7 +8,7 @@ from ingest.connectors.mitre_attack import MitreAttackConnector
 from ingest.connectors.mitre_cwe import MitreCweConnector
 from ingest.connectors.nvd import NVDConnector
 from ingest.connectors.sigma import SigmaConnector
-from ingest.connectors.stackexchange_infosec import StackExchangeInfosecConnector
+from ingest.connectors.stackexchange import StackExchangeSiteConnector
 from ingest.writers import write_parquet
 
 
@@ -19,7 +19,10 @@ _CONNECTORS: dict[str, Connector] = {
     "capec": CapecConnector(),
     "mitre-cwe": MitreCweConnector(),
     "sigma": SigmaConnector(),
-    "stackexchange-infosec": StackExchangeInfosecConnector(),
+    "stackexchange-infosec": StackExchangeSiteConnector("infosec", "security.stackexchange.com"),
+    "stackexchange-reverseengineering": StackExchangeSiteConnector("reverseengineering", "reverseengineering.stackexchange.com"),
+    "stackexchange-crypto": StackExchangeSiteConnector("crypto", "crypto.stackexchange.com"),
+    "stackexchange-tor": StackExchangeSiteConnector("tor", "tor.stackexchange.com"),
 }
 
 def ingest(path: Path, source: str) -> Iterator[NormalizedData]:
@@ -27,13 +30,13 @@ def ingest(path: Path, source: str) -> Iterator[NormalizedData]:
     connector = _CONNECTORS.get(source)
     if connector is None:
         raise ValueError(f"{source} is not a valid source in {list(_CONNECTORS)}")
-    
+
     for record in connector.iter_records(path):
         yield connector.normalize(record)
 
 def ingest_and_store(path: Path, source: str, output_dir: Path) -> int:
     """Ingest a file end-to-end and write normalized records to Parquet.
-    
+
     Returns the number of records written.
     """
     records = ingest(path, source)
