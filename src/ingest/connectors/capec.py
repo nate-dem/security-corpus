@@ -4,7 +4,7 @@ from typing import Iterator
 
 from lxml import etree
 
-from ingest.connectors.base import KnowledgeBaseData
+from ingest.connectors.base import MitreData
 from ingest.readers import read
 from ingest.utils import compute_content_hash, compute_token_count, MITRE_TERMS
 
@@ -28,7 +28,7 @@ class CapecConnector:
                 continue
             yield record
 
-    def normalize(self, record: dict) -> KnowledgeBaseData:
+    def normalize(self, record: dict) -> MitreData:
         """Convert one CAPEC attack pattern dict into the normalized schema."""
         pattern_id = record["id"]
         capec_id = f"CAPEC-{pattern_id}"
@@ -38,7 +38,7 @@ class CapecConnector:
         if extended:
             content = f"{content}\n\n{extended}" if content else extended
 
-        return KnowledgeBaseData(
+        return MitreData(
             record_id=f"capec:{capec_id}",
             source_id=self.source_id,
             source_record_id=capec_id,

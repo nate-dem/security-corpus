@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from lxml import etree
 
-from ingest.connectors.base import NormalizedData, KnowledgeBaseData
+from ingest.connectors.base import NormalizedData, MitreData
 from ingest.connectors.mitre_cwe import MitreCweConnector
 
 
@@ -26,10 +26,10 @@ def _load_record(fixture_path: Path, tag: str, record_type: str) -> dict:
     return record
 
 
-def test_normalize_weakness_returns_knowledge_base_data():
+def test_normalize_weakness_returns_mitre_data():
     record = _load_record(FIXTURES / "sample_weakness.xml", "Weakness", "Weakness")
     result = MitreCweConnector().normalize(record)
-    assert isinstance(result, KnowledgeBaseData)
+    assert isinstance(result, MitreData)
     assert isinstance(result, NormalizedData)
     assert result.record_id == "mitre-cwe:CWE-79"
     assert result.source_id == "mitre-cwe"
@@ -88,13 +88,13 @@ def test_category_and_view_normalize_successfully():
 
     cat_record = _load_record(FIXTURES / "sample_category.xml", "Category", "Category")
     cat_result = connector.normalize(cat_record)
-    assert isinstance(cat_result, KnowledgeBaseData)
+    assert isinstance(cat_result, MitreData)
     assert cat_result.record_id == "mitre-cwe:CWE-1001"
     assert cat_record["record_type"] == "Category"
 
     view_record = _load_record(FIXTURES / "sample_view.xml", "View", "View")
     view_result = connector.normalize(view_record)
-    assert isinstance(view_result, KnowledgeBaseData)
+    assert isinstance(view_result, MitreData)
     assert view_result.record_id == "mitre-cwe:CWE-1000"
     assert view_record["record_type"] == "View"
 

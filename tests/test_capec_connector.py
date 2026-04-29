@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from lxml import etree
 
-from ingest.connectors.base import NormalizedData, KnowledgeBaseData
+from ingest.connectors.base import NormalizedData, MitreData
 from ingest.connectors.capec import CapecConnector
 
 
@@ -13,9 +13,9 @@ SAMPLE_PATTERN = json.loads(
 )
 
 
-def test_normalize_returns_knowledge_base_data():
+def test_normalize_returns_mitre_data():
     result = CapecConnector().normalize(SAMPLE_PATTERN)
-    assert isinstance(result, KnowledgeBaseData)
+    assert isinstance(result, MitreData)
     assert isinstance(result, NormalizedData)
     assert result.record_id == "capec:CAPEC-66"
     assert result.source_id == "capec"

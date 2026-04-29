@@ -37,7 +37,7 @@ class VulnerabilityData(NormalizedData):
     exploited_in_wild: bool | None = None
 
 
-class KnowledgeBaseData(NormalizedData):
+class MitreData(NormalizedData):
     """MITRE ATT&CK, CWE, CAPEC."""
     framework: str | None = None              # "attack" | "cwe" | "capec"
     category_id: str | None = None            # T1055, CWE-79, CAPEC-100

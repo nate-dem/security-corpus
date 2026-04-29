@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
-from ingest.connectors.base import KnowledgeBaseData
+from ingest.connectors.base import MitreData
 from ingest.readers import read
 from ingest.utils import compute_content_hash, compute_token_count, MITRE_TERMS
 
@@ -32,12 +32,12 @@ class MitreAttackConnector:
                 continue
             yield obj
 
-    def normalize(self, record: dict) -> KnowledgeBaseData:
+    def normalize(self, record: dict) -> MitreData:
         """Convert one STIX object into the normalized schema."""
         external_id = _extract_attack_id(record)
         content = record.get("description", "")
 
-        return KnowledgeBaseData(
+        return MitreData(
             record_id=f"mitre-attack:{external_id}",
             source_id=self.source_id,
             source_record_id=external_id,

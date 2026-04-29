@@ -4,7 +4,7 @@ from typing import Iterator
 
 from lxml import etree
 
-from ingest.connectors.base import KnowledgeBaseData
+from ingest.connectors.base import MitreData
 from ingest.readers import read
 from ingest.utils import compute_content_hash, compute_token_count, MITRE_TERMS
 
@@ -35,7 +35,7 @@ class MitreCweConnector:
                 record["record_type"] = record_type
                 yield record
 
-    def normalize(self, record: dict) -> KnowledgeBaseData:
+    def normalize(self, record: dict) -> MitreData:
         """Convert one CWE record dict into the normalized schema."""
         cwe_id = f"CWE-{record['id']}"
 
@@ -46,7 +46,7 @@ class MitreCweConnector:
 
         published_at = _parse_date(record.get("submission_date"))
 
-        return KnowledgeBaseData(
+        return MitreData(
             record_id=f"mitre-cwe:{cwe_id}",
             source_id=self.source_id,
             source_record_id=cwe_id,

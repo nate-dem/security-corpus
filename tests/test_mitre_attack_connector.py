@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-from ingest.connectors.base import NormalizedData, KnowledgeBaseData
+from ingest.connectors.base import NormalizedData, MitreData
 from ingest.connectors.mitre_attack import MitreAttackConnector
 
 
@@ -11,9 +11,9 @@ SAMPLE_TECHNIQUE = json.loads(
 )
 
 
-def test_normalize_returns_knowledge_base_data():
+def test_normalize_returns_mitre_data():
     result = MitreAttackConnector().normalize(SAMPLE_TECHNIQUE)
-    assert isinstance(result, KnowledgeBaseData)
+    assert isinstance(result, MitreData)
     assert isinstance(result, NormalizedData)
     assert result.record_id.startswith("mitre-attack:")
     assert result.source_id == "mitre-attack"
