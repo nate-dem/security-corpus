@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "atlas_mitigation/AML.M0000",
+    "_rev": "_kkkJssK---",
+    "_key": "AML.M0000",
+    "original_id": "AML.M0000",
+    "name": "Limit Public Release of Information",
+    "datatype": "atlas_mitigation",
+    "metadata": {
+      "description": "Limit the public release of technical information about the AI stack used in an organization's products or services. Technical knowledge of how AI is used can be leveraged by adversaries to perform targeting and tailor attacks to the target system. Additionally, consider limiting the release of organizational information - including physical locations, researcher names, and department structures - from which technical details such as AI techniques, model architectures, or datasets may be inferred.",
+      "tags": []
+    }
+  },
+  {
+    "_id": "atlas_mitigation/AML.M0001",
+    "_rev": "_kkkJssL---",
+    "_key": "AML.M0001",
+    "original_id": "AML.M0001",
+    "name": "Limit Release of Sensitive Data",
+    "datatype": "atlas_mitigation",
+    "metadata": {
+      "description": "Limit the release of data that can be used to infer sensitive information about an AI model, including training data, model architecture, and intermediate outputs.",
+      "tags": []
+    }
+  }
+]

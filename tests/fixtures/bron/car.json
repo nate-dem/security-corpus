@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "car/CAR-2013-01-001",
+    "_rev": "_kkkJssN---",
+    "_key": "CAR-2013-01-001",
+    "original_id": "CAR-2013-01-001",
+    "name": "Malicious URL",
+    "datatype": "car",
+    "metadata": {
+      "description": "Adversaries will sometimes attempt to use a malicious URL to facilitate initial access or other stages of the attack lifecycle. A malicious URL is typically used to perform browser-based exploitation or as a mechanism to deliver malware to a host.",
+      "implementations": []
+    }
+  }
+]

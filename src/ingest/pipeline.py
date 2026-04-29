@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Iterator
 
 from ingest.connectors.base import Connector, NormalizedData
+from ingest.connectors.bron import BronConnector
 from ingest.connectors.capec import CapecConnector
 from ingest.connectors.cisa_kev import CisaKevConnector
 from ingest.connectors.mitre_attack import MitreAttackConnector
@@ -23,6 +24,7 @@ _CONNECTORS: dict[str, Connector] = {
     "stackexchange-reverseengineering": StackExchangeSiteConnector("reverseengineering", "reverseengineering.stackexchange.com"),
     "stackexchange-crypto": StackExchangeSiteConnector("crypto", "crypto.stackexchange.com"),
     "stackexchange-tor": StackExchangeSiteConnector("tor", "tor.stackexchange.com"),
+    "bron": BronConnector(),
 }
 
 def ingest(path: Path, source: str) -> Iterator[NormalizedData]:

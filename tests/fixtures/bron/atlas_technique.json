@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "atlas_technique/AML.T0000",
+    "_rev": "_kkkJssM---",
+    "_key": "AML.T0000",
+    "original_id": "AML.T0000",
+    "name": "Phishing",
+    "datatype": "atlas_technique",
+    "metadata": {
+      "description": "Adversaries may use phishing to gain access to ML systems or gather information about an organization's AI stack, including credentials to model repositories or data pipelines.",
+      "tags": ["Reconnaissance"]
+    }
+  }
+]
