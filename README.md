@@ -1,6 +1,6 @@
-# security-corpus
+# Open Security Corpus
 
-Ingestion pipeline for building a security-domain mid-training corpus for LLMs. Pulls from vulnerability databases, knowledge bases, detection rules, and Q&A archives, normalizes everything into a canonical schema, and writes Parquet output partitioned by source.
+This repo contains a data ingestion pipeline for building a security-domain mid-training corpus. It pulls from sources such as vulnerability databases, knowledge bases, detection rules, Q&A archives, academic papers, security blog posts, and security conference transcripts. It then normalizes every record into a canonical schema, and writes Parquet output partitioned by source.
 
 ## Sources
 
@@ -13,7 +13,7 @@ Ingestion pipeline for building a security-domain mid-training corpus for LLMs. 
 | CAPEC | `KnowledgeBaseData` | `capec.py` |
 | BRON | `KnowledgeBaseData` | `bron.py` |
 | Sigma Rules | `DetectionRuleData` | `sigma.py` |
-| Stack Exchange (InfoSec, RE, Crypto, Tor) | `QAThreadData` | `stackexchange/` |
+| Stack Exchange (InfoSec, RE, Crypto) | `QAThreadData` | `stackexchange/` |
 
 ## Setup
 
@@ -40,4 +40,4 @@ pytest -m data_quality      # validate ingested Parquet output
 
 ## Output
 
-Parquet files written to `data/{source}/normalized/`, Hive-partitioned by `source_id`. Each record includes content, metadata, quality signals, content hash (for dedup), and token count.
+Parquet files written to `data/{source}/normalized/`, partitioned by `source_id`. Each record includes content, metadata, quality signals, content hash (for dedup), and token count.
