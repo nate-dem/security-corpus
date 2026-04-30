@@ -8,10 +8,10 @@ This repo contains a data ingestion pipeline for building a security-domain mid-
 |---|---|---|
 | NVD (CVEs) | `VulnerabilityData` | `nvd.py` |
 | CISA KEV | `VulnerabilityData` | `cisa_kev.py` |
-| MITRE ATT&CK | `KnowledgeBaseData` | `mitre_attack.py` |
-| MITRE CWE | `KnowledgeBaseData` | `mitre_cwe.py` |
-| CAPEC | `KnowledgeBaseData` | `capec.py` |
-| BRON | `KnowledgeBaseData` | `bron.py` |
+| MITRE ATT&CK | `MitreData` | `mitre_attack.py` |
+| MITRE CWE | `MitreData` | `mitre_cwe.py` |
+| CAPEC | `MitreData` | `capec.py` |
+| BRON | `NormalizedData` | `bron.py` |
 | Sigma Rules | `DetectionRuleData` | `sigma.py` |
 | Stack Exchange (InfoSec, RE, Crypto) | `QAThreadData` | `stackexchange/` |
 
