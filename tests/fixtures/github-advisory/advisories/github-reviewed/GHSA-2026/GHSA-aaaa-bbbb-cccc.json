@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.4.0",
+  "id": "GHSA-aaaa-bbbb-cccc",
+  "modified": "2024-02-20T09:00:00Z",
+  "published": "2024-02-18T14:00:00Z",
+  "aliases": [],
+  "summary": "SQL injection in acme-db-connector",
+  "details": "Improper input sanitization in acme-db-connector allows an authenticated user to inject SQL statements via the query builder's filter parameter.",
+  "severity": [],
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "acme-db-connector"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {"introduced": "1.0.0"},
+            {"fixed": "1.4.2"}
+          ]
+        }
+      ]
+    }
+  ],
+  "references": [
+    {"type": "ADVISORY", "url": "https://github.com/advisories/GHSA-aaaa-bbbb-cccc"}
+  ],
+  "database_specific": {
+    "cwe_ids": ["CWE-89"],
+    "severity": "HIGH",
+    "github_reviewed": true,
+    "github_reviewed_at": "2024-02-19T08:00:00Z",
+    "nvd_published_at": null
+  }
+}

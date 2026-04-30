@@ -4,6 +4,8 @@ from typing import Iterator
 from ingest.connectors.base import Connector, NormalizedData
 from ingest.connectors.bron import BronConnector
 from ingest.connectors.capec import CapecConnector
+from ingest.connectors.github_advisory import GitHubAdvisoryConnector
+from ingest.connectors.youtube_transcripts import YouTubeTranscriptsConnector
 from ingest.connectors.cisa_kev import CisaKevConnector
 from ingest.connectors.mitre_attack import MitreAttackConnector
 from ingest.connectors.mitre_cwe import MitreCweConnector
@@ -25,6 +27,8 @@ _CONNECTORS: dict[str, Connector] = {
     "stackexchange-crypto": StackExchangeSiteConnector("crypto", "crypto.stackexchange.com"),
     "stackexchange-tor": StackExchangeSiteConnector("tor", "tor.stackexchange.com"),
     "bron": BronConnector(),
+    "github-advisory": GitHubAdvisoryConnector(),
+    "youtube-transcripts": YouTubeTranscriptsConnector(),
 }
 
 def ingest(path: Path, source: str) -> Iterator[NormalizedData]:

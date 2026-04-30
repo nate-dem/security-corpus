@@ -60,6 +60,15 @@ class QAThreadData(NormalizedData):
     tags: list[str] = Field(default_factory=list)
 
 
+class TranscriptData(NormalizedData):
+    """YouTube transcripts and similar spoken-word video corpora."""
+    video_id: str | None = None
+    channel: str | None = None
+    channel_id: str | None = None
+    language: str | None = None          # transcription_language (BCP-47 code)
+    word_count: int | None = None
+
+
 class Connector(Protocol):
     source_id: str
 
