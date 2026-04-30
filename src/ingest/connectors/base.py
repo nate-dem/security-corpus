@@ -44,9 +44,9 @@ class MitreData(NormalizedData):
 
 
 class DetectionRuleData(NormalizedData):
-    """Sigma, YARA, Snort rules."""
+    """Sigma, YARA."""
     rule_id: str | None = None
-    rule_format: str | None = None            # "sigma" | "yara" | "snort"
+    rule_format: str | None = None            # "sigma" | "yara"
     rule_level: str | None = None             # severity/confidence
     rule_source: str | None = None            # raw rule text
 
