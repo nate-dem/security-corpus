@@ -13,7 +13,9 @@ This repo contains a data ingestion pipeline for building a security-domain mid-
 | CAPEC | `MitreData` | `capec.py` |
 | BRON | `NormalizedData` | `bron.py` |
 | Sigma Rules | `DetectionRuleData` | `sigma.py` |
-| Stack Exchange (InfoSec, RE, Crypto) | `QAThreadData` | `stackexchange/` |
+| Stack Exchange (InfoSec, RE, Crypto, Tor) | `QAThreadData` | `stackexchange/` |
+| Stack Overflow (security tags) | `QAThreadData` | `stackexchange/stackoverflow.py` |
+| Reddit (22 security subreddits) | `QAThreadData` | `reddit/` |
 
 ## Setup
 
@@ -29,6 +31,15 @@ Ingest a source:
 
 ```bash
 python scripts/ingest_{source}.py
+python scripts/ingest_stackexchange.py {site}    # infosec, reverseengineering, crypto, tor
+python scripts/ingest_stackoverflow.py           # streams from .7z archive
+python scripts/ingest_reddit.py {subreddit}      # or --all for all 22 subreddits
+```
+
+Analyze Q&A sources:
+
+```bash
+python scripts/analyze_qa_sources.py             # outputs to reports/qa_analysis/
 ```
 
 Run tests:
@@ -40,4 +51,4 @@ pytest -m data_quality      # validate ingested Parquet output
 
 ## Output
 
-Parquet files written to `data/{source}/normalized/`, partitioned by `source_id`. Each record includes content, metadata, quality signals, content hash (for dedup), and token count.
+Parquet files written to `data/{source}/normalized/`, Hive-partitioned by `source_id`. Each record includes content, metadata, quality signals, content hash (for dedup), and token count.
