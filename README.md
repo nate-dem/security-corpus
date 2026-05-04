@@ -36,12 +36,6 @@ python scripts/ingest_stackoverflow.py           # streams from .7z archive
 python scripts/ingest_reddit.py {subreddit}      # or --all for all 22 subreddits
 ```
 
-Analyze Q&A sources:
-
-```bash
-python scripts/analyze_qa_sources.py             # outputs to reports/qa_analysis/
-```
-
 Run tests:
 
 ```bash
