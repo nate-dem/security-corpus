@@ -11,6 +11,7 @@ dependencies = [
     "beautifulsoup4",
     "markdownify",
     "tiktoken",
+    "zstandard",
 ]
 
 [project.optional-dependencies]

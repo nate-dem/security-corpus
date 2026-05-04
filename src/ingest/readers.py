@@ -1,4 +1,5 @@
 import gzip
+import io
 import json
 from pathlib import Path
 from typing import Any, Iterator
@@ -14,6 +15,7 @@ def read(path: Path, json_path: str | None = None, xml_tag: str | None = None) -
         - .json
         - .xml
         - .yml / .yaml
+        - .zst (zstandard-compressed JSONL)
     """
     suffixes = path.suffixes
 
@@ -25,6 +27,8 @@ def read(path: Path, json_path: str | None = None, xml_tag: str | None = None) -
         yield from _read_xml(path, xml_tag)
     elif suffixes[-1:] in ([".yml"], [".yaml"]):
         yield from _read_yaml(path)
+    elif suffixes[-1:] == [".zst"]:
+        yield from _read_jsonl_zst(path)
     else:
         raise ValueError(
             f"Unsupported format: {path.name} (suffixes={suffixes})"
@@ -48,6 +52,20 @@ def _stream_json(fp, json_path: str | None) -> Iterator[Any]:
 def _read_yaml(path: Path) -> Iterator[Any]:
     with open(path, "rb") as f:
         yield yaml.safe_load(f)
+
+
+def _read_jsonl_zst(path: Path) -> Iterator[Any]:
+    """Stream JSON objects from a zstandard-compressed JSONL file."""
+    import zstandard as zstd
+
+    dctx = zstd.ZstdDecompressor()
+    with open(path, "rb") as fh:
+        with dctx.stream_reader(fh) as reader:
+            text_stream = io.TextIOWrapper(reader, encoding="utf-8")
+            for line in text_stream:
+                line = line.strip()
+                if line:
+                    yield json.loads(line)
 
 
 def _read_xml(path: Path, xml_tag: str | None) -> Iterator[Any]:
