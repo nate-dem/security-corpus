@@ -7,17 +7,58 @@ import pyarrow.parquet as pq
 from ingest.connectors.base import TranscriptData
 from ingest.utils import CC_BY_4_0, compute_content_hash, compute_token_count
 
+# Path to the model-classified channel allowlist produced by
+# scripts/classify_youtube_channels.py.  Each line is a channel_id.
+_CHANNEL_ALLOWLIST_PATH = Path("data/youtube-transcripts/security_channels.txt")
+
+MIN_WORD_COUNT = 100  # drop shorts, music videos, trailers
+
+
+def _load_channel_allowlist() -> frozenset[str]:
+    """Load security channel IDs from the classified allowlist file.
+
+    Returns an empty frozenset if the file doesn't exist yet — in that case
+    iter_records with filter_security=True will pass nothing until the
+    classify_youtube_channels script has been run.
+    """
+    if not _CHANNEL_ALLOWLIST_PATH.exists():
+        return frozenset()
+    ids = {
+        line.strip()
+        for line in _CHANNEL_ALLOWLIST_PATH.read_text().splitlines()
+        if line.strip() and not line.startswith("#")
+    }
+    return frozenset(ids)
+
+
+def _is_security_relevant(record: dict, channel_allowlist: frozenset[str]) -> bool:
+    """Return True if this record is from a classified security channel.
+
+    Stage 1: English only, minimum word count.
+    Stage 2: channel_id present in the model-classified allowlist.
+    """
+    if record.get("transcription_language") != "en":
+        return False
+    if (record.get("word_count") or 0) < MIN_WORD_COUNT:
+        return False
+    return record.get("channel_id") in channel_allowlist
+
 
 class YouTubeTranscriptsConnector:
     source_id = "youtube-transcripts"
 
-    def iter_records(self, path: Path) -> Iterator[dict]:
+    def iter_records(self, path: Path, *, filter_security: bool = True) -> Iterator[dict]:
         """Yield one row per transcript from cctube_*.parquet shards under path.
 
         path should be the directory containing the downloaded Parquet shards
         (data/youtube-transcripts/raw/).  Files are walked in sorted order so
         runs are deterministic.  Missing or empty shards are skipped silently.
+
+        filter_security=True (default): only yields English records whose
+        channel_id appears in the model-classified allowlist, with word_count >= 100.
+        Set filter_security=False to yield all records (full corpus mode).
         """
+        allowlist = _load_channel_allowlist() if filter_security else frozenset()
         for parquet_file in sorted(path.glob("cctube_*.parquet")):
             try:
                 table = pq.read_table(parquet_file)
@@ -27,7 +68,10 @@ class YouTubeTranscriptsConnector:
                 cols = {name: batch.column(name).to_pylist() for name in batch.schema.names}
                 n = batch.num_rows
                 for i in range(n):
-                    yield {col: cols[col][i] for col in cols}
+                    record = {col: cols[col][i] for col in cols}
+                    if filter_security and not _is_security_relevant(record, allowlist):
+                        continue
+                    yield record
 
     def normalize(self, record: dict) -> TranscriptData:
         """Convert one YouTube-Commons row into the canonical schema."""
