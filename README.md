@@ -16,6 +16,7 @@ This repo contains a data ingestion pipeline for building a security-domain mid-
 | Stack Exchange (InfoSec, RE, Crypto, Tor) | `QAThreadData` | `stackexchange/` |
 | Stack Overflow (security tags) | `QAThreadData` | `stackexchange/stackoverflow.py` |
 | Reddit (22 security subreddits) | `QAThreadData` | `reddit/` |
+| CloudTrail (flaws.cloud) | `CloudTrailSessionData` | `cloudtrail.py` |
 
 ## Setup
 
@@ -34,7 +35,9 @@ python scripts/ingest_{source}.py
 python scripts/ingest_stackexchange.py {site}    # infosec, reverseengineering, crypto, tor
 python scripts/ingest_stackoverflow.py           # streams from .7z archive
 python scripts/ingest_reddit.py {subreddit}      # or --all for all 22 subreddits
+python scripts/ingest_cloudtrail.py              # flaws.cloud session logs
 ```
+
 
 Run tests:
 

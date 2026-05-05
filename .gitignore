@@ -209,5 +209,10 @@ __marimo__/
 # Data sources
 data/
 
+# Inspection scripts and reports
+scripts/inspect_*.py
+scripts/analyze_*.py
+reports/
+
 # Claude
 .claude/
