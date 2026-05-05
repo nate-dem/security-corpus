@@ -12,8 +12,33 @@ from ingest.connectors.mitre_cwe import MitreCweConnector
 from ingest.connectors.nvd import NVDConnector
 from ingest.connectors.sigma import SigmaConnector
 from ingest.connectors.stackexchange import StackExchangeSiteConnector
+from ingest.connectors.reddit import RedditSubredditConnector
 from ingest.writers import write_parquet
 
+
+REDDIT_SUBREDDITS = [
+    "antivirus",
+    "AskNetsec",
+    "blueteamsec",
+    "bugbounty",
+    "CloudFlare",
+    "ComputerSecurity",
+    "computerviruses",
+    "cryptography",
+    "cyberlaws",
+    "cybersecurity",
+    "cybersecurity_help",
+    "CyberSecurityAdvice",
+    "hacking",
+    "Malware",
+    "netsec",
+    "netsecstudents",
+    "phishing",
+    "ReverseEngineering",
+    "security",
+    "TOR",
+    "VPN",
+]
 
 _CONNECTORS: dict[str, Connector] = {
     "nvd": NVDConnector(),
@@ -30,6 +55,9 @@ _CONNECTORS: dict[str, Connector] = {
     "github-advisory": GitHubAdvisoryConnector(),
     "youtube-transcripts": YouTubeTranscriptsConnector(),
 }
+
+for _sub in REDDIT_SUBREDDITS:
+    _CONNECTORS[f"reddit-{_sub.lower()}"] = RedditSubredditConnector(_sub)
 
 def ingest(path: Path, source: str) -> Iterator[NormalizedData]:
     """Stream normalized records from a file for a known source."""
