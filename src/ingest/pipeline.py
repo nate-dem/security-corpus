@@ -12,33 +12,10 @@ from ingest.connectors.mitre_cwe import MitreCweConnector
 from ingest.connectors.nvd import NVDConnector
 from ingest.connectors.sigma import SigmaConnector
 from ingest.connectors.stackexchange import StackExchangeSiteConnector
-from ingest.connectors.reddit import RedditSubredditConnector
+from ingest.connectors.reddit import RedditSubredditConnector, REDDIT_SUBREDDITS
+from ingest.connectors.cloudtrail import CloudTrailSessionConnector
 from ingest.writers import write_parquet
 
-
-REDDIT_SUBREDDITS = [
-    "antivirus",
-    "AskNetsec",
-    "blueteamsec",
-    "bugbounty",
-    "CloudFlare",
-    "ComputerSecurity",
-    "computerviruses",
-    "cryptography",
-    "cyberlaws",
-    "cybersecurity",
-    "cybersecurity_help",
-    "CyberSecurityAdvice",
-    "hacking",
-    "Malware",
-    "netsec",
-    "netsecstudents",
-    "phishing",
-    "ReverseEngineering",
-    "security",
-    "TOR",
-    "VPN",
-]
 
 _CONNECTORS: dict[str, Connector] = {
     "nvd": NVDConnector(),
@@ -54,6 +31,7 @@ _CONNECTORS: dict[str, Connector] = {
     "bron": BronConnector(),
     "github-advisory": GitHubAdvisoryConnector(),
     "youtube-transcripts": YouTubeTranscriptsConnector(),
+    "cloudtrail-flaws": CloudTrailSessionConnector(),
 }
 
 for _sub in REDDIT_SUBREDDITS:
