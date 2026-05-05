@@ -69,6 +69,18 @@ class TranscriptData(NormalizedData):
     word_count: int | None = None
 
 
+class CloudTrailSessionData(NormalizedData):
+    """CloudTrail log sessions (grouped by source IP + time gap)."""
+    event_count: int | None = None
+    session_duration_seconds: int | None = None
+    source_ip: str | None = None
+    principals: list[str] = Field(default_factory=list)
+    actions: list[str] = Field(default_factory=list)
+    aws_services: list[str] = Field(default_factory=list)
+    regions: list[str] = Field(default_factory=list)
+    has_errors: bool | None = None
+
+
 class Connector(Protocol):
     source_id: str
 

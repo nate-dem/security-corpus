@@ -77,13 +77,16 @@ class SigmaConnector:
             allow_unicode=True,
         )
 
+        # Content includes description + full YAML rule
+        content = _assemble_content(description, rule_source)
+
         return DetectionRuleData(
             record_id=f"sigma:{rule_id}",
             source_id=self.source_id,
             source_record_id=rule_id,
-            content=description,
-            content_length=compute_token_count(description),
-            content_hash=compute_content_hash(description),
+            content=content,
+            content_length=compute_token_count(content),
+            content_hash=compute_content_hash(content),
             title=record.get("title"),
             ingested_at=datetime.now(timezone.utc),
             license=DETECTION_RULE_LICENSE_LGPL_2_1,
@@ -114,6 +117,18 @@ def _derive_path_metadata(yml_path: Path, repo_root: Path, rule_dir_name: str) -
         "rule_source_dir": rule_dir_name,
         "relative_path": str(relative_path),
     }
+
+
+def _assemble_content(description: str, rule_source: str) -> str:
+    """Combine description and raw YAML rule into training content."""
+    parts = []
+    if description:
+        parts.append(description)
+        parts.append("")
+    parts.append("```yaml")
+    parts.append(rule_source.rstrip())
+    parts.append("```")
+    return "\n".join(parts)
 
 
 def _coerce_datetime(value: str | date | datetime | None) -> datetime | None:
