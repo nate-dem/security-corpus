@@ -2,25 +2,36 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
+import pyarrow as pa
 import pyarrow.parquet as pq
 
 from ingest.connectors.base import TranscriptData
 from ingest.utils import CC_BY_4_0, compute_content_hash, compute_token_count
 
-# Path to the model-classified channel allowlist produced by
-# scripts/classify_youtube_channels.py.  Each line is a channel_id.
 _CHANNEL_ALLOWLIST_PATH = Path("data/youtube-transcripts/security_channels.txt")
 
-MIN_WORD_COUNT = 100  # drop shorts, music videos, trailers
+MIN_WORD_COUNT = 50
+
+# Columns needed to decide whether a row passes all gates — everything except
+# the large transcript text field.  Read these first across all row groups;
+# only fetch 'text' for row groups that have at least one passing row.
+_GATE_COLS = [
+    "video_id",
+    "channel_id",
+    "channel",
+    "title",
+    "transcription_language",
+    "original_language",
+    "language_id_method",
+    "word_count",
+    "character_count",
+    "date",
+    "video_link",
+    "license",
+]
 
 
 def _load_channel_allowlist() -> frozenset[str]:
-    """Load security channel IDs from the classified allowlist file.
-
-    Returns an empty frozenset if the file doesn't exist yet — in that case
-    iter_records with filter_security=True will pass nothing until the
-    classify_youtube_channels script has been run.
-    """
     if not _CHANNEL_ALLOWLIST_PATH.exists():
         return frozenset()
     ids = {
@@ -31,56 +42,108 @@ def _load_channel_allowlist() -> frozenset[str]:
     return frozenset(ids)
 
 
-def _is_security_relevant(record: dict, channel_allowlist: frozenset[str]) -> bool:
-    """Return True if this record is from a classified security channel.
+def _is_english(record: dict) -> bool:
+    """Return True if the transcript is English.
 
-    Stage 1: English only, minimum word count.
-    Stage 2: channel_id present in the model-classified allowlist.
+    Checks transcription_language with prefix matching to catch en-GB, en-US,
+    etc.  Falls back to original_language when transcription_language is absent.
+    Prefers records where language_id_method is 'metadata' (YouTube-declared)
+    over 'detection' (algorithmic), but does not hard-reject detected records.
     """
-    if record.get("transcription_language") != "en":
+    t_lang = record.get("transcription_language") or ""
+    o_lang = record.get("original_language") or ""
+    method = record.get("language_id_method") or ""
+
+    is_en = t_lang.startswith("en") or (not t_lang and o_lang == "en")
+
+    # Reject only if language was declared (metadata) as non-English.
+    # If method is detection/unknown we give the benefit of the doubt when
+    # the language code starts with 'en'.
+    if method == "metadata" and not is_en:
+        return False
+
+    return is_en
+
+
+def _passes_gate(record: dict, channel_allowlist: frozenset[str]) -> bool:
+    """Stage 1 gate: language, word count, and channel allowlist."""
+    if not _is_english(record):
         return False
     if (record.get("word_count") or 0) < MIN_WORD_COUNT:
         return False
     return record.get("channel_id") in channel_allowlist
 
 
+# Backward-compatible alias used by existing tests.
+_is_security_relevant = _passes_gate
+
+
 class YouTubeTranscriptsConnector:
     source_id = "youtube-transcripts"
 
     def iter_records(self, path: Path, *, filter_security: bool = True) -> Iterator[dict]:
-        """Yield one row per transcript from cctube_*.parquet shards under path.
+        """Yield one record per transcript from cctube_*.parquet shards.
 
-        path should be the directory containing the downloaded Parquet shards
-        (data/youtube-transcripts/raw/).  Files are walked in sorted order so
-        runs are deterministic.  Missing or empty shards are skipped silently.
+        Two-pass column projection per row group:
+          Pass 1 — read only _GATE_COLS (skips the large 'text' column).
+          Pass 2 — read 'text' only for row groups that have ≥1 passing row,
+                   then combine with the gate-column data.
 
-        filter_security=True (default): only yields English records whose
-        channel_id appears in the model-classified allowlist, with word_count >= 100.
-        Set filter_security=False to yield all records (full corpus mode).
+        This avoids loading transcript text for the vast majority of rows
+        that fail the channel-allowlist or language gate.
         """
         allowlist = _load_channel_allowlist() if filter_security else frozenset()
+
         for parquet_file in sorted(path.glob("cctube_*.parquet")):
             try:
-                table = pq.read_table(parquet_file)
+                pf = pq.ParquetFile(parquet_file)
             except Exception:
                 continue
-            for batch in table.to_batches():
-                cols = {name: batch.column(name).to_pylist() for name in batch.schema.names}
-                n = batch.num_rows
-                for i in range(n):
-                    record = {col: cols[col][i] for col in cols}
-                    if filter_security and not _is_security_relevant(record, allowlist):
-                        continue
+
+            num_row_groups = pf.metadata.num_row_groups
+
+            for rg in range(num_row_groups):
+                # Pass 1: cheap metadata columns only.
+                try:
+                    meta_table = pf.read_row_group(rg, columns=_GATE_COLS)
+                except Exception:
+                    continue
+
+                n = meta_table.num_rows
+                meta_cols = {
+                    name: meta_table.column(name).to_pylist()
+                    for name in meta_table.schema.names
+                }
+                meta_records = [{col: meta_cols[col][i] for col in meta_cols} for i in range(n)]
+
+                if filter_security:
+                    passing_indices = [
+                        i for i, rec in enumerate(meta_records)
+                        if _passes_gate(rec, allowlist)
+                    ]
+                else:
+                    passing_indices = list(range(n))
+
+                if not passing_indices:
+                    continue  # skip text read entirely for this row group
+
+                # Pass 2: fetch text only for this row group, then slice.
+                try:
+                    text_col = pf.read_row_group(rg, columns=["text"]).column("text").to_pylist()
+                except Exception:
+                    continue
+
+                for i in passing_indices:
+                    record = meta_records[i]
+                    record["text"] = text_col[i]
                     yield record
 
     def normalize(self, record: dict) -> TranscriptData:
-        """Convert one YouTube-Commons row into the canonical schema."""
         video_id = record.get("video_id") or ""
         text = record.get("text") or ""
         title = record.get("title") or None
-        lang = record.get("transcription_language") or record.get("source_language") or None
+        lang = record.get("transcription_language") or record.get("source_language") or record.get("original_language") or None
 
-        # record_id must be unique across languages for the same video
         lang_suffix = f":{lang}" if lang else ""
         record_id = f"youtube-transcripts:{video_id}{lang_suffix}"
 
@@ -95,7 +158,7 @@ class YouTubeTranscriptsConnector:
             title=title,
             content_length=compute_token_count(text),
             content_hash=compute_content_hash(text),
-            raw=None,  # rows are large; skip raw to keep Parquet output lean
+            raw=None,
             ingested_at=datetime.now(timezone.utc),
             published_at=_parse_date(record.get("date")),
             source_url=record.get("video_link") or (f"https://www.youtube.com/watch?v={video_id}" if video_id else None),
