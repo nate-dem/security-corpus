@@ -14,6 +14,7 @@ from ingest.connectors.sigma import SigmaConnector
 from ingest.connectors.stackexchange import StackExchangeSiteConnector
 from ingest.connectors.reddit import RedditSubredditConnector, REDDIT_SUBREDDITS
 from ingest.connectors.cloudtrail import CloudTrailSessionConnector
+from ingest.connectors.arxiv import ArxivConnector
 from ingest.writers import write_parquet
 
 
@@ -32,6 +33,7 @@ _CONNECTORS: dict[str, Connector] = {
     "github-advisory": GitHubAdvisoryConnector(),
     "youtube-transcripts": YouTubeTranscriptsConnector(),
     "cloudtrail-flaws": CloudTrailSessionConnector(),
+    "arxiv": ArxivConnector(),
 }
 
 for _sub in REDDIT_SUBREDDITS:

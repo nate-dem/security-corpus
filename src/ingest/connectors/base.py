@@ -81,6 +81,17 @@ class CloudTrailSessionData(NormalizedData):
     has_errors: bool | None = None
 
 
+class AcademicPaperData(NormalizedData):
+    """arXiv academic papers (LaTeX source)."""
+    arxiv_id: str | None = None
+    authors: list[str] = Field(default_factory=list)
+    abstract: str | None = None
+    categories: list[str] = Field(default_factory=list)
+    primary_category: str | None = None
+    doi: str | None = None
+    journal_ref: str | None = None
+
+
 class Connector(Protocol):
     source_id: str
 
