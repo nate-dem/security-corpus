@@ -16,6 +16,26 @@ dependencies = [
 dev = [
     "pytest",
 ]
+regmix = [
+    "pyyaml",
+    "numpy",
+    "scipy",
+    "scikit-learn",
+    "lightgbm",
+    "pandas",
+]
+regmix-train = [
+    "pyyaml",
+    "numpy",
+    "scipy",
+    "scikit-learn",
+    "lightgbm",
+    "pandas",
+    "torch",
+    "transformers",
+    "accelerate",
+    "datasets",
+]
 
 [tool.pytest.ini_options]
 markers = [

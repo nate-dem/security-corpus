@@ -1,0 +1,44 @@
+# Base training configuration shared by all proxy runs.
+# Override individual fields per-run via MixtureConfig.
+training:
+  base_model: "EleutherAI/pythia-160m"   # PoC default; swap for 410m, 1b, etc.
+  tokenizer: null                          # defaults to base_model
+  max_length: 2048
+  learning_rate: 3.0e-4
+  lr_schedule: cosine
+  warmup_ratio: 0.05
+  weight_decay: 0.1
+  gradient_clip: 1.0
+  batch_size: 32                           # per-device
+  gradient_accumulation_steps: 4
+  seed: 42
+  bf16: true
+  dataloader_num_workers: 4
+
+# Proxy run budget
+proxy:
+  token_budget: 100_000_000               # 100M tokens per proxy run (PoC)
+  n_runs: 64                               # number of proxy runs to sample
+  alpha_scale: 1.0                         # Dirichlet concentration scale
+  min_bucket_weight: 0.01                  # clip zero-weights in sampled mixtures
+
+# Simulation
+simulation:
+  n_candidates: 100_000
+  top_k: 10
+  selection_strategy: average_topk        # "best" or "average_topk"
+  random_seed: 0
+
+# Composite loss weights
+objective:
+  lambda_general_penalty: 0.5             # penalty weight for general language degradation
+  # L_composite = mean(cyber losses) + lambda * max(0, L_general - L_general_baseline)
+  # L_general_baseline is measured from the base model before any midtraining
+
+# Validation set paths (populated after build_validation_sets)
+validation:
+  cyber_general: data/validation/cyber_general
+  cloud_security: data/validation/cloud_security
+  task_specific: data/validation/task_specific
+  general_language: data/validation/general_language
+  tokens_per_set: 5_000_000               # ~5M tokens per validation shard
