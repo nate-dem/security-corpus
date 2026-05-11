@@ -12,6 +12,8 @@ dependencies = [
     "markdownify",
     "tiktoken",
     "zstandard",
+    "sickle>=0.7.0",
+    "xmltodict",
 ]
 
 [project.optional-dependencies]
