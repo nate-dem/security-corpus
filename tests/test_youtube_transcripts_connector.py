@@ -1,13 +1,14 @@
 """
 Comprehensive tests for YouTubeTranscriptsConnector.
 
-Organized into six classes:
+Organized into seven classes:
   TestIterRecords           — shard walking, ordering, edge cases
   TestNormalizeIdentification — record_id / source_id / source_record_id / source_url
   TestNormalizeContent      — text→content, title, hash, token count
   TestNormalizeTranscriptFields — video_id, channel, language, word_count
   TestNormalizeMetadata     — ingested_at, published_at, license, raw=None
   TestNormalizeEndToEnd     — full fixture round-trip, uniqueness invariants
+  TestSecurityFilter        — file-based allowlist, language drop, word_count drop
 """
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -16,7 +17,12 @@ from datetime import timezone
 from pathlib import Path
 
 from ingest.connectors.base import NormalizedData, TranscriptData
-from ingest.connectors.youtube_transcripts import YouTubeTranscriptsConnector
+from ingest.connectors.youtube_transcripts import (
+    YouTubeTranscriptsConnector,
+    MIN_WORD_COUNT,
+    _CHANNEL_ALLOWLIST_PATH,
+    _is_security_relevant,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures" / "youtube-transcripts"
 
@@ -74,7 +80,7 @@ def _write_parquet(tmp_path: Path, rows: list[dict], filename: str = "cctube_0.p
 
 
 def _all_fixture_records() -> list[dict]:
-    return list(YouTubeTranscriptsConnector().iter_records(FIXTURES))
+    return list(YouTubeTranscriptsConnector().iter_records(FIXTURES, filter_security=False))
 
 
 # ---------------------------------------------------------------------------
@@ -105,14 +111,14 @@ class TestIterRecords:
     def test_multiple_shards_all_yielded(self, tmp_path):
         _write_parquet(tmp_path, [_make_record(video_id="vid_a")], "cctube_0.parquet")
         _write_parquet(tmp_path, [_make_record(video_id="vid_b")], "cctube_1.parquet")
-        records = list(YouTubeTranscriptsConnector().iter_records(tmp_path))
+        records = list(YouTubeTranscriptsConnector().iter_records(tmp_path, filter_security=False))
         assert len(records) == 2
 
     def test_shard_ordering_is_alphabetical(self, tmp_path):
         """Shards are walked in sorted (alphabetical) order."""
         _write_parquet(tmp_path, [_make_record(video_id="second")], "cctube_1.parquet")
         _write_parquet(tmp_path, [_make_record(video_id="first")], "cctube_0.parquet")
-        records = list(YouTubeTranscriptsConnector().iter_records(tmp_path))
+        records = list(YouTubeTranscriptsConnector().iter_records(tmp_path, filter_security=False))
         assert records[0]["video_id"] == "first"
         assert records[1]["video_id"] == "second"
 
@@ -336,7 +342,7 @@ class TestNormalizeEndToEnd:
 
     def test_fixture_sql_injection_video(self):
         connector = YouTubeTranscriptsConnector()
-        records = list(connector.iter_records(FIXTURES))
+        records = list(connector.iter_records(FIXTURES, filter_security=False))
         target = next(r for r in records if r["video_id"] == "abc123xyz")
         result = connector.normalize(target)
         assert result.channel == "SecurityAcademy"
@@ -351,6 +357,93 @@ class TestNormalizeEndToEnd:
         ]
         _write_parquet(tmp_path, rows, "cctube_0.parquet")
         connector = YouTubeTranscriptsConnector()
-        ids = [connector.normalize(r).record_id for r in connector.iter_records(tmp_path)]
+        ids = [connector.normalize(r).record_id for r in connector.iter_records(tmp_path, filter_security=False)]
         assert len(ids) == 2
         assert len(set(ids)) == 2
+
+
+# ---------------------------------------------------------------------------
+# TestSecurityFilter
+# ---------------------------------------------------------------------------
+
+class TestSecurityFilter:
+    KNOWN_CHANNEL = "UCsec_test_channel_id_001"
+
+    def _make_allowlist(self, tmp_path: Path, channel_ids: list[str]) -> Path:
+        """Write a temporary allowlist file and patch the module path."""
+        f = tmp_path / "security_channels.txt"
+        f.write_text("\n".join(channel_ids))
+        return f
+
+    # --- _is_security_relevant unit tests ---
+
+    def test_allowlisted_channel_passes(self):
+        allowlist = frozenset([self.KNOWN_CHANNEL])
+        record = _make_record(channel_id=self.KNOWN_CHANNEL, word_count=200)
+        assert _is_security_relevant(record, allowlist) is True
+
+    def test_unknown_channel_fails(self):
+        record = _make_record(channel_id="UCunknown", word_count=200)
+        assert _is_security_relevant(record, frozenset([self.KNOWN_CHANNEL])) is False
+
+    def test_non_english_dropped(self):
+        allowlist = frozenset([self.KNOWN_CHANNEL])
+        record = _make_record(channel_id=self.KNOWN_CHANNEL, transcription_language="fr", word_count=300)
+        assert _is_security_relevant(record, allowlist) is False
+
+    def test_below_min_word_count_dropped(self):
+        allowlist = frozenset([self.KNOWN_CHANNEL])
+        record = _make_record(channel_id=self.KNOWN_CHANNEL, word_count=MIN_WORD_COUNT - 1)
+        assert _is_security_relevant(record, allowlist) is False
+
+    def test_exactly_min_word_count_passes(self):
+        allowlist = frozenset([self.KNOWN_CHANNEL])
+        record = _make_record(channel_id=self.KNOWN_CHANNEL, word_count=MIN_WORD_COUNT)
+        assert _is_security_relevant(record, allowlist) is True
+
+    def test_empty_allowlist_passes_nothing(self):
+        record = _make_record(channel_id=self.KNOWN_CHANNEL, word_count=200)
+        assert _is_security_relevant(record, frozenset()) is False
+
+    # --- iter_records integration tests ---
+
+    def test_filter_security_false_yields_all_records(self, tmp_path):
+        rows = [
+            _make_record(video_id="v1", channel_id="UCsec", word_count=200),
+            _make_record(video_id="v2", channel_id="UCother", word_count=300),
+        ]
+        _write_parquet(tmp_path, rows, "cctube_0.parquet")
+        records = list(YouTubeTranscriptsConnector().iter_records(tmp_path, filter_security=False))
+        assert len(records) == 2
+
+    def test_filter_with_no_allowlist_file_yields_nothing(self, tmp_path, monkeypatch):
+        """If the allowlist file doesn't exist yet, nothing passes the filter."""
+        import ingest.connectors.youtube_transcripts as mod
+        monkeypatch.setattr(mod, "_CHANNEL_ALLOWLIST_PATH", tmp_path / "nonexistent.txt")
+        rows = [_make_record(video_id="v1", channel_id="UCsec", word_count=200)]
+        _write_parquet(tmp_path, rows, "cctube_0.parquet")
+        records = list(YouTubeTranscriptsConnector().iter_records(tmp_path, filter_security=True))
+        assert records == []
+
+    def test_filter_with_allowlist_file_passes_matching_channels(self, tmp_path, monkeypatch):
+        """Records whose channel_id is in the allowlist file pass the filter."""
+        import ingest.connectors.youtube_transcripts as mod
+        allowlist_file = tmp_path / "security_channels.txt"
+        allowlist_file.write_text("UCsec_001\nUCsec_002\n")
+        monkeypatch.setattr(mod, "_CHANNEL_ALLOWLIST_PATH", allowlist_file)
+        rows = [
+            _make_record(video_id="pass", channel_id="UCsec_001", word_count=200),
+            _make_record(video_id="drop", channel_id="UCother", word_count=200),
+        ]
+        _write_parquet(tmp_path, rows, "cctube_0.parquet")
+        records = list(YouTubeTranscriptsConnector().iter_records(tmp_path, filter_security=True))
+        assert len(records) == 1
+        assert records[0]["video_id"] == "pass"
+
+    def test_allowlist_file_ignores_comments_and_blank_lines(self, tmp_path, monkeypatch):
+        import ingest.connectors.youtube_transcripts as mod
+        allowlist_file = tmp_path / "security_channels.txt"
+        allowlist_file.write_text("# this is a comment\nUCsec_001\n\n  \n")
+        monkeypatch.setattr(mod, "_CHANNEL_ALLOWLIST_PATH", allowlist_file)
+        allowlist = mod._load_channel_allowlist()
+        assert allowlist == frozenset(["UCsec_001"])

@@ -1,0 +1,54 @@
+buckets:
+  - name: mitre_cve
+    path: data/buckets/mitre_cve
+    token_count: 0  # populated by 01_prepare_buckets.py
+    description: "MITRE ATT&CK, CVE/NVD, CWE, CAPEC, CISA KEV — structured threat knowledge"
+    validation_sets: [cyber_general, cloud_security]
+
+  - name: sigma_rules
+    path: data/buckets/sigma_rules
+    token_count: 0
+    description: "Sigma detection rules — YAML detection logic with condition/logsource context"
+    validation_sets: [task_specific, cloud_security]
+
+  - name: bron_graph
+    path: data/buckets/bron_graph
+    token_count: 0
+    description: "BRON threat graph: ATT&CK, D3FEND, CAR, ENGAGE, ATLAS mitigations"
+    validation_sets: [cyber_general]
+
+  - name: stackexchange_security
+    path: data/buckets/stackexchange_security
+    token_count: 0
+    description: "Security StackExchange Q&A — practitioner knowledge and explanations"
+    validation_sets: [cyber_general, task_specific]
+
+  - name: youtube_cyber
+    path: data/buckets/youtube_cyber
+    token_count: 0
+    description: "YouTube cybersecurity channel transcripts — conference talks and tutorials"
+    validation_sets: [cyber_general]
+
+  - name: reddit_cyber
+    path: data/buckets/reddit_cyber
+    token_count: 0
+    description: "Reddit r/netsec, r/cybersecurity, r/blueteamsec discussions"
+    validation_sets: [cyber_general, task_specific]
+
+  - name: github_security
+    path: data/buckets/github_security
+    token_count: 0
+    description: "GitHub security tools, exploit PoCs, pentest frameworks, READMEs"
+    validation_sets: [task_specific, cloud_security]
+
+  - name: security_blogs
+    path: data/buckets/security_blogs
+    token_count: 0
+    description: "Security blogs and incident writeups (Krebs, Mandiant, Google Project Zero, etc.)"
+    validation_sets: [cyber_general, cloud_security]
+
+  - name: general_technical
+    path: data/buckets/general_technical
+    token_count: 0
+    description: "General technical text from Wikipedia, textbooks — language preservation control"
+    validation_sets: [general_language]
