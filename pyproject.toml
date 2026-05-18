@@ -14,6 +14,7 @@ dependencies = [
     "zstandard",
     "sickle>=0.7.0",
     "xmltodict",
+    "pypdf",
 ]
 
 [project.optional-dependencies]
@@ -21,10 +22,18 @@ dev = [
     "pytest",
 ]
 
+[project.scripts]
+security-corpus-ingest = "ingest.commands:main"
+
 [tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
 markers = [
     "data_quality: tests that run against ingested Parquet output",
 ]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [build-system]
 requires = ["setuptools"]
