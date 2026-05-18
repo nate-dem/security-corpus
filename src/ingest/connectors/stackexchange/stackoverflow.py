@@ -229,6 +229,8 @@ class StackOverflowConnector:
         batch_size: int = 100_000,
     ) -> int:
         """Run the three-pass ingestion pipeline. Returns record count."""
+        if not SECURITY_TAGS:
+            raise ValueError("SECURITY_TAGS is empty")
 
         question_ids = self._collect_question_ids(archive_path, intermediate_dir)
         self._write_answer_index(

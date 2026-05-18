@@ -2,19 +2,23 @@ from pathlib import Path
 from typing import Iterator
 
 from ingest.connectors.base import Connector, NormalizedData
-from ingest.connectors.bron import BronConnector
-from ingest.connectors.capec import CapecConnector
-from ingest.connectors.github_advisory import GitHubAdvisoryConnector
-from ingest.connectors.youtube_transcripts import YouTubeTranscriptsConnector
-from ingest.connectors.cisa_kev import CisaKevConnector
-from ingest.connectors.mitre_attack import MitreAttackConnector
-from ingest.connectors.mitre_cwe import MitreCweConnector
-from ingest.connectors.nvd import NVDConnector
-from ingest.connectors.sigma import SigmaConnector
+from ingest.connectors.detection import SigmaConnector
+from ingest.connectors.knowledge import (
+    BronConnector,
+    CapecConnector,
+    MitreAttackConnector,
+    MitreCweConnector,
+)
+from ingest.connectors.logs import CloudTrailSessionConnector
 from ingest.connectors.stackexchange import StackExchangeSiteConnector
 from ingest.connectors.reddit import RedditSubredditConnector, REDDIT_SUBREDDITS
-from ingest.connectors.cloudtrail import CloudTrailSessionConnector
 from ingest.connectors.arxiv import ArxivConnector
+from ingest.connectors.transcripts import YouTubeTranscriptsConnector
+from ingest.connectors.vulnerability import (
+    CisaKevConnector,
+    GitHubAdvisoryConnector,
+    NVDConnector,
+)
 from ingest.writers import write_parquet
 
 
