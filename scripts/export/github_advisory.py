@@ -1,7 +1,7 @@
 """Clone the GitHub Advisory Database into data/github-advisory/raw/.
 
 Usage:
-    python scripts/export_github_advisory.py
+    python scripts/export/github_advisory.py
 
 The script does a shallow clone (--depth=1) so it only fetches the latest
 snapshot without full git history (~700 MB checked-out, ~200 MB transfer).

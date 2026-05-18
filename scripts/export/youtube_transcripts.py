@@ -1,9 +1,9 @@
 """Download YouTube-Commons Parquet shards from HuggingFace.
 
 Usage:
-    python scripts/export_youtube_transcripts.py            # first 10 shards (~3.8 GB)
-    python scripts/export_youtube_transcripts.py --shards 50
-    python scripts/export_youtube_transcripts.py --all      # all 439 shards (~163 GB)
+    python scripts/export/youtube_transcripts.py            # first 10 shards (~3.8 GB)
+    python scripts/export/youtube_transcripts.py --shards 50
+    python scripts/export/youtube_transcripts.py --all      # all 439 shards (~163 GB)
 
 Shards already present on disk are skipped (safe to re-run).
 """

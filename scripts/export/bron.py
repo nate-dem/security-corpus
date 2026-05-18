@@ -1,10 +1,10 @@
 """Export target BRON collections from the public ArangoDB instance to JSON files.
 
 Usage:
-    python scripts/export_bron.py
+    python scripts/export/bron.py
 
 Writes one JSON array file per collection to data/bron/raw/.
-Run this once before running ingest_bron.py.
+Run this once before running `python scripts/ingest.py bron`.
 """
 import base64
 import json
