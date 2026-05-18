@@ -1,4 +1,4 @@
-from typing import Protocol, Iterator
+from typing import Protocol, Iterator, Literal
 from pydantic import BaseModel, Field
 from pathlib import Path
 from datetime import datetime
@@ -82,8 +82,9 @@ class CloudTrailSessionData(NormalizedData):
 
 
 class AcademicPaperData(NormalizedData):
-    """arXiv academic papers (LaTeX source)."""
+    """arXiv academic papers."""
     arxiv_id: str | None = None
+    source_format: Literal["latex", "pdf"] | None = None
     authors: list[str] = Field(default_factory=list)
     abstract: str | None = None
     categories: list[str] = Field(default_factory=list)

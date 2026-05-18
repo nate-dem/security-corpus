@@ -33,6 +33,19 @@ from ingest.utils import compute_content_hash, compute_token_count
 logger = logging.getLogger(__name__)
 
 
+def _paper_dir_to_arxiv_id(paper_dir_name: str) -> str:
+    """Map normalized directory names back to canonical arXiv IDs.
+
+    Download filenames replace ``/`` with ``-`` for old-style arXiv IDs, so
+    ``quant-ph/0408108`` is stored under ``quant-ph-0408108``. New-style IDs
+    such as ``2401.12345`` are already filesystem-safe and unchanged.
+    """
+    if "." in paper_dir_name or "-" not in paper_dir_name:
+        return paper_dir_name
+    category, old_id = paper_dir_name.rsplit("-", 1)
+    return f"{category}/{old_id}"
+
+
 class ArxivConnector:
     """Connector for arXiv papers preprocessed into cleaned LaTeX.
 
@@ -42,9 +55,9 @@ class ArxivConnector:
         metadata/cs_CR/       # OAI-PMH metadata JSONL (one file per month)
         0701.jsonl
         ...
-        source/normalized/    # cleaned LaTeX (one dir per paper)
+        source/normalized/    # cleaned source text (one dir per paper)
         YYMM/{arxiv_id}/
-            main.tex
+            main.tex | main.txt
             status.json
     """
 
@@ -86,7 +99,8 @@ class ArxivConnector:
                 if not paper_dir.is_dir():
                     continue
 
-                arxiv_id = paper_dir.name
+                arxiv_id = _paper_dir_to_arxiv_id(paper_dir.name)
+                status: dict = {}
 
                 # Check normalization status
                 status_file = paper_dir / "status.json"
@@ -104,13 +118,24 @@ class ArxivConnector:
                         skipped_incomplete += 1
                         continue
 
-                # Read cleaned LaTeX
+                # Read cleaned source text. LaTeX normalizations write main.tex;
+                # PDF-only normalizations write extracted text to main.txt.
                 main_tex = paper_dir / "main.tex"
-                if not main_tex.exists():
+                main_txt = paper_dir / "main.txt"
+                if main_tex.exists():
+                    content_path = main_tex
+                    inferred_source_format = "latex"
+                elif main_txt.exists():
+                    content_path = main_txt
+                    inferred_source_format = "pdf"
+                else:
                     skipped_incomplete += 1
                     continue
+                source_format = status.get("source_format")
+                if source_format not in {"latex", "pdf"}:
+                    source_format = inferred_source_format
 
-                content = main_tex.read_text(encoding="utf-8", errors="ignore")
+                content = content_path.read_text(encoding="utf-8", errors="ignore")
                 if not content.strip():
                     skipped_empty += 1
                     continue
@@ -123,6 +148,7 @@ class ArxivConnector:
 
                 yield {
                     "arxiv_id": arxiv_id,
+                    "source_format": source_format,
                     "content": content,
                     "title": meta.get("title", ""),
                     "authors": meta.get("authors", []),
@@ -164,6 +190,7 @@ class ArxivConnector:
             license=_map_license(record.get("license_url")),
             raw=None,
             arxiv_id=arxiv_id,
+            source_format=record.get("source_format"),
             authors=record.get("authors", []),
             abstract=record.get("abstract"),
             categories=record.get("categories", []),

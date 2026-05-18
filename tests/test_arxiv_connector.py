@@ -2,7 +2,7 @@ from datetime import timezone
 from pathlib import Path
 
 from ingest.connectors.base import AcademicPaperData, NormalizedData
-from ingest.connectors.arxiv.connector import ArxivConnector
+from ingest.connectors.arxiv.connector import ArxivConnector, _paper_dir_to_arxiv_id
 from ingest.connectors.arxiv.metadata import (
     _map_license,
     _parse_arxiv_id,
@@ -34,6 +34,18 @@ def test_parse_arxiv_id_old_format():
 
 def test_parse_arxiv_id_no_prefix():
     assert _parse_arxiv_id("2401.12345") == "2401.12345"
+
+
+def test_paper_dir_to_arxiv_id_new_format():
+    assert _paper_dir_to_arxiv_id("2401.12345") == "2401.12345"
+
+
+def test_paper_dir_to_arxiv_id_old_format():
+    assert _paper_dir_to_arxiv_id("cs-0601001") == "cs/0601001"
+
+
+def test_paper_dir_to_arxiv_id_old_hyphenated_category():
+    assert _paper_dir_to_arxiv_id("quant-ph-0408108") == "quant-ph/0408108"
 
 
 def test_parse_authors_multiple():
@@ -222,6 +234,7 @@ def test_iter_records_record_has_metadata():
         assert "authors" in r
         assert "abstract" in r
         assert "categories" in r
+        assert r["source_format"] in {"latex", "pdf"}
 
 
 # ── normalize ──────────────────────────────────────────────────────────────
@@ -299,6 +312,49 @@ def test_normalize_doi_and_journal_ref():
     paper2 = [r for r in results if r.arxiv_id == "2401.00002"][0]
     assert paper2.doi is None
     assert paper2.journal_ref is None
+
+
+def test_normalize_source_format_defaults_to_latex():
+    results = _get_normalized()
+    for result in results:
+        assert result.source_format == "latex"
+
+
+def test_iter_records_reads_pdf_text(tmp_path):
+    raw_dir = tmp_path / "raw"
+    metadata_dir = raw_dir / "metadata" / "cs_CR"
+    paper_dir = raw_dir / "source" / "normalized" / "2401" / "2401.00006"
+    metadata_dir.mkdir(parents=True)
+    paper_dir.mkdir(parents=True)
+
+    metadata_dir.joinpath("2401.jsonl").write_text(
+        '{"record": {"header": {"identifier": "oai:arXiv.org:2401.00006", '
+        '"datestamp": "2024-01-18"}, "metadata": {"arXiv": {'
+        '"id": "2401.00006", "title": "PDF Security Paper", '
+        '"authors": {"author": {"keyname": "Reader"}}, '
+        '"abstract": "PDF extracted abstract.", "categories": "cs.CR", '
+        '"license": "http://creativecommons.org/licenses/by/4.0/"}}}}\n',
+        encoding="utf-8",
+    )
+    paper_dir.joinpath("status.json").write_text(
+        '{"aid": "2401.00006", "completed": true, '
+        '"source_format": "pdf", "pdf_extracted": true, "errors": []}',
+        encoding="utf-8",
+    )
+    paper_dir.joinpath("main.txt").write_text(
+        "Extracted PDF text about side-channel attacks.",
+        encoding="utf-8",
+    )
+
+    connector = ArxivConnector()
+    records = list(connector.iter_records(raw_dir))
+
+    assert len(records) == 1
+    assert records[0]["source_format"] == "pdf"
+    assert records[0]["content"] == "Extracted PDF text about side-channel attacks."
+
+    normalized = connector.normalize(records[0])
+    assert normalized.source_format == "pdf"
 
 
 def test_normalize_populates_base_fields():
