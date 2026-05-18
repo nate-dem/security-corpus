@@ -9,7 +9,7 @@ Each line is an OAI-PMH record parsed to JSON via xmltodict.
 Resumable: skips months for which a JSONL file already exists.
 
 Usage:
-    python scripts/arxiv_harvest_metadata.py \\
+    python scripts/arxiv/harvest_metadata.py \\
         --from-date 2007-01-01 \\
         --data-dir data/arxiv/raw/metadata/cs_CR
 """

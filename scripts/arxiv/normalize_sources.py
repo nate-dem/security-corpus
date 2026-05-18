@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
-"""Extract and normalize downloaded arXiv LaTeX sources.
+"""Extract and normalize downloaded arXiv paper sources.
 
 For each downloaded source archive:
   1. Extract to a temporary directory
   2. Find the main .tex file, inline includes, strip comments
   3. Write cleaned main.tex + status.json to the normalized directory
 
+For PDF-only downloads:
+  1. Extract text from each page
+  2. Write cleaned main.txt + status.json to the normalized directory
+
 Uses the LaTeX processing functions from
 ``src/ingest/connectors/arxiv/latex_processing.py``.
 
 Usage:
-    python scripts/arxiv_normalize_sources.py \\
+    python scripts/arxiv/normalize_sources.py \\
         --downloads-dir data/arxiv/raw/source/downloads \\
         --output-dir data/arxiv/raw/source/normalized \\
         --workers 8
@@ -20,6 +24,7 @@ import argparse
 import gzip
 import json
 import logging
+import re
 import shutil
 import tarfile
 import tempfile
@@ -33,6 +38,10 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
+SUPPORTED_SUFFIXES = (".tar.gz", ".gz", ".pdf")
+PDF_WHITESPACE_RE = re.compile(r"[ \t]+")
+PDF_BLANK_LINES_RE = re.compile(r"(\n\s*){3,}")
 
 
 def parse_args():
@@ -88,6 +97,44 @@ def _extract_source(archive_path: Path, extract_dir: Path) -> bool:
     return False
 
 
+def _strip_supported_suffix(path: Path) -> str:
+    """Return the arXiv ID represented by a downloaded source filename."""
+    name = path.name
+    for suffix in SUPPORTED_SUFFIXES:
+        if name.endswith(suffix):
+            return name[: -len(suffix)]
+    return path.stem
+
+
+def _clean_pdf_text(text: str) -> str:
+    """Normalize common whitespace noise from PDF page text extraction."""
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = PDF_WHITESPACE_RE.sub(" ", text)
+    text = "\n".join(line.strip() for line in text.splitlines())
+    text = PDF_BLANK_LINES_RE.sub("\n\n", text)
+    return text.strip()
+
+
+def _extract_pdf_text(pdf_path: Path) -> str:
+    """Extract text from a PDF-only arXiv download."""
+    try:
+        from pypdf import PdfReader
+    except ImportError as e:
+        raise RuntimeError(
+            "PDF normalization requires the pypdf package. "
+            "Run `pip install -e .` to install project dependencies."
+        ) from e
+
+    reader = PdfReader(str(pdf_path))
+    pages: list[str] = []
+    for page in reader.pages:
+        page_text = page.extract_text() or ""
+        page_text = page_text.strip()
+        if page_text:
+            pages.append(page_text)
+    return _clean_pdf_text("\n\n".join(pages))
+
+
 def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
     """Normalize a single paper. Returns (arxiv_id, processed, skipped, failed)."""
     # Import here to avoid issues with multiprocessing on some platforms
@@ -99,12 +146,7 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
 
     archive_path, output_dir = args
     yymm = archive_path.parent.name
-    # Strip .tar.gz or .gz extension to get ID
-    arxiv_id = archive_path.name
-    for suffix in (".tar.gz", ".gz", ".pdf"):
-        if arxiv_id.endswith(suffix):
-            arxiv_id = arxiv_id[: -len(suffix)]
-            break
+    arxiv_id = _strip_supported_suffix(archive_path)
 
     tgt = output_dir / yymm / arxiv_id
     tgt.mkdir(parents=True, exist_ok=True)
@@ -120,20 +162,36 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
         except Exception:
             pass
 
-    # Skip PDF-only papers (no LaTeX to normalize)
     if archive_path.name.endswith(".pdf"):
-        write_status_json(tgt, {
+        status = {
             "aid": arxiv_id,
             "timestamp": datetime.now().isoformat(),
             "completed": False,
-            "errors": ["PDF-only source, no LaTeX"],
-        })
-        return (arxiv_id, 0, 0, 1)
+            "source_format": "pdf",
+            "pdf_extracted": False,
+            "errors": [],
+        }
+        try:
+            text = _extract_pdf_text(archive_path)
+            if not text:
+                status["errors"].append("PDF text extraction produced empty content")
+                write_status_json(tgt, status)
+                return (arxiv_id, 0, 0, 1)
+            (tgt / "main.txt").write_text(text, encoding="utf-8")
+            status["pdf_extracted"] = True
+            status["completed"] = True
+            write_status_json(tgt, status)
+            return (arxiv_id, 1, 0, 0)
+        except Exception as e:
+            status["errors"].append(str(e))
+            write_status_json(tgt, status)
+            return (arxiv_id, 0, 0, 1)
 
     status = {
         "aid": arxiv_id,
         "timestamp": datetime.now().isoformat(),
         "completed": False,
+        "source_format": "latex",
         "tex_merged": False,
         "errors": [],
     }
@@ -189,7 +247,13 @@ def main():
         if months and month_dir.name not in months:
             continue
         for archive in sorted(month_dir.iterdir()):
-            if archive.is_file():
+            if (
+                archive.is_file()
+                and not archive.name.startswith("._")
+                and not archive.name.endswith(".failed")
+                and archive.name.endswith(SUPPORTED_SUFFIXES)
+                and archive.stat().st_size > 0
+            ):
                 tasks.append((archive, output_dir))
 
     logger.info("Found %d archives to normalize", len(tasks))

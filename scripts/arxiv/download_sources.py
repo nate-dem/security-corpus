@@ -7,7 +7,7 @@ archives one at a time with rate limiting.
 Resumable: skips papers whose files already exist on disk.
 
 Usage:
-    python scripts/arxiv_download_sources.py \\
+    python scripts/arxiv/download_sources.py \\
         --metadata-dir data/arxiv/raw/metadata/cs_CR \\
         --output-dir data/arxiv/raw/source/downloads
 """

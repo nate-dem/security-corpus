@@ -1,6 +1,6 @@
 """Helpers for parsing OAI-PMH metadata records harvested from arXiv.
 
-The harvester (scripts/arxiv_harvest_metadata.py) writes JSONL where each line
+The harvester (scripts/arxiv/harvest_metadata.py) writes JSONL where each line
 is the result of ``xmltodict.parse(sickle_record.raw)``.  The arXiv-native
 metadata prefix produces a nested dict rooted at ``record.metadata.arXiv``.
 """
