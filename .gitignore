@@ -216,3 +216,7 @@ reports/
 
 # Claude
 .claude/
+
+docs/
+
+AGENTS.md
