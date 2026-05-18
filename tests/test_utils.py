@@ -37,3 +37,8 @@ def test_compute_token_count_scales_with_length():
     assert compute_token_count(long) > compute_token_count(short)
 
 
+def test_compute_token_count_treats_special_token_text_as_ordinary_text():
+    count = compute_token_count("literal <|endoftext|> marker")
+    assert isinstance(count, int)
+    assert count > 0
+

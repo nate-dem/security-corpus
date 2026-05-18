@@ -3,7 +3,14 @@ import hashlib
 import tiktoken
 
 # Module-level cached encoder for token counting.
-_ENCODER = tiktoken.get_encoding("cl100k_base")
+_ENCODER = None
+
+
+def _get_encoder():
+    global _ENCODER
+    if _ENCODER is None:
+        _ENCODER = tiktoken.get_encoding("cl100k_base")
+    return _ENCODER
 
 
 def compute_content_hash(content: str) -> str:
@@ -13,7 +20,7 @@ def compute_content_hash(content: str) -> str:
 
 def compute_token_count(content: str) -> int:
     """Return the token count of content using the cl100k_base tokenizer."""
-    return len(_ENCODER.encode(content))
+    return len(_get_encoder().encode(content, disallowed_special=()))
 
 
 # License constants — one per source or license family.
