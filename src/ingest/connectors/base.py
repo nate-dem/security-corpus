@@ -67,6 +67,7 @@ class TranscriptData(NormalizedData):
     channel_id: str | None = None
     language: str | None = None          # transcription_language (BCP-47 code)
     word_count: int | None = None
+    character_count: int | None = None   # character count from source parquet
 
 
 class Connector(Protocol):

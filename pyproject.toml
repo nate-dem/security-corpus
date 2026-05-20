@@ -36,6 +36,15 @@ regmix-train = [
     "accelerate",
     "datasets",
 ]
+fineweb = [
+    "datatrove[io]",         # streaming ParquetReader + HuggingFace fs support
+    "huggingface_hub",
+]
+youtube = [
+    "vllm",                  # GPU batch inference — install on Marlowe only (requires CUDA)
+    "huggingface_hub",       # shard download in classify_youtube_videos.py
+    "transformers",          # AutoTokenizer for chat template application
+]
 
 [tool.pytest.ini_options]
 markers = [

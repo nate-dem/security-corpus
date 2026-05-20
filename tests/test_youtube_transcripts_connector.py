@@ -2,13 +2,13 @@
 Comprehensive tests for YouTubeTranscriptsConnector.
 
 Organized into seven classes:
-  TestIterRecords           — shard walking, ordering, edge cases
+  TestIterRecords             — shard walking, ordering, edge cases
   TestNormalizeIdentification — record_id / source_id / source_record_id / source_url
-  TestNormalizeContent      — text→content, title, hash, token count
+  TestNormalizeContent        — text→content, title, hash, token count
   TestNormalizeTranscriptFields — video_id, channel, language, word_count
-  TestNormalizeMetadata     — ingested_at, published_at, license, raw=None
-  TestNormalizeEndToEnd     — full fixture round-trip, uniqueness invariants
-  TestSecurityFilter        — file-based allowlist, language drop, word_count drop
+  TestNormalizeMetadata       — ingested_at, published_at, license, raw=None
+  TestNormalizeEndToEnd       — full fixture round-trip, uniqueness invariants
+  TestGateFunction            — _passes_gate: language gate, word count gate, cache gate
 """
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -20,8 +20,8 @@ from ingest.connectors.base import NormalizedData, TranscriptData
 from ingest.connectors.youtube_transcripts import (
     YouTubeTranscriptsConnector,
     MIN_WORD_COUNT,
-    _CHANNEL_ALLOWLIST_PATH,
-    _is_security_relevant,
+    _passes_gate,
+    _is_english,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "youtube-transcripts"
@@ -238,8 +238,18 @@ class TestNormalizeTranscriptFields:
         assert result.language == "fr"
 
     def test_language_falls_back_to_source_language(self):
-        record = _make_record(source_language="de")
+        # When transcription_language is absent, source_language is the first fallback.
+        record = _make_record(source_language="ja")
         del record["transcription_language"]
+        result = _normalize(record)
+        assert result.language == "ja"
+
+    def test_language_falls_back_to_original_language(self):
+        # When both transcription_language and source_language are absent,
+        # normalize() falls back to original_language (the third field in the chain).
+        record = _make_record(original_language="de")
+        del record["transcription_language"]
+        del record["source_language"]
         result = _normalize(record)
         assert result.language == "de"
 
@@ -363,87 +373,174 @@ class TestNormalizeEndToEnd:
 
 
 # ---------------------------------------------------------------------------
-# TestSecurityFilter
+# TestGateFunction
+# ---------------------------------------------------------------------------
+# These tests cover the three-gate logic in _passes_gate():
+#   Gate 1 — language (English only)
+#   Gate 2 — word count (>= MIN_WORD_COUNT)
+#   Gate 3 — classifier cache (video_id in keep set, or skipped if keep set is None)
+#
+# The old TestSecurityFilter class tested a file-based channel allowlist that
+# no longer exists.  Gate 3 is now driven by a frozenset of video_ids produced
+# by the vLLM classifier (see scripts/classify_youtube_videos.py).
 # ---------------------------------------------------------------------------
 
-class TestSecurityFilter:
-    KNOWN_CHANNEL = "UCsec_test_channel_id_001"
+class TestGateFunction:
 
-    def _make_allowlist(self, tmp_path: Path, channel_ids: list[str]) -> Path:
-        """Write a temporary allowlist file and patch the module path."""
-        f = tmp_path / "security_channels.txt"
-        f.write_text("\n".join(channel_ids))
-        return f
+    # ── Gate 1: language ────────────────────────────────────────────────────
 
-    # --- _is_security_relevant unit tests ---
+    def test_non_english_transcription_language_dropped(self):
+        record = _make_record(transcription_language="fr", word_count=200)
+        assert _passes_gate(record, video_keep_set=None) is False
 
-    def test_allowlisted_channel_passes(self):
-        allowlist = frozenset([self.KNOWN_CHANNEL])
-        record = _make_record(channel_id=self.KNOWN_CHANNEL, word_count=200)
-        assert _is_security_relevant(record, allowlist) is True
+    def test_english_with_region_suffix_passes(self):
+        # en-GB, en-US, en-AU must pass — uppercase region codes are valid BCP-47.
+        for lang in ("en-GB", "en-US", "en-AU"):
+            record = _make_record(transcription_language=lang, word_count=200)
+            assert _passes_gate(record, video_keep_set=None) is True, f"Failed for lang={lang}"
 
-    def test_unknown_channel_fails(self):
-        record = _make_record(channel_id="UCunknown", word_count=200)
-        assert _is_security_relevant(record, frozenset([self.KNOWN_CHANNEL])) is False
+    def test_mixed_language_detection_code_dropped(self):
+        # 'en-fr' appears in the actual dataset on French videos that YouTube's
+        # detection tagged as bilingual.  original_language='fr' confirms these
+        # are not English-primary content and should be dropped.
+        record = _make_record(transcription_language="en-fr", word_count=200)
+        record["original_language"] = "fr"
+        record["language_id_method"] = "detection"
+        assert _passes_gate(record, video_keep_set=None) is False
 
-    def test_non_english_dropped(self):
-        allowlist = frozenset([self.KNOWN_CHANNEL])
-        record = _make_record(channel_id=self.KNOWN_CHANNEL, transcription_language="fr", word_count=300)
-        assert _is_security_relevant(record, allowlist) is False
+    def test_garbage_language_code_with_english_metadata_passes(self):
+        # 'en-GHEw9DUond8' appears in the dataset — a YouTube ID appended to 'en'
+        # by mistake.  The video IS English (original_language='en', method='metadata').
+        # The metadata fallback path in _is_english() should keep it.
+        record = _make_record(transcription_language="en-GHEw9DUond8", word_count=200)
+        record["original_language"] = "en"
+        record["language_id_method"] = "metadata"
+        assert _passes_gate(record, video_keep_set=None) is True
+
+    def test_metadata_declared_non_english_dropped(self):
+        # YouTube metadata declares German (transcription + original) → hard reject.
+        # original_language must also be non-English, otherwise the metadata
+        # fallback path in _is_english() would accept it as an English source video.
+        record = _make_record(transcription_language="de", original_language="de", word_count=200)
+        record["language_id_method"] = "metadata"
+        assert _passes_gate(record, video_keep_set=None) is False
+
+    # ── Gate 2: word count ──────────────────────────────────────────────────
 
     def test_below_min_word_count_dropped(self):
-        allowlist = frozenset([self.KNOWN_CHANNEL])
-        record = _make_record(channel_id=self.KNOWN_CHANNEL, word_count=MIN_WORD_COUNT - 1)
-        assert _is_security_relevant(record, allowlist) is False
+        record = _make_record(transcription_language="en", word_count=MIN_WORD_COUNT - 1)
+        assert _passes_gate(record, video_keep_set=None) is False
 
     def test_exactly_min_word_count_passes(self):
-        allowlist = frozenset([self.KNOWN_CHANNEL])
-        record = _make_record(channel_id=self.KNOWN_CHANNEL, word_count=MIN_WORD_COUNT)
-        assert _is_security_relevant(record, allowlist) is True
+        record = _make_record(transcription_language="en", word_count=MIN_WORD_COUNT)
+        assert _passes_gate(record, video_keep_set=None) is True
 
-    def test_empty_allowlist_passes_nothing(self):
-        record = _make_record(channel_id=self.KNOWN_CHANNEL, word_count=200)
-        assert _is_security_relevant(record, frozenset()) is False
+    def test_zero_word_count_dropped(self):
+        record = _make_record(transcription_language="en", word_count=0)
+        assert _passes_gate(record, video_keep_set=None) is False
 
-    # --- iter_records integration tests ---
+    def test_missing_word_count_treated_as_zero(self):
+        record = _make_record(transcription_language="en", word_count=200)
+        record["word_count"] = None
+        assert _passes_gate(record, video_keep_set=None) is False
+
+    # ── Gate 3: classifier cache ─────────────────────────────────────────────
+
+    def test_no_keep_set_passes_all_english_with_sufficient_words(self):
+        # video_keep_set=None means the classifier cache gate is inactive.
+        # Any English record with >= MIN_WORD_COUNT words should pass.
+        record = _make_record(video_id="any_video", transcription_language="en", word_count=500)
+        assert _passes_gate(record, video_keep_set=None) is True
+
+    def test_video_id_in_keep_set_passes(self):
+        keep = frozenset(["vid_good"])
+        record = _make_record(video_id="vid_good", transcription_language="en", word_count=200)
+        assert _passes_gate(record, video_keep_set=keep) is True
+
+    def test_video_id_not_in_keep_set_dropped(self):
+        keep = frozenset(["vid_good"])
+        record = _make_record(video_id="vid_other", transcription_language="en", word_count=200)
+        assert _passes_gate(record, video_keep_set=keep) is False
+
+    def test_empty_keep_set_drops_everything(self):
+        # An empty frozenset means the classifier ran but kept nothing —
+        # every video_id lookup will miss.
+        keep = frozenset()
+        record = _make_record(video_id="some_video", transcription_language="en", word_count=200)
+        assert _passes_gate(record, video_keep_set=keep) is False
+
+    def test_non_english_dropped_even_if_in_keep_set(self):
+        # Gate 1 runs before gate 3; non-English should never reach gate 3.
+        keep = frozenset(["vid_fr"])
+        record = _make_record(video_id="vid_fr", transcription_language="fr", word_count=200)
+        assert _passes_gate(record, video_keep_set=keep) is False
+
+    def test_low_word_count_dropped_even_if_in_keep_set(self):
+        # Gate 2 runs before gate 3.
+        keep = frozenset(["vid_short"])
+        record = _make_record(video_id="vid_short", transcription_language="en", word_count=10)
+        assert _passes_gate(record, video_keep_set=keep) is False
+
+    # ── iter_records integration ─────────────────────────────────────────────
 
     def test_filter_security_false_yields_all_records(self, tmp_path):
         rows = [
-            _make_record(video_id="v1", channel_id="UCsec", word_count=200),
-            _make_record(video_id="v2", channel_id="UCother", word_count=300),
+            _make_record(video_id="v1", transcription_language="en", word_count=200),
+            _make_record(video_id="v2", transcription_language="fr", word_count=300),
         ]
         _write_parquet(tmp_path, rows, "cctube_0.parquet")
         records = list(YouTubeTranscriptsConnector().iter_records(tmp_path, filter_security=False))
         assert len(records) == 2
 
-    def test_filter_with_no_allowlist_file_yields_nothing(self, tmp_path, monkeypatch):
-        """If the allowlist file doesn't exist yet, nothing passes the filter."""
-        import ingest.connectors.youtube_transcripts as mod
-        monkeypatch.setattr(mod, "_CHANNEL_ALLOWLIST_PATH", tmp_path / "nonexistent.txt")
-        rows = [_make_record(video_id="v1", channel_id="UCsec", word_count=200)]
-        _write_parquet(tmp_path, rows, "cctube_0.parquet")
-        records = list(YouTubeTranscriptsConnector().iter_records(tmp_path, filter_security=True))
-        assert records == []
-
-    def test_filter_with_allowlist_file_passes_matching_channels(self, tmp_path, monkeypatch):
-        """Records whose channel_id is in the allowlist file pass the filter."""
-        import ingest.connectors.youtube_transcripts as mod
-        allowlist_file = tmp_path / "security_channels.txt"
-        allowlist_file.write_text("UCsec_001\nUCsec_002\n")
-        monkeypatch.setattr(mod, "_CHANNEL_ALLOWLIST_PATH", allowlist_file)
+    def test_filter_security_true_no_cache_passes_english_with_wordcount(self, tmp_path):
+        # Without a cache, gate 3 is inactive — all English + sufficient words pass.
         rows = [
-            _make_record(video_id="pass", channel_id="UCsec_001", word_count=200),
-            _make_record(video_id="drop", channel_id="UCother", word_count=200),
+            _make_record(video_id="en_long",  transcription_language="en", word_count=200),
+            _make_record(video_id="fr_long",  transcription_language="fr", word_count=200),
+            _make_record(video_id="en_short", transcription_language="en", word_count=5),
         ]
         _write_parquet(tmp_path, rows, "cctube_0.parquet")
         records = list(YouTubeTranscriptsConnector().iter_records(tmp_path, filter_security=True))
-        assert len(records) == 1
-        assert records[0]["video_id"] == "pass"
+        ids = [r["video_id"] for r in records]
+        assert "en_long" in ids
+        assert "fr_long" not in ids    # non-English dropped by gate 1
+        assert "en_short" not in ids   # too short dropped by gate 2
 
-    def test_allowlist_file_ignores_comments_and_blank_lines(self, tmp_path, monkeypatch):
-        import ingest.connectors.youtube_transcripts as mod
-        allowlist_file = tmp_path / "security_channels.txt"
-        allowlist_file.write_text("# this is a comment\nUCsec_001\n\n  \n")
-        monkeypatch.setattr(mod, "_CHANNEL_ALLOWLIST_PATH", allowlist_file)
-        allowlist = mod._load_channel_allowlist()
-        assert allowlist == frozenset(["UCsec_001"])
+    def test_filter_security_true_with_cache_only_passes_kept_ids(self, tmp_path):
+        # Gate 3 is active when cache_path is given.  Only video_ids whose
+        # should_keep=True appear in the cache file pass.
+        rows = [
+            _make_record(video_id="keep_me",   transcription_language="en", word_count=200),
+            _make_record(video_id="drop_me",   transcription_language="en", word_count=200),
+        ]
+        _write_parquet(tmp_path, rows, "cctube_0.parquet")
+
+        # Write a minimal JSONL cache — only keep_me is marked should_keep=True.
+        cache_file = tmp_path / "classifier_cache.jsonl"
+        cache_file.write_text(
+            '{"video_id": "keep_me", "result": {"should_keep": true, "is_cybersecurity_relevant": true, "confidence": 0.9, "relevance_level": "high", "reason": "test", "topic_tags": []}}\n'
+            '{"video_id": "drop_me", "result": {"should_keep": false, "is_cybersecurity_relevant": false, "confidence": 0.8, "relevance_level": "not_relevant", "reason": "test", "topic_tags": []}}\n'
+        )
+
+        records = list(
+            YouTubeTranscriptsConnector().iter_records(tmp_path, filter_security=True, cache_path=cache_file)
+        )
+        ids = [r["video_id"] for r in records]
+        assert ids == ["keep_me"]
+
+    def test_cache_miss_treated_as_keep(self, tmp_path):
+        # A video_id not in the cache at all should NOT be dropped.
+        # load_keep_set returns an empty frozenset when the cache file is missing,
+        # which the connector treats as video_keep_set=None (gate 3 inactive).
+        rows = [_make_record(video_id="uncached_video", transcription_language="en", word_count=200)]
+        _write_parquet(tmp_path, rows, "cctube_0.parquet")
+
+        # cache_path points to a non-existent file.
+        records = list(
+            YouTubeTranscriptsConnector().iter_records(
+                tmp_path, filter_security=True, cache_path=tmp_path / "nonexistent.jsonl"
+            )
+        )
+        # load_keep_set warns and returns frozenset() when file is absent;
+        # iter_records then skips gate 3 — so the record passes.
+        assert len(records) == 1
