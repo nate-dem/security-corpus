@@ -43,7 +43,7 @@
 # 439 tasks run in parallel, so total wall time ≈ time for the slowest shard.
 
 #SBATCH --job-name=yt-classify
-#SBATCH --array=0-438
+#SBATCH --array=0-438%16
 #SBATCH --account=marlowe-m000091-pm05
 #SBATCH --partition=batch
 #SBATCH --gres=gpu:1
