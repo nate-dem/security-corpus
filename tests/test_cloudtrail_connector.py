@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from ingest.connectors.cloudtrail import (
+from ingest.connectors.logs.cloudtrail import (
     CloudTrailSessionConnector,
     _extract_identity_short,
     _assemble_session_content,

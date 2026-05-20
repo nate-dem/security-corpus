@@ -17,7 +17,7 @@ from datetime import timezone
 from pathlib import Path
 
 from ingest.connectors.base import NormalizedData, TranscriptData
-from ingest.connectors.youtube_transcripts import (
+from ingest.connectors.transcripts.youtube_transcripts import (
     YouTubeTranscriptsConnector,
     MIN_WORD_COUNT,
     _CHANNEL_ALLOWLIST_PATH,
@@ -418,7 +418,7 @@ class TestSecurityFilter:
 
     def test_filter_with_no_allowlist_file_yields_nothing(self, tmp_path, monkeypatch):
         """If the allowlist file doesn't exist yet, nothing passes the filter."""
-        import ingest.connectors.youtube_transcripts as mod
+        import ingest.connectors.transcripts.youtube_transcripts as mod
         monkeypatch.setattr(mod, "_CHANNEL_ALLOWLIST_PATH", tmp_path / "nonexistent.txt")
         rows = [_make_record(video_id="v1", channel_id="UCsec", word_count=200)]
         _write_parquet(tmp_path, rows, "cctube_0.parquet")
@@ -427,7 +427,7 @@ class TestSecurityFilter:
 
     def test_filter_with_allowlist_file_passes_matching_channels(self, tmp_path, monkeypatch):
         """Records whose channel_id is in the allowlist file pass the filter."""
-        import ingest.connectors.youtube_transcripts as mod
+        import ingest.connectors.transcripts.youtube_transcripts as mod
         allowlist_file = tmp_path / "security_channels.txt"
         allowlist_file.write_text("UCsec_001\nUCsec_002\n")
         monkeypatch.setattr(mod, "_CHANNEL_ALLOWLIST_PATH", allowlist_file)
@@ -441,7 +441,7 @@ class TestSecurityFilter:
         assert records[0]["video_id"] == "pass"
 
     def test_allowlist_file_ignores_comments_and_blank_lines(self, tmp_path, monkeypatch):
-        import ingest.connectors.youtube_transcripts as mod
+        import ingest.connectors.transcripts.youtube_transcripts as mod
         allowlist_file = tmp_path / "security_channels.txt"
         allowlist_file.write_text("# this is a comment\nUCsec_001\n\n  \n")
         monkeypatch.setattr(mod, "_CHANNEL_ALLOWLIST_PATH", allowlist_file)

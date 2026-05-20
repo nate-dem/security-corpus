@@ -4,7 +4,7 @@ from unittest.mock import patch
 from lxml import etree
 
 from ingest.connectors.base import NormalizedData, MitreData
-from ingest.connectors.mitre_cwe import MitreCweConnector
+from ingest.connectors.knowledge.mitre_cwe import MitreCweConnector
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "mitre-cwe"
@@ -19,7 +19,7 @@ def _parse_first_element(fixture_path: Path, tag: str) -> etree._Element:
 
 def _load_record(fixture_path: Path, tag: str, record_type: str) -> dict:
     """Load a fixture, convert to dict via the connector's pipeline, and tag it."""
-    from ingest.connectors.mitre_cwe import _elem_to_dict
+    from ingest.connectors.knowledge.mitre_cwe import _elem_to_dict
     elem = _parse_first_element(fixture_path, tag)
     record = _elem_to_dict(elem)
     record["record_type"] = record_type
@@ -75,7 +75,7 @@ def test_iter_records_filters_deprecated():
             return iter(elements)
         return iter([])
 
-    with patch("ingest.connectors.mitre_cwe.read", side_effect=mock_read):
+    with patch("ingest.connectors.knowledge.mitre_cwe.read", side_effect=mock_read):
         results = list(connector.iter_records(Path("fake.xml")))
 
     assert len(results) == 2

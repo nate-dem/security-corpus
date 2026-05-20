@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from ingest.connectors.base import NormalizedData, VulnerabilityData
-from ingest.connectors.cisa_kev import CisaKevConnector
+from ingest.connectors.vulnerability.cisa_kev import CisaKevConnector
 
 
 SAMPLE_RECORD = json.loads(

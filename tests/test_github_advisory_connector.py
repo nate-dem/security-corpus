@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 from ingest.connectors.base import NormalizedData, VulnerabilityData
-from ingest.connectors.github_advisory import GitHubAdvisoryConnector
+from ingest.connectors.vulnerability.github_advisory import GitHubAdvisoryConnector
 
 FIXTURES = Path(__file__).parent / "fixtures" / "github-advisory"
 

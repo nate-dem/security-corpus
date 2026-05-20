@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from ingest.connectors.base import NormalizedData, MitreData
-from ingest.connectors.mitre_attack import MitreAttackConnector
+from ingest.connectors.knowledge.mitre_attack import MitreAttackConnector
 
 
 SAMPLE_TECHNIQUE = json.loads(
@@ -34,7 +34,7 @@ def test_iter_records_filters_revoked_and_deprecated():
     ]
     bundle_path = Path("fake.json")
     connector = MitreAttackConnector()
-    with patch("ingest.connectors.mitre_attack.read", return_value=iter(objects)):
+    with patch("ingest.connectors.knowledge.mitre_attack.read", return_value=iter(objects)):
         results = list(connector.iter_records(bundle_path))
     assert len(results) == 1
     assert results[0]["id"] == SAMPLE_TECHNIQUE["id"]
@@ -48,5 +48,4 @@ def test_normalize_populates_new_fields():
     assert result.license is not None
     assert result.framework == "attack"
     assert result.category_id == "T1055.011"
-
 
