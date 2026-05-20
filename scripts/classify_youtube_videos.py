@@ -67,7 +67,7 @@ from ingest.connectors.youtube_transcripts import MIN_WORD_COUNT, _GATE_COLS, _i
 REPO_ID = "PleIAs/YouTube-Commons"
 DEFAULT_RAW_DIR = Path("data/youtube-transcripts/raw")
 DEFAULT_CACHE_DIR = Path("data/youtube-transcripts/classifier_cache")
-DEFAULT_MODEL = "meta-llama/Llama-3.2-3B-Instruct"
+DEFAULT_MODEL = "Qwen/Qwen3-4B"
 DEFAULT_BATCH_SIZE = 500
 
 

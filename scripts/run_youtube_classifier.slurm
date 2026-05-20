@@ -20,10 +20,10 @@
 #
 #   export HF_HOME="/scratch/m000091-pm05/stanny04/youtube-transcripts/.hf_cache"
 #
-#   # Model weights (~6 GB):
+#   # Model weights (~8 GB, no license gating):
 #   python3 -c "
 #   from huggingface_hub import snapshot_download
-#   snapshot_download('meta-llama/Llama-3.2-3B-Instruct')
+#   snapshot_download('Qwen/Qwen3-4B')
 #   "
 #
 #   # Description enrichment dataset (~2.2 GB compressed):
@@ -80,7 +80,7 @@ mkdir -p "$RAW_DIR" "$CACHE_DIR" "$DESCRIPTIONS_DIR" logs/youtube-classify
 # --delete-after removes the raw shard parquet after classification to save
 # scratch space (each shard is ~370 MB; 439 shards = ~163 GB total).
 python3 scripts/classify_youtube_videos.py \
-    --model             meta-llama/Llama-3.2-3B-Instruct \
+    --model             Qwen/Qwen3-4B \
     --raw-dir           "$RAW_DIR" \
     --cache-dir         "$CACHE_DIR" \
     --descriptions-path "$DESCRIPTIONS_DIR" \

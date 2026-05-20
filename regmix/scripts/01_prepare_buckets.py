@@ -38,28 +38,70 @@ logger = logging.getLogger(__name__)
 BUCKET_SOURCES: dict[str, list[str]] = {
     "mitre_cve": [
         "data/bron/normalized/source_id=bron/raw.parquet",
-        # add NVD, CWE, CAPEC, CISA KEV parquets here as they're ingested
+        "data/nvd/normalized/source_id=nvd/raw.parquet",
+        "data/mitre-cwe/normalized/source_id=mitre-cwe/raw.parquet",
+        "data/capec/normalized/source_id=capec/raw.parquet",
+        "data/cisa-kev/normalized/source_id=cisa-kev/raw.parquet",
+        "data/mitre-attack/normalized/source_id=mitre-attack/raw.parquet",
     ],
     "sigma_rules": [
-        # sigma outputs a parquet when ingest_sigma.py is run
-        # placeholder: add after running scripts/ingest_sigma.py
+        "data/sigma/normalized/source_id=sigma/raw.parquet",
     ],
     "bron_graph": [
         "data/bron/normalized/source_id=bron/raw.parquet",
     ],
     "stackexchange_security": [
-        # produced by scripts/ingest_stackexchange.py
+        "data/stackexchange-infosec/normalized/source_id=stackexchange-infosec/raw.parquet",
+        "data/stackexchange-reverseengineering/normalized/source_id=stackexchange-reverseengineering/raw.parquet",
+        "data/stackexchange-crypto/normalized/source_id=stackexchange-crypto/raw.parquet",
     ],
     "youtube_cyber": [
         "data/youtube-transcripts/normalized/source_id=youtube-transcripts/raw.parquet",
     ],
     "reddit_cyber": [],       # not yet ingested
-    "github_security": [],    # not yet ingested
-    "security_blogs": [],     # not yet ingested
-    "general_technical": [],  # bring your own (C4, Wikipedia, etc.)
+    "github_security": [
+        "data/github-advisory/normalized/source_id=github-advisory/raw.parquet",
+    ],
+    "security_blogs": [
+        # FineWeb high-confidence cybersecurity subset.
+        # Points to directory — all *.parquet files inside are resolved automatically.
+        # Produced by: python scripts/ingest_fineweb.py  (default: v1.4 snapshots)
+        "data/fineweb/normalized/confidence=high",
+    ],
+    "general_technical": [
+        # FineWeb background (non-cyber) — general language preservation.
+        # Points to directory — all *.parquet files inside are resolved automatically.
+        "data/fineweb/normalized/confidence=background",
+    ],
 }
 
-TEXT_COLUMN = "text"         # column name in source parquets
+# NormalizedData subclasses use 'content' as the primary text field.
+TEXT_COLUMN = "content"
+
+
+def resolve_sources(raw_paths: list[str], repo_root: Path) -> list[Path]:
+    """
+    Expand BUCKET_SOURCES entries into a flat list of parquet file paths.
+
+    Entries may be either:
+      - A specific file  →  returned as-is (with a warning if missing).
+      - A directory      →  all *.parquet files inside are returned, sorted.
+                           This allows FineWeb (and other multi-file sources)
+                           to add new dump files without editing BUCKET_SOURCES.
+    """
+    files: list[Path] = []
+    for raw in raw_paths:
+        p = repo_root / raw
+        if p.is_dir():
+            found = sorted(p.glob("*.parquet"))
+            if not found:
+                logger.warning(f"Directory has no *.parquet files, skipping: {p}")
+            files.extend(found)
+        elif p.exists():
+            files.append(p)
+        else:
+            logger.warning(f"Source not found, skipping: {p}")
+    return files
 
 
 def tokenize_and_save(
@@ -150,7 +192,7 @@ def main():
     out_root = repo_root / args.output
 
     for bucket_name in registry.names():
-        sources = [repo_root / s for s in BUCKET_SOURCES.get(bucket_name, [])]
+        sources = resolve_sources(BUCKET_SOURCES.get(bucket_name, []), repo_root)
         if not sources:
             logger.warning(f"[{bucket_name}] No sources defined — skipping")
             continue

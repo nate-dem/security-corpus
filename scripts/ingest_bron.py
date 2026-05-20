@@ -2,7 +2,6 @@ from pathlib import Path
 
 from ingest.pipeline import ingest_and_store
 
-
 def main() -> None:
     raw_dir = Path("data/bron/raw")
     output_dir = Path("data/bron/normalized")
