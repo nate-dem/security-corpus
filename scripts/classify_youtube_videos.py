@@ -316,7 +316,8 @@ def _run_inference(
     Returns a dict of summary counts for the caller to print.
     """
     counts = {"kept": 0, "rejected": 0, "parse_failures": 0,
-              "high": 0, "medium": 0, "low": 0, "not_relevant": 0}
+              "high": 0, "medium": 0, "low": 0, "not_relevant": 0,
+              "kept_tokens": 0}
     classified_at = datetime.now(timezone.utc).isoformat()
 
     for batch_start in range(0, len(records), batch_size):
@@ -338,6 +339,7 @@ def _run_inference(
             if result.should_keep:
                 counts["kept"] += 1
                 counts[result.relevance_level] = counts.get(result.relevance_level, 0) + 1
+                counts["kept_tokens"] += int((record.get("word_count") or 0) * 1.3)
             else:
                 counts["rejected"] += 1
 
@@ -462,11 +464,6 @@ def main() -> None:
     elapsed = time.time() - t0
     total_classified = counts["kept"] + counts["rejected"]
     retention = counts["kept"] / total_classified * 100 if total_classified else 0
-    est_tokens = sum(
-        int((r.get("word_count") or 0) * 1.3)
-        for r in candidates
-    )
-
     print(f"\n--- Shard {shard_index} complete ---")
     print(f"  Classified    : {total_classified:,}")
     print(f"  Kept          : {counts['kept']:,}  ({retention:.1f}%)")
@@ -476,7 +473,7 @@ def main() -> None:
     print(f"    not_relevant (low-conf): {counts.get('not_relevant', 0):,}")
     print(f"  Rejected      : {counts['rejected']:,}")
     print(f"  Parse failures: {counts['parse_failures']:,}  (kept by lenient fallback)")
-    print(f"  Est. tokens   : ~{est_tokens:,}  (word_count * 1.3 for kept records)")
+    print(f"  Est. tokens   : ~{counts['kept_tokens']:,}  (kept records × word_count × 1.3)")
     print(f"  Wall time     : {elapsed / 60:.1f} min")
 
     # Step 8: optionally remove shard to save scratch space.
