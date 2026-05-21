@@ -75,10 +75,9 @@ class ClassificationResult(BaseModel):
     topic_tags
         Up to 5 short tags the model assigned (e.g. "sql injection", "red team").
     should_keep
-        The single gate bit consumed by iter_records().  True unless
-        relevance_level is "not_relevant" AND confidence ≥ 0.70.
-        If confidence < 0.50 the model must also set this to true regardless of
-        relevance_level — the prompt enforces this.
+        The single gate bit consumed by iter_records().  False only when
+        relevance_level is "not_relevant" AND confidence ≥ 0.50.
+        "low" requires a plausible security angle — the prompt enforces this.
     """
     is_cybersecurity_relevant: bool
     confidence: float = Field(ge=0.0, le=1.0)
@@ -157,10 +156,17 @@ CLASSIFY AS NOT RELEVANT only when clearly off-topic:
 - General networking without attack or defense context (home router setup, Wi-Fi troubleshooting)
 - Cryptocurrency or blockchain content unless it covers smart contract auditing or cryptographic protocol design
 - General data science or ML without adversarial ML, model security, or privacy engineering
-- Gaming, entertainment, cooking, personal vlogs, fitness, lifestyle
+- Gaming, entertainment, cooking, personal vlogs, fitness, lifestyle, religion, sports, music, travel, arts
+- Mathematics, linguistics, history, or other academic topics with no security connection
 
-UNCERTAINTY RULE: If the title is ambiguous, the channel name is generic, or the topic is unclear, \
-default to keeping the video. Set should_keep to true and confidence between 0.30 and 0.49.
+"low" relevance requires at least a PLAUSIBLE security angle — a programming concept with security \
+implications, a technical tool used in security contexts, or ambiguous content on a channel whose name \
+suggests security. Do NOT assign "low" to content that is clearly off-topic (nail care, sermons, \
+game walkthroughs, cooking, fitness, math proofs, pronunciation guides, travel vlogs).
+
+UNCERTAINTY RULE: Only apply when the title or channel has at least some plausible technical or \
+security signal. If the content is clearly non-technical and off-topic, set relevance_level to \
+not_relevant even if you are not fully confident — do not default to "low" merely because you are unsure.
 
 Respond with exactly one JSON object. No markdown code fences, no preamble, no text after the closing brace:
 {"is_cybersecurity_relevant": <bool>, "confidence": <float 0.0-1.0>, \
@@ -169,8 +175,8 @@ Respond with exactly one JSON object. No markdown code fences, no preamble, no t
 
 Constraints:
 - should_keep must be true when relevance_level is "high", "medium", or "low"
-- should_keep must be false only when relevance_level is "not_relevant" AND confidence >= 0.70
-- If confidence < 0.50, set should_keep to true regardless of relevance_level\
+- should_keep must be false when relevance_level is "not_relevant" AND confidence >= 0.50
+- Only use relevance_level "low" when there is a plausible security angle, not merely because the topic is ambiguous\
 """
 
 
