@@ -316,7 +316,7 @@ def _run_inference(
     Returns a dict of summary counts for the caller to print.
     """
     counts = {"kept": 0, "rejected": 0, "parse_failures": 0,
-              "high": 0, "medium": 0, "low": 0}
+              "high": 0, "medium": 0, "low": 0, "not_relevant": 0}
     classified_at = datetime.now(timezone.utc).isoformat()
 
     for batch_start in range(0, len(records), batch_size):
@@ -473,6 +473,7 @@ def main() -> None:
     print(f"    high        : {counts.get('high', 0):,}")
     print(f"    medium      : {counts.get('medium', 0):,}")
     print(f"    low         : {counts.get('low', 0):,}")
+    print(f"    not_relevant (low-conf): {counts.get('not_relevant', 0):,}")
     print(f"  Rejected      : {counts['rejected']:,}")
     print(f"  Parse failures: {counts['parse_failures']:,}  (kept by lenient fallback)")
     print(f"  Est. tokens   : ~{est_tokens:,}  (word_count * 1.3 for kept records)")
