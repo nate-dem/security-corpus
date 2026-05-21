@@ -149,7 +149,11 @@ def main():
             token_budget=token_budget,
             training_config=training_config,
             validation_losses=ValidationLosses(**val_losses_raw),
-            metadata={"type": entry.get("type", "sampled"), "dry_run": args.dry_run},
+            metadata={
+                "type": entry.get("type", "sampled"),
+                "dry_run": args.dry_run,
+                "dirichlet_concentration": entry.get("dirichlet_concentration"),
+            },
         )
         saved_path = tracker.save(result)
         logger.info(f"[{run_id}] Saved → {saved_path}")

@@ -3,7 +3,7 @@ from pathlib import Path
 import yaml
 
 from ingest.connectors.base import NormalizedData, DetectionRuleData
-from ingest.connectors.sigma import SigmaConnector
+from ingest.connectors.detection.sigma import SigmaConnector
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sigma"
 
@@ -85,5 +85,4 @@ def test_normalize_populates_detection_rule_fields():
     assert result.license is not None
     # raw is not set for Sigma (dropped per schema rules)
     assert result.raw is None
-
 

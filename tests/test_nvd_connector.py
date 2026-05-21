@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from ingest.connectors.base import NormalizedData, VulnerabilityData
-from ingest.connectors.nvd import NVDConnector
+from ingest.connectors.vulnerability.nvd import NVDConnector
 
 
 SAMPLE_CVE = json.loads(
@@ -39,5 +39,4 @@ def test_normalize_populates_new_fields():
     assert result.content_length > 0
     assert result.license is not None
     assert result.cve_id == SAMPLE_CVE["cve"]["id"]
-
 

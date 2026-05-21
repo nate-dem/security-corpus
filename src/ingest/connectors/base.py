@@ -1,4 +1,4 @@
-from typing import Protocol, Iterator
+from typing import Protocol, Iterator, Literal
 from pydantic import BaseModel, Field
 from pathlib import Path
 from datetime import datetime
@@ -68,6 +68,30 @@ class TranscriptData(NormalizedData):
     language: str | None = None          # transcription_language (BCP-47 code)
     word_count: int | None = None
     character_count: int | None = None   # character count from source parquet
+
+
+class CloudTrailSessionData(NormalizedData):
+    """CloudTrail log sessions (grouped by source IP + time gap)."""
+    event_count: int | None = None
+    session_duration_seconds: int | None = None
+    source_ip: str | None = None
+    principals: list[str] = Field(default_factory=list)
+    actions: list[str] = Field(default_factory=list)
+    aws_services: list[str] = Field(default_factory=list)
+    regions: list[str] = Field(default_factory=list)
+    has_errors: bool | None = None
+
+
+class AcademicPaperData(NormalizedData):
+    """arXiv academic papers."""
+    arxiv_id: str | None = None
+    source_format: Literal["latex", "pdf"] | None = None
+    authors: list[str] = Field(default_factory=list)
+    abstract: str | None = None
+    categories: list[str] = Field(default_factory=list)
+    primary_category: str | None = None
+    doi: str | None = None
+    journal_ref: str | None = None
 
 
 class Connector(Protocol):

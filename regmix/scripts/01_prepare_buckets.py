@@ -9,8 +9,7 @@ For each bucket defined in config/buckets.yaml:
   4. Write back the token count to buckets.yaml.
 
 This script maps existing corpus sources to REGMIX buckets.
-New sources (reddit, github, blogs) are skipped with a warning until
-their ingestion connectors are built.
+Sources without normalized parquet paths yet are skipped with a warning.
 
 Usage:
     python -m regmix.scripts.01_prepare_buckets \
@@ -35,73 +34,48 @@ logger = logging.getLogger(__name__)
 # Paths are relative to the repo root (security-corpus/).
 # Each entry maps a bucket name to one or more existing parquet sources.
 # ---------------------------------------------------------------------------
+TRAINING_CLEAN_V2 = "data/training-clean-v2/normalized"
+
 BUCKET_SOURCES: dict[str, list[str]] = {
     "mitre_cve": [
-        "data/bron/normalized/source_id=bron/raw.parquet",
-        "data/nvd/normalized/source_id=nvd/raw.parquet",
-        "data/mitre-cwe/normalized/source_id=mitre-cwe/raw.parquet",
-        "data/capec/normalized/source_id=capec/raw.parquet",
-        "data/cisa-kev/normalized/source_id=cisa-kev/raw.parquet",
-        "data/mitre-attack/normalized/source_id=mitre-attack/raw.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=nvd/*.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=cisa-kev/*.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=mitre-attack/*.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=mitre-cwe/*.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=capec/*.parquet",
     ],
     "sigma_rules": [
-        "data/sigma/normalized/source_id=sigma/raw.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=sigma/*.parquet",
     ],
     "bron_graph": [
-        "data/bron/normalized/source_id=bron/raw.parquet",
+        # RESEARCHER: add BRON normalized parquet path when that bucket is rebuilt.
     ],
     "stackexchange_security": [
-        "data/stackexchange-infosec/normalized/source_id=stackexchange-infosec/raw.parquet",
-        "data/stackexchange-reverseengineering/normalized/source_id=stackexchange-reverseengineering/raw.parquet",
-        "data/stackexchange-crypto/normalized/source_id=stackexchange-crypto/raw.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=stackexchange-infosec/*.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=stackexchange-reverseengineering/*.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=stackexchange-crypto/*.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=stackexchange-tor/*.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=stackoverflow/*.parquet",
     ],
     "youtube_cyber": [
-        "data/youtube-transcripts/normalized/source_id=youtube-transcripts/raw.parquet",
+        f"{TRAINING_CLEAN_V2}/source_id=youtube-transcripts/*.parquet",
     ],
-    "reddit_cyber": [],       # not yet ingested
-    "github_security": [
-        "data/github-advisory/normalized/source_id=github-advisory/raw.parquet",
+    "reddit_cyber": [
+        f"{TRAINING_CLEAN_V2}/source_id=reddit-*/*.parquet",
     ],
+    "github_security": [],    # RESEARCHER: add source paths when available
     "security_blogs": [
-        # FineWeb high-confidence cybersecurity subset.
-        # Points to directory — all *.parquet files inside are resolved automatically.
-        # Produced by: python scripts/ingest_fineweb.py  (default: v1.4 snapshots)
-        "data/fineweb/normalized/confidence=high",
+        # FineWeb V1.4 high-confidence cybersecurity subset (DSIR scored).
+        # Produced by: python3 scripts/ingest_fineweb.py (default: v1.4 snapshots)
+        "data/fineweb/normalized/confidence=high/*.parquet",
     ],
     "general_technical": [
-        # FineWeb background (non-cyber) — general language preservation.
-        # Points to directory — all *.parquet files inside are resolved automatically.
-        "data/fineweb/normalized/confidence=background",
+        # FineWeb background tier — general language preservation.
+        "data/fineweb/normalized/confidence=background/*.parquet",
     ],
 }
 
-# NormalizedData subclasses use 'content' as the primary text field.
-TEXT_COLUMN = "content"
-
-
-def resolve_sources(raw_paths: list[str], repo_root: Path) -> list[Path]:
-    """
-    Expand BUCKET_SOURCES entries into a flat list of parquet file paths.
-
-    Entries may be either:
-      - A specific file  →  returned as-is (with a warning if missing).
-      - A directory      →  all *.parquet files inside are returned, sorted.
-                           This allows FineWeb (and other multi-file sources)
-                           to add new dump files without editing BUCKET_SOURCES.
-    """
-    files: list[Path] = []
-    for raw in raw_paths:
-        p = repo_root / raw
-        if p.is_dir():
-            found = sorted(p.glob("*.parquet"))
-            if not found:
-                logger.warning(f"Directory has no *.parquet files, skipping: {p}")
-            files.extend(found)
-        elif p.exists():
-            files.append(p)
-        else:
-            logger.warning(f"Source not found, skipping: {p}")
-    return files
+TEXT_COLUMN = "content"      # normalized corpus training text column
 
 
 def tokenize_and_save(
@@ -136,30 +110,44 @@ def tokenize_and_save(
             logger.warning(f"Source not found, skipping: {src}")
             continue
 
-        table = pq.read_table(str(src))
-        if TEXT_COLUMN not in table.column_names:
-            logger.warning(f"{src} has no '{TEXT_COLUMN}' column; available: {table.column_names}")
+        parquet = pq.ParquetFile(src)
+        if TEXT_COLUMN not in parquet.schema_arrow.names:
+            logger.warning(
+                f"{src} has no '{TEXT_COLUMN}' column; available: {parquet.schema_arrow.names}"
+            )
             continue
 
-        texts = table[TEXT_COLUMN].to_pylist()
-        logger.info(f"Tokenizing {len(texts):,} documents from {src.name}")
-
-        for text in texts:
-            if not isinstance(text, str) or not text.strip():
-                continue
-            ids = tokenizer.encode(text, add_special_tokens=False)
-            # sliding window: chunk into max_length segments
-            for start in range(0, len(ids), max_length):
-                chunk = ids[start : start + max_length]
-                if len(chunk) < 64:   # discard very short sequences
+        logger.info(f"Tokenizing documents from {src}")
+        for batch in parquet.iter_batches(columns=[TEXT_COLUMN], batch_size=1_024):
+            texts = batch.column(0).to_pylist()
+            for text in texts:
+                if not isinstance(text, str) or not text.strip():
                     continue
-                buffer.append(chunk)
-                total_tokens += len(chunk)
-                if len(buffer) >= shard_size:
-                    flush()
+                ids = tokenizer.encode(text, add_special_tokens=False)
+                # sliding window: chunk into max_length segments
+                for start in range(0, len(ids), max_length):
+                    chunk = ids[start : start + max_length]
+                    if len(chunk) < 64:   # discard very short sequences
+                        continue
+                    buffer.append(chunk)
+                    total_tokens += len(chunk)
+                    if len(buffer) >= shard_size:
+                        flush()
 
     flush()
     return total_tokens
+
+
+def expand_source_patterns(repo_root: Path, patterns: list[str]) -> list[Path]:
+    """Expand repo-relative glob patterns into parquet files."""
+    files: list[Path] = []
+    for pattern in patterns:
+        matches = sorted(repo_root.glob(pattern))
+        if matches:
+            files.extend(path for path in matches if path.is_file())
+        else:
+            files.append(repo_root / pattern)
+    return files
 
 
 def main():
@@ -192,7 +180,7 @@ def main():
     out_root = repo_root / args.output
 
     for bucket_name in registry.names():
-        sources = resolve_sources(BUCKET_SOURCES.get(bucket_name, []), repo_root)
+        sources = expand_source_patterns(repo_root, BUCKET_SOURCES.get(bucket_name, []))
         if not sources:
             logger.warning(f"[{bucket_name}] No sources defined — skipping")
             continue

@@ -3,7 +3,14 @@ import hashlib
 import tiktoken
 
 # Module-level cached encoder for token counting.
-_ENCODER = tiktoken.get_encoding("cl100k_base")
+_ENCODER = None
+
+
+def _get_encoder():
+    global _ENCODER
+    if _ENCODER is None:
+        _ENCODER = tiktoken.get_encoding("cl100k_base")
+    return _ENCODER
 
 
 def compute_content_hash(content: str) -> str:
@@ -13,7 +20,7 @@ def compute_content_hash(content: str) -> str:
 
 def compute_token_count(content: str) -> int:
     """Return the token count of content using the cl100k_base tokenizer."""
-    return len(_ENCODER.encode(content))
+    return len(_get_encoder().encode(content, disallowed_special=()))
 
 
 # License constants — one per source or license family.
@@ -26,3 +33,19 @@ MITRE_TERMS = "MITRE Terms of Use"
 CISA_TERMS = "CISA Terms of Use"
 DETECTION_RULE_LICENSE_LGPL_2_1 = "LGPL-2.1"
 CC_BY_4_0 = "CC-BY-4.0"
+REDDIT_TERMS = "Reddit Terms of Service"
+FLAWS_CLOUD_PUBLIC = "Public Domain (flaws.cloud)"
+
+# arXiv license constants
+ARXIV_PERPETUAL_NON_EXCLUSIVE = "arXiv Perpetual Non-Exclusive License"
+CC_BY_NC_SA_4_0 = "CC-BY-NC-SA-4.0"
+CC_BY_NC_ND_4_0 = "CC-BY-NC-ND-4.0"
+
+ARXIV_LICENSE_MAP: dict[str, str] = {
+    "http://creativecommons.org/licenses/by/4.0/": CC_BY_4_0,
+    "http://creativecommons.org/licenses/by-sa/4.0/": CC_BY_SA_4_0,
+    "http://creativecommons.org/licenses/by-nc-sa/4.0/": CC_BY_NC_SA_4_0,
+    "http://creativecommons.org/licenses/by-nc-nd/4.0/": CC_BY_NC_ND_4_0,
+    "http://creativecommons.org/publicdomain/zero/1.0/": PUBLIC_DOMAIN,
+    "http://arxiv.org/licenses/nonexclusive-distrib/1.0/": ARXIV_PERPETUAL_NON_EXCLUSIVE,
+}

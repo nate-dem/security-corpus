@@ -17,7 +17,7 @@ from datetime import timezone
 from pathlib import Path
 
 from ingest.connectors.base import NormalizedData, TranscriptData
-from ingest.connectors.youtube_transcripts import (
+from ingest.connectors.transcripts.youtube_transcripts import (
     YouTubeTranscriptsConnector,
     MIN_WORD_COUNT,
     _passes_gate,
@@ -515,7 +515,6 @@ class TestGateFunction:
         ]
         _write_parquet(tmp_path, rows, "cctube_0.parquet")
 
-        # Write a minimal JSONL cache — only keep_me is marked should_keep=True.
         cache_file = tmp_path / "classifier_cache.jsonl"
         cache_file.write_text(
             '{"video_id": "keep_me", "result": {"should_keep": true, "is_cybersecurity_relevant": true, "confidence": 0.9, "relevance_level": "high", "reason": "test", "topic_tags": []}}\n'
@@ -529,18 +528,12 @@ class TestGateFunction:
         assert ids == ["keep_me"]
 
     def test_cache_miss_treated_as_keep(self, tmp_path):
-        # A video_id not in the cache at all should NOT be dropped.
-        # load_keep_set returns an empty frozenset when the cache file is missing,
-        # which the connector treats as video_keep_set=None (gate 3 inactive).
         rows = [_make_record(video_id="uncached_video", transcription_language="en", word_count=200)]
         _write_parquet(tmp_path, rows, "cctube_0.parquet")
 
-        # cache_path points to a non-existent file.
         records = list(
             YouTubeTranscriptsConnector().iter_records(
                 tmp_path, filter_security=True, cache_path=tmp_path / "nonexistent.jsonl"
             )
         )
-        # load_keep_set warns and returns frozenset() when file is absent;
-        # iter_records then skips gate 3 — so the record passes.
         assert len(records) == 1

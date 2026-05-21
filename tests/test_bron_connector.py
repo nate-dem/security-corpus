@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 from ingest.connectors.base import NormalizedData
-from ingest.connectors.bron import (
+from ingest.connectors.knowledge.bron import (
     BronConnector,
     _SOURCE_URL_TEMPLATES,
     _TARGET_COLLECTIONS,

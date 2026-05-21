@@ -16,6 +16,7 @@ External dependencies (not in pyproject.toml yet):
 """
 
 import copy
+import math
 import logging
 import os
 import tempfile
@@ -78,6 +79,8 @@ def run_proxy_job(
     cfg = copy.deepcopy(training_cfg)
 
     tokenizer = AutoTokenizer.from_pretrained(base_model)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
     model = AutoModelForCausalLM.from_pretrained(
         base_model,
         torch_dtype=torch.bfloat16 if cfg.get("bf16", True) else torch.float32,
@@ -105,21 +108,24 @@ def run_proxy_job(
             return_tensors="pt",
         )
         padded["labels"] = padded["input_ids"].clone()
+        padded["labels"][padded["attention_mask"] == 0] = -100
         return padded
 
     loader = DataLoader(
-        list(train_dataset),
+        train_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=False,
         collate_fn=collate,
-        num_workers=cfg.get("dataloader_num_workers", 2),
+        # IterableDataset instances need worker partitioning to avoid duplicate
+        # samples. Keep this single-worker until that is implemented.
+        num_workers=0,
     )
 
     # ------------------------------------------------------------------
     # Optimizer and scheduler
     # ------------------------------------------------------------------
-    steps_per_epoch = len(loader)
-    total_optimizer_steps = max(1, steps_per_epoch // grad_accum)
+    approx_batches = max(1, math.ceil(token_budget / max(1, batch_size * max_length)))
+    total_optimizer_steps = max(1, math.ceil(approx_batches / grad_accum))
     warmup_steps = int(total_optimizer_steps * cfg.get("warmup_ratio", 0.05))
 
     optimizer = AdamW(

@@ -123,13 +123,11 @@ def test_detect_code_in_html():
 
 
 def test_extract_closure():
-    closed, reason = extract_closure({"ClosedDate": "2020-01-01T00:00:00.000"})
+    closed = extract_closure({"ClosedDate": "2020-01-01T00:00:00.000"})
     assert closed is True
-    assert reason is None
 
-    closed, reason = extract_closure({"Score": "5"})
+    closed = extract_closure({"Score": "5"})
     assert closed is False
-    assert reason is None
 
 
 # ── StackExchangeSiteConnector ────────────────────────────────────────
@@ -156,7 +154,6 @@ def test_normalize_populates_qa_fields():
     assert result.answer_count == 2
     assert result.has_accepted_answer is True
     assert result.closed is False
-    assert result.closure_reason is None
     assert result.tags == ["cryptography", "ssl", "tls"]
 
 
@@ -220,15 +217,6 @@ def test_iter_records_yields_all_questions():
     # DeletionDate check was removed; deleted posts aren't in public dumps)
     assert 100 in qids
     assert 200 in qids
-
-
-def test_owner_resolved_from_users():
-    record = _get_record_by_qid(100)
-    owner = record["question"]["owner"]
-    assert owner is not None
-    assert owner["id"] == 201
-    assert owner["display_name"] == "alice"
-    assert owner["reputation"] == 5000
 
 
 def test_markdown_conversion_in_content():

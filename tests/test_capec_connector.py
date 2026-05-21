@@ -5,7 +5,7 @@ from unittest.mock import patch
 from lxml import etree
 
 from ingest.connectors.base import NormalizedData, MitreData
-from ingest.connectors.capec import CapecConnector
+from ingest.connectors.knowledge.capec import CapecConnector
 
 
 SAMPLE_PATTERN = json.loads(
@@ -69,7 +69,7 @@ def test_iter_records_filters_deprecated_and_obsolete():
     ]
 
     connector = CapecConnector()
-    with patch("ingest.connectors.capec.read", return_value=iter(elements)):
+    with patch("ingest.connectors.knowledge.capec.read", return_value=iter(elements)):
         results = list(connector.iter_records(Path("fake.xml")))
 
     assert len(results) == 2
