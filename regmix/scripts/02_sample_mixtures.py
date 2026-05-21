@@ -46,20 +46,28 @@ def main():
     proxy_cfg = exp_cfg["proxy"]
 
     n_runs = args.n_runs or proxy_cfg["n_runs"]
-    alpha_scale = proxy_cfg["alpha_scale"]
-    min_weight = proxy_cfg["min_bucket_weight"]
+    concentrations = proxy_cfg.get("dirichlet_concentrations") or [proxy_cfg.get("alpha_scale", 1.0)]
+    bucket_floors = proxy_cfg.get("bucket_floors", {})
+    max_usage = proxy_cfg.get("max_usage")
     token_budget = proxy_cfg["token_budget"]
     seed = args.seed or 42
 
     sampler = DirichletMixtureSampler(
         bucket_names=registry.names(),
         token_counts=registry.token_counts(),
-        alpha_scale=alpha_scale,
-        min_weight=min_weight,
+        concentrations=concentrations,
+        bucket_floors=bucket_floors,
+        token_budget=token_budget,
+        max_usage=max_usage,
         seed=seed,
     )
 
-    mixtures = sampler.sample(n_runs)
+    mixtures = []
+    mixture_concentrations = []
+    for i in range(n_runs):
+        concentration = float(concentrations[i % len(concentrations)])
+        mixtures.append(sampler.sample(1, concentration=concentration)[0])
+        mixture_concentrations.append(concentration)
 
     out_path = repo_root / args.output
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -69,6 +77,7 @@ def main():
         records.append({
             "mixture_id": f"m{i:04d}",
             "type": "sampled",
+            "dirichlet_concentration": mixture_concentrations[i],
             "weights": mix.weights,
             "token_budget": token_budget,
         })
@@ -77,13 +86,13 @@ def main():
     records.append({
         "mixture_id": "ref_natural",
         "type": "reference",
-        "weights": registry.natural_weights(),
+        "weights": sampler.natural_mixture(registry.token_counts()).weights,
         "token_budget": token_budget,
     })
     records.append({
         "mixture_id": "ref_uniform",
         "type": "reference",
-        "weights": registry.uniform_weights(),
+        "weights": sampler.uniform_mixture().weights,
         "token_budget": token_budget,
     })
 

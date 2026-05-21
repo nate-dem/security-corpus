@@ -33,6 +33,7 @@ class FitResult:
     ridge_coef: np.ndarray
     ridge_intercept: float
     lgbm_importances: Optional[np.ndarray] = None
+    lgbm_best_iteration: Optional[int] = None
     metrics: dict = field(default_factory=dict)  # populated by evaluator
 
 
@@ -65,55 +66,84 @@ class MixtureRegressor:
         rows: list[RegressionRow],
         target: str = "y_composite",
         lgbm_params: Optional[dict] = None,
+        final_refit: bool = True,
+        validation_fraction: float = 0.2,
+        early_stopping_rounds: int = 50,
     ) -> "MixtureRegressor":
         X = _to_X(rows)
         y = _to_y(rows, target)
         self.target = target
 
         # Ridge baseline
+        ridge_cv = min(5, len(rows)) if len(rows) >= 2 else None
         self._ridge = Pipeline([
             ("scaler", StandardScaler()),
-            ("ridge", RidgeCV(alphas=[0.01, 0.1, 1.0, 10.0, 100.0], cv=5)),
+            ("ridge", RidgeCV(
+                alphas=np.logspace(-3, 3, 7),
+                cv=ridge_cv,
+                scoring="neg_mean_squared_error" if ridge_cv else None,
+            )),
         ])
         self._ridge.fit(X, y)
 
         # LightGBM
+        best_iteration = None
         if _LGBM_AVAILABLE:
             defaults = dict(
-                n_estimators=500,
-                learning_rate=0.05,
-                num_leaves=31,
-                min_child_samples=max(3, len(rows) // 10),
-                subsample=0.8,
-                colsample_bytree=0.8,
-                reg_alpha=0.1,
-                reg_lambda=0.1,
+                n_estimators=1000,
+                learning_rate=0.01,
                 random_state=42,
                 verbose=-1,
             )
             if lgbm_params:
                 defaults.update(lgbm_params)
-            self._lgbm = lgb.LGBMRegressor(**defaults)
-            # Use all data; at small n (< 64) early stopping hurts more than helps
-            n_val = max(1, len(rows) // 5)
-            X_tr, X_val = X[:-n_val], X[-n_val:]
-            y_tr, y_val = y[:-n_val], y[-n_val:]
-            self._lgbm.fit(
-                X_tr, y_tr,
-                eval_set=[(X_val, y_val)],
-                callbacks=[lgb.early_stopping(50, verbose=False), lgb.log_evaluation(-1)],
-            )
+            if len(rows) >= 5 and validation_fraction > 0 and early_stopping_rounds > 0:
+                n_val = max(1, int(round(len(rows) * validation_fraction)))
+                n_val = min(n_val, len(rows) - 1)
+                rng = np.random.default_rng(42)
+                indices = rng.permutation(len(rows))
+                val_idx = indices[:n_val]
+                train_idx = indices[n_val:]
+                X_tr, X_val = X.iloc[train_idx], X.iloc[val_idx]
+                y_tr, y_val = y[train_idx], y[val_idx]
+
+                tuned = lgb.LGBMRegressor(**defaults)
+                tuned.fit(
+                    X_tr, y_tr,
+                    eval_set=[(X_val, y_val)],
+                    callbacks=[
+                        lgb.early_stopping(early_stopping_rounds, verbose=False),
+                        lgb.log_evaluation(-1),
+                    ],
+                )
+                best_iteration = getattr(tuned, "best_iteration_", None) or defaults["n_estimators"]
+                best_iteration = max(1, int(best_iteration))
+
+                if final_refit:
+                    final_params = {**defaults, "n_estimators": best_iteration}
+                    self._lgbm = lgb.LGBMRegressor(**final_params)
+                    self._lgbm.fit(X, y)
+                else:
+                    self._lgbm = tuned
+            else:
+                self._lgbm = lgb.LGBMRegressor(**defaults)
+                self._lgbm.fit(X, y)
+                best_iteration = defaults["n_estimators"]
 
         ridge_model = self._ridge.named_steps["ridge"]
         scaler = self._ridge.named_steps["scaler"]
         coef_original = ridge_model.coef_ / scaler.scale_
+        intercept_original = ridge_model.intercept_ - np.dot(coef_original, scaler.mean_)
 
         self._fit_result = FitResult(
             target=target,
             ridge_coef=coef_original,
-            ridge_intercept=float(ridge_model.intercept_),
+            ridge_intercept=float(intercept_original),
             lgbm_importances=(
                 self._lgbm.feature_importances_ if _LGBM_AVAILABLE and self._lgbm else None
+            ),
+            lgbm_best_iteration=(
+                int(best_iteration) if best_iteration is not None else None
             ),
         )
         return self

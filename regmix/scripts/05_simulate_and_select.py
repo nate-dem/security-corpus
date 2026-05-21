@@ -39,6 +39,7 @@ def main():
     parser.add_argument("--n-simulations", type=int, default=None)
     parser.add_argument("--top-k", type=int, default=None)
     parser.add_argument("--strategy", default=None, choices=["best", "average_topk"])
+    parser.add_argument("--regression-model", default=None, choices=["lgbm", "ridge"])
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
@@ -54,6 +55,7 @@ def main():
     n_simulations = args.n_simulations or sim_cfg["n_candidates"]
     top_k = args.top_k or sim_cfg["top_k"]
     strategy = args.strategy or sim_cfg["selection_strategy"]
+    regression_model = args.regression_model or sim_cfg.get("regression_model", "lgbm")
     seed = args.seed if args.seed is not None else sim_cfg["random_seed"]
 
     from regmix.buckets.registry import BucketRegistry
@@ -68,8 +70,10 @@ def main():
     sampler = DirichletMixtureSampler(
         bucket_names=registry.names(),
         token_counts=registry.token_counts(),
-        alpha_scale=proxy_cfg["alpha_scale"],
-        min_weight=proxy_cfg["min_bucket_weight"],
+        concentrations=proxy_cfg.get("dirichlet_concentrations") or [proxy_cfg.get("alpha_scale", 1.0)],
+        bucket_floors=proxy_cfg.get("bucket_floors", {}),
+        token_budget=proxy_cfg["token_budget"],
+        max_usage=proxy_cfg.get("max_usage"),
         seed=seed,
     )
 
@@ -81,7 +85,7 @@ def main():
     logger.info(f"Simulating {n_simulations:,} candidate mixtures...")
 
     def predict_fn(mixtures):
-        return regressor.predict(mixtures, model="lgbm")
+        return regressor.predict(mixtures, model=regression_model)
 
     all_mixtures, all_preds = simulator.run(predict_fn)
 
@@ -99,7 +103,7 @@ def main():
         "uniform": sampler.uniform_mixture(),
     }
     reference_preds = {
-        name: float(regressor.predict([mix], model="lgbm")[0])
+        name: float(regressor.predict([mix], model=regression_model)[0])
         for name, mix in reference_mixtures.items()
     }
 
@@ -114,8 +118,9 @@ def main():
         "pred_p25": float(np.percentile(all_preds, 25)),
         "pred_p50": float(np.percentile(all_preds, 50)),
         "pred_p75": float(np.percentile(all_preds, 75)),
-        "selected_pred_loss": float(regressor.predict([selected], model="lgbm")[0]),
+        "selected_pred_loss": float(regressor.predict([selected], model=regression_model)[0]),
         "selection_strategy": strategy,
+        "regression_model": regression_model,
         "top_k": top_k,
         "reference_preds": reference_preds,
     }
@@ -130,6 +135,7 @@ def main():
                 "weights": selected.weights,
                 "predicted_loss": stats["selected_pred_loss"],
                 "strategy": strategy,
+                "regression_model": regression_model,
                 "top_k": top_k,
                 "n_simulations": n_simulations,
             },

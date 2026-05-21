@@ -64,6 +64,10 @@ def cross_validate_regression(
     """
     from regmix.regression.models import MixtureRegressor
 
+    if len(rows) < 2:
+        raise ValueError("At least two regression rows are required for cross-validation")
+    n_folds = min(n_folds, len(rows))
+
     indices = np.arange(len(rows))
     np.random.default_rng(42).shuffle(indices)
     folds = np.array_split(indices, n_folds)

@@ -37,7 +37,12 @@ def main():
     parser.add_argument("--output-dir", default="experiments/regression")
     parser.add_argument("--target", default="y_composite",
                         help="Regression target column (see RegressionRow)")
-    parser.add_argument("--cross-validate", action="store_true")
+    parser.add_argument("--regression-model", default=None, choices=["lgbm", "ridge"],
+                        help="Model used for CV metrics and simulation")
+    parser.add_argument("--n-folds", type=int, default=5)
+    parser.add_argument("--skip-cross-validate", action="store_true")
+    parser.add_argument("--cross-validate", action="store_true",
+                        help="Deprecated; CV is now enabled by default")
     parser.add_argument("--general-baseline", type=float, default=None,
                         help="Base model general language loss (overrides auto-detection)")
     args = parser.parse_args()
@@ -62,8 +67,10 @@ def main():
     tracker = ExperimentTracker(repo_root / args.results_dir)
 
     obj_cfg = exp_cfg.get("objective", {})
+    sim_cfg = exp_cfg.get("simulation", {})
     lambda_penalty = obj_cfg.get("lambda_general_penalty", 0.5)
     general_baseline = args.general_baseline or obj_cfg.get("general_baseline", 3.0)
+    regression_model = args.regression_model or sim_cfg.get("regression_model", "lgbm")
 
     runs = tracker.load_all()
     if len(runs) < 10:
@@ -79,27 +86,33 @@ def main():
     # ------------------------------------------------------------------
     # Cross-validation (optional but recommended)
     # ------------------------------------------------------------------
-    if args.cross_validate:
+    if not args.skip_cross_validate:
         logger.info("\nCross-validating regression quality...")
         cv_metrics = cross_validate_regression(
             rows=rows,
             bucket_names=registry.names(),
             target=args.target,
-            n_folds=5,
+            n_folds=args.n_folds,
+            model=regression_model,
         )
-        print_metrics(cv_metrics, title="5-fold cross-validation")
+        print_metrics(cv_metrics, title=f"{args.n_folds}-fold cross-validation")
         with open(out_dir / "cv_metrics.json", "w") as f:
             json.dump(cv_metrics, f, indent=2)
 
     # ------------------------------------------------------------------
     # Fit final model on all data
     # ------------------------------------------------------------------
-    logger.info(f"\nFitting final model on {len(rows)} runs, target={args.target}")
+    logger.info(f"\nFitting final model on all {len(rows)} runs, target={args.target}")
     regressor = MixtureRegressor(registry.names())
-    regressor.fit(rows, target=args.target)
+    regressor.fit(rows, target=args.target, final_refit=True)
 
     # Evaluate on training data (sanity check)
-    train_metrics = evaluate_regression(regressor, rows, target=args.target)
+    train_metrics = evaluate_regression(
+        regressor,
+        rows,
+        target=args.target,
+        model=regression_model,
+    )
     print_metrics(train_metrics, title="Train-set metrics (sanity check)")
 
     # ------------------------------------------------------------------
@@ -114,15 +127,24 @@ def main():
     # Save metrics and importances
     # ------------------------------------------------------------------
     with open(out_dir / "metrics.json", "w") as f:
-        json.dump(train_metrics, f, indent=2)
+        json.dump(
+            {
+                "regression_model": regression_model,
+                "target": args.target,
+                "train_metrics": train_metrics,
+            },
+            f,
+            indent=2,
+        )
 
     importances = regressor.feature_importance_table()
     with open(out_dir / "importances.json", "w") as f:
         json.dump(importances, f, indent=2)
 
     logger.info("\nFeature importances (LightGBM or Ridge):")
+    max_importance = max((v for _, v in importances), default=0)
     for name, imp in importances:
-        bar = "█" * int(imp / max(v for _, v in importances) * 30)
+        bar = "█" * int(imp / max_importance * 30) if max_importance else ""
         logger.info(f"  {name:<30} {bar}  {imp:.1f}")
 
     # ------------------------------------------------------------------

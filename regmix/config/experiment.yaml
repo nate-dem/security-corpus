@@ -19,14 +19,22 @@ training:
 proxy:
   token_budget: 100_000_000               # 100M tokens per proxy run (PoC)
   n_runs: 64                               # number of proxy runs to sample
-  alpha_scale: 1.0                         # Dirichlet concentration scale
-  min_bucket_weight: 0.01                  # clip zero-weights in sampled mixtures
+  # REGMIX samples from Dirichlet(alpha = lambda * natural_token_distribution).
+  # Multiple lambda values give both sparse and near-natural proxy mixtures.
+  dirichlet_concentrations: [0.1, 0.3, 1.0, 3.0, 5.0]
+  # RESEARCHER: tune per-bucket floors for small/high-value buckets.
+  # Example shape: {mitre_cve: 0.01}
+  bucket_floors: {}
+  # RESEARCHER: tune maximum per-run data reuse. Null disables the guard.
+  # A value of 2.0 means a proxy run may request at most 2x a bucket's tokens.
+  max_usage: null
 
 # Simulation
 simulation:
   n_candidates: 100_000
   top_k: 10
   selection_strategy: average_topk        # "best" or "average_topk"
+  regression_model: lgbm                  # "lgbm" or "ridge"
   random_seed: 0
 
 # Composite loss weights
