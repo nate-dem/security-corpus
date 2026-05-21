@@ -39,6 +39,8 @@ regmix-train = [
 fineweb = [
     "datatrove[io]",         # streaming ParquetReader + HuggingFace fs support
     "huggingface_hub",
+    "datasets",              # CTIBench download (download_ctibench.py) + DSIR target build
+    "numpy",                 # DSIRFitter / DSIRScorer vector math
 ]
 youtube = [
     "vllm",                  # GPU batch inference — install on Marlowe only (requires CUDA)
