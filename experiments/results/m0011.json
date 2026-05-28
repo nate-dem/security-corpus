@@ -1,0 +1,41 @@
+{
+  "run_id": "m0011",
+  "timestamp": "2026-05-14T05:21:21.479156",
+  "mixture": {
+    "weights": {
+      "mitre_cve": 0.16639828712262553,
+      "sigma_rules": 0.0745470489270411,
+      "bron_graph": 0.227768919776317,
+      "stackexchange_security": 0.15121722767485118,
+      "youtube_cyber": 0.08260451222859252,
+      "reddit_cyber": 0.13674659935933936,
+      "github_security": 0.053715161420555615,
+      "security_blogs": 0.07890669145710118,
+      "general_technical": 0.028095552033576495
+    }
+  },
+  "token_budget": 100000000,
+  "training_config": {
+    "base_model": "EleutherAI/pythia-160m",
+    "learning_rate": 0.0003,
+    "batch_size": 32,
+    "gradient_accumulation_steps": 4,
+    "max_steps": -1,
+    "warmup_ratio": 0.05,
+    "weight_decay": 0.1,
+    "seed": 42,
+    "bf16": true
+  },
+  "validation_losses": {
+    "cyber_general": 2.7343033334947764,
+    "cloud_security": 2.7825455661987584,
+    "task_specific": 2.731039327264572,
+    "general_language": 3.03645149280219
+  },
+  "composite_loss": null,
+  "benchmark_scores": {},
+  "metadata": {
+    "type": "sampled",
+    "dry_run": true
+  }
+}

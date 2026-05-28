@@ -1,0 +1,17 @@
+{
+  "weights": {
+    "mitre_cve": 0.24976236634522242,
+    "sigma_rules": 0.2634353879517389,
+    "bron_graph": 0.08003665417144648,
+    "stackexchange_security": 0.07387520111699822,
+    "youtube_cyber": 0.03385677275644727,
+    "reddit_cyber": 0.050487282584455506,
+    "github_security": 0.06616784213662756,
+    "security_blogs": 0.10764069971707568,
+    "general_technical": 0.07473779321998801
+  },
+  "predicted_loss": 2.7169333160693965,
+  "strategy": "average_topk",
+  "top_k": 10,
+  "n_simulations": 100000
+}

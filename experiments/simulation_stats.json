@@ -1,0 +1,16 @@
+{
+  "n_simulations": 100000,
+  "pred_min": 2.7169333160693965,
+  "pred_max": 2.752384038299744,
+  "pred_mean": 2.7372905791450264,
+  "pred_p25": 2.7296776660460065,
+  "pred_p50": 2.7374723017215072,
+  "pred_p75": 2.7467019911437704,
+  "selected_pred_loss": 2.7169333160693965,
+  "selection_strategy": "average_topk",
+  "top_k": 10,
+  "reference_preds": {
+    "natural": 2.7457888426217667,
+    "uniform": 2.7457888426217667
+  }
+}

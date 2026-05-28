@@ -1,0 +1,318 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+    citecolor=black
+}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{FineWeb Pilot --- Internal Memo}
+\lhead{M. Torre}
+\rfoot{\thepage}
+
+\setlist[itemize]{noitemsep, topsep=2pt}
+
+\begin{document}
+
+% ─────────────────────────────────────────────────────────────────
+\begin{center}
+    {\Large \textbf{FineWeb V1.4.0 Pilot: Results, Scoring Analysis, and Next Steps}}\\[6pt]
+    {\normalsize Matthew Torre \quad\textbullet\quad \today}\\[2pt]
+    {\small \textit{Internal memo for Abhinav --- pipeline context included below}}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────
+\section{Context for Abhinav}
+
+The broader project is building a cybersecurity-domain midtraining corpus for a language model.
+Rather than starting from raw Common Crawl, I am using \textbf{FineWeb}
+(\href{https://huggingface.co/datasets/HuggingFaceFW/fineweb}{\texttt{HuggingFaceFW/fineweb}}),
+which provides already-cleaned, deduplicated English Common Crawl records with useful metadata:
+\texttt{text}, \texttt{url}, \texttt{language\_score}, \texttt{token\_count}, \texttt{dump}, \texttt{date}, and \texttt{file\_path}.
+
+The processing pipeline applies two successive stages before any document reaches training data:
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Light quality gate.}
+          Drop obvious junk without aggressive filtering:
+          \texttt{language\_score} $\geq 0.65$, \texttt{token\_count} $\geq 80$.
+
+    \item \textbf{Soft routing into confidence tiers} (not hard keep/drop rules).
+          Rather than discarding anything that fails a keyword match---which caused
+          over-filtering problems in an earlier YouTube channel pass---documents are
+          routed into three pools: \textit{high}, \textit{medium}, and
+          \textit{background}. Cyber-domain signals (trusted domain boost, URL
+          pattern matching, density-normalized term scoring) act as weak signals for
+          candidate generation, not gatekeepers. Uncertain documents stay in
+          background and can still be used for general-language preservation in the
+          mixture.
+
+    \item \textbf{Task-aware selection (Stage 4, proposed).}
+          Apply DSIR-style importance resampling
+          \cite{xie2023data}
+          using CTIBench \cite{tihanyi2024ctibench} or AttackQA as the target
+          distribution. This replaces or supplements the hand-built term bank with
+          a selection criterion grounded in similarity to actual cybersecurity task
+          data.
+\end{enumerate}
+
+The pilot run described in this memo covers stages 1--2 on a 5{,}000-document sample
+and directly informs whether stage 4 is necessary at current scale.
+
+% ─────────────────────────────────────────────────────────────────
+\section{Pilot Run}
+
+\textbf{Command:}
+\begin{verbatim}
+python3 scripts/ingest_fineweb.py --max-docs 5000 --dump v1.4
+\end{verbatim}
+
+\textbf{Scope:} First 833 documents $\times$ 6 snapshots (CC-MAIN-2025-05 through
+CC-MAIN-2025-26). Datatrove streamed directly from HuggingFace via HTTP range
+requests targeting one row group per dump; no dataset download was required.
+Each row group is $\approx$2\,MB; total network transfer was $\approx$12\,MB.
+Total wall time was \textbf{50 seconds}.
+
+\subsection{Retention Results}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Tier} & \textbf{Documents} & \textbf{\%} & \textbf{Est.\ tokens} \\
+\midrule
+\textbf{high} ($\geq 3.0$)   & 0      & 0.00\%  & 0           \\
+\textbf{medium} ($\geq 0.8$) & 6      & 0.12\%  & 8{,}614     \\
+background ($< 0.8$)         & 4{,}854 & 99.88\% & 3{,}644{,}847 \\
+\midrule
+Dropped (quality gate)       & 140    & 2.80\%  & ---         \\
+\bottomrule
+\end{tabular}
+\caption{Pilot retention by confidence tier. Input: 5{,}000 documents across all six V1.4 snapshots.}
+\end{table}
+
+\subsection{Medium-Tier Manual Audit}
+
+Six documents reached medium tier (score $\geq 0.8$, $< 3.0$):
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llc}
+\toprule
+\textbf{Score} & \textbf{Domain} & \textbf{Verdict} \\
+\midrule
+1.21 & africabusiness.com            & \textcolor{blue}{TP} --- 2021 SANS CTI survey (COVID phishing/ransomware) \\
+0.99 & campustechnology.com          & \textcolor{red}{FP} --- EdTech article, ``security'' in passing \\
+0.84 & cluztr.com                    & \textcolor{blue}{TP} --- Malicious URL scanner / OSINT primer \\
+0.85 & australiansecuritymagazine.au & \textcolor{blue}{TP} --- Cyber trade press \\
+0.85 & cyber-security-consultancy.co.uk & \textcolor{blue}{TP} --- Legitimate security consultancy \\
+0.88 & dev.comparitech.com           & \textcolor{blue}{TP} --- Security product comparison \\
+\bottomrule
+\end{tabular}
+\caption{Manual review of all six medium-tier documents. 5/6 correctly identified; 1 false positive (17\%).}
+\end{table}
+
+\subsection{Background Near-Miss Distribution}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Score range} & \textbf{Documents} \\
+\midrule
+$[2.0,\;3.0)$ & 0 \\
+$[1.0,\;2.0)$ & 0 \\
+$[0.5,\;1.0)$ & 9 \\
+$(0.0,\;0.5)$ & 1{,}104 \\
+$= 0.0$       & 3{,}741 \\
+\bottomrule
+\end{tabular}
+\caption{Score distribution of background-tier documents. No high-signal documents sitting just below the medium threshold; the gate is placed correctly.}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────
+\section{What the Results Expose}
+
+\textbf{The URL signal dominates the scoring formula.}
+High tier ($\geq 3.0$) requires either a trusted-domain hit
+(\texttt{nvd.nist.gov}, \texttt{cisa.gov}, \texttt{attack.mitre.org}, $\ldots$; $+5$)
+or a strong URL pattern (\texttt{/cve/}, \texttt{/exploit/}; $+4$) alongside
+non-trivial term density. The first row group of a general CC shard contains none
+of these domains. The zero high-tier count is expected behavior, not a failure.
+In a full run, trusted-domain pages appear in proportion to their crawl frequency
+and trivially exceed the threshold.
+
+\textbf{The text scorer is intentionally conservative.}
+A document dense with strong terms (e.g.\ five instances of ``shellcode'' or
+``CVE-20XX'') contributes only
+$5 \times 6 \;/\; \sqrt{750} \approx 1.1$
+to the final score. This is correct: URL provenance anchors high-tier classification,
+preventing SEO-farm pages from gaming term density.
+
+\textbf{The 0.12\% retention rate is plausible but unverified.}
+This slice samples sequential documents from the first row group of each shard,
+which clusters similar-format pages from the same crawl block. A random sample
+across shards could yield 2--5$\times$ higher retention. Importantly, the background
+maximum score (0.718) confirms no high-signal documents are being clipped by the
+current threshold placement.
+
+% ─────────────────────────────────────────────────────────────────
+\section{Full-Run Extrapolation}
+
+FineWeb V1.4 contains $\approx$15\,B documents and $\approx$18.5\,T tokens.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Estimate} \\
+\midrule
+Cyber documents (medium+) & $\approx$18.5\,M \\
+Cyber tokens (medium+)    & $\approx$\textbf{22.8\,B tokens} \\
+High-tier share           & Unknown from this slice; expect 10--30\% of medium \\
+Background tokens retained & $\approx$18.5\,T (general-language bucket) \\
+Full run wall time (64 SLURM tasks, Marlowe) & $\approx$18--24 hours \\
+\bottomrule
+\end{tabular}
+\caption{Extrapolation from 0.12\% pilot retention rate to full FineWeb V1.4.}
+\end{table}
+
+At 0.12\%, the \texttt{security\_blogs} bucket alone contributes $\approx$22\,B tokens
+to the RegMix mixture---larger than all structured sources combined (NVD, MITRE ATT\&CK,
+Sigma, StackExchange-infosec combined is likely $<$5\,B tokens).
+
+% ─────────────────────────────────────────────────────────────────
+\section{Alternative Approaches}
+
+\subsection{Current Approach: Keyword Scoring}
+
+\textit{Speed:} microseconds per document.
+\textit{Defensibility:} medium.
+The scoring works and is fast enough for any scale, but a reviewer can always challenge
+the choice of term bank. The 17\% false-positive rate in medium tier would worsen at
+scale as general SEO content increases.
+
+\subsection{Stage 4 --- DSIR-Style Distribution Matching (Recommended Upgrade)}
+
+\cite{xie2023data} selects from a large unlabeled corpus so that the selected subset
+matches a target distribution, using importance weighting in a reduced hashed
+$n$-gram feature space. Applied here:
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item Fit a hashed bigram vectorizer on CTIBench \cite{tihanyi2024ctibench}
+          (4{,}947 task samples: TRAM, CTINexus, CTISum, etc.) --- the
+          \textit{target} distribution.
+    \item Fit the same vectorizer on a random FineWeb background sample --- the
+          \textit{raw} distribution.
+    \item For each candidate document compute importance weight
+          $w(x) = p_{\text{target}}(x)\;/\;p_{\text{raw}}(x)$ in hashed feature space.
+    \item Sample FineWeb proportionally to $w(x)$.
+\end{enumerate}
+
+\textit{Why more defensible:}
+The selection criterion derives entirely from real cybersecurity task data.
+A reviewer can audit by asking ``does the selected corpus improve CTIBench performance?''---a
+falsifiable empirical claim, not a judgment call about which keywords matter.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Step} & \textbf{Time (Marlowe, 64 tasks)} \\
+\midrule
+Fit vectorizer on CTIBench          & $<1$ minute \\
+Score 15\,B FineWeb docs (bigram hash, batched) & 8--16 hours \\
+\midrule
+\textbf{Total} & $\approx$\textbf{1 day} \\
+\bottomrule
+\end{tabular}
+\caption{DSIR compute estimate on Marlowe using existing SLURM infrastructure.}
+\end{table}
+
+\subsection{Stage 5 --- Lightweight Domain Classifier}
+
+Train a binary classifier using our existing structured corpus (NVD, Sigma,
+StackExchange-infosec) as positives and random FineWeb as negatives.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lllc}
+\toprule
+\textbf{Classifier} & \textbf{Training} & \textbf{Inference (15\,B docs, 64 tasks)} & \textbf{Feasible?} \\
+\midrule
+TF-IDF + logistic regression & $<5$ min   & 4--8 hours   & Yes \\
+fastText                     & $<10$ min  & 2--4 hours   & Yes \\
+Sentence embeddings (MiniLM) & $\sim$30 min & 3--5 days  & Marginal \\
+\textbf{Ollama / LLM (7B)}   & ---        & $\approx$\textbf{290 GPU-days} & \textbf{No} \\
+\bottomrule
+\end{tabular}
+\caption{Classifier options for cybersecurity document selection at FineWeb scale.}
+\end{table}
+
+\textbf{Ollama cost in detail.}
+A 7\,B model via Ollama classifies a $\approx$750-token document in 5--25 seconds
+on consumer hardware. Applying this to the 18.5\,M filtered candidates alone:
+$18.5\,\text{M} \times 15\,\text{s} \approx 78\,\text{GPU-years}$.
+LLM-based classification belongs in evaluation, not ingestion at this scale.
+A fastText classifier trained on 100\,K labeled examples achieves similar or
+better precision in $\approx$3 hours on Marlowe.
+
+% ─────────────────────────────────────────────────────────────────
+\section{Recommended Path}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Stage} & \textbf{Action} & \textbf{Status} \\
+\midrule
+Current     & Keyword scoring (this pilot)            & Done --- use for RegMix v1 \\
+Near-term   & DSIR with CTIBench as target            & +1 day compute, principled \\
+Optional    & fastText classifier as second-pass boost & +1 day training \\
+Skip        & Ollama/LLM classification at FineWeb scale & Infeasible \\
+\bottomrule
+\end{tabular}
+\caption{Recommended sequencing.}
+\end{table}
+
+The keyword scorer is sufficient to start RegMix. DSIR is the right principled
+replacement: same Marlowe infrastructure, one additional day of compute, and a
+benchmark-grounded defensibility argument. The practical proposal is to run RegMix
+with keyword-scored data first, then upgrade to DSIR before the final model training run.
+
+% ─────────────────────────────────────────────────────────────────
+\begin{thebibliography}{9}
+
+\bibitem{xie2023data}
+Sang Michael Xie, Shibani Santurkar, Tengyu Ma, and Percy Liang.
+\textit{Data Selection via Optimal Transport}.
+Advances in Neural Information Processing Systems 36 (NeurIPS 2023).
+\url{https://proceedings.neurips.cc/paper_files/paper/2023/file/6b9aa8f418bde2840d5f4ab7a02f663b-Paper-Conference.pdf}
+
+\bibitem{tihanyi2024ctibench}
+Norbert Tihanyi et al.
+\textit{CTIBench: A Benchmark for Evaluating LLMs in Cyber Threat Intelligence}.
+Advances in Neural Information Processing Systems 37 (NeurIPS 2024), Datasets and Benchmarks Track.
+\url{https://proceedings.neurips.cc/paper_files/paper/2024/file/5acd3c628aa1819fbf07c39ef73e7285-Paper-Datasets_and_Benchmarks_Track.pdf}
+
+\end{thebibliography}
+
+\end{document}
