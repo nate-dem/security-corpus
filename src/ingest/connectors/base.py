@@ -93,6 +93,12 @@ class AcademicPaperData(NormalizedData):
     journal_ref: str | None = None
 
 
+class WebDocumentData(NormalizedData):
+    """General web documents selected from broad web corpora."""
+    dsir_score: float | None = None
+    language: str | None = None
+
+
 class Connector(Protocol):
     source_id: str
 

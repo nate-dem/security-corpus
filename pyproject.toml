@@ -21,6 +21,31 @@ dependencies = [
 dev = [
     "pytest",
 ]
+mcp = [
+    "mcp",
+]
+web = [
+    "fastapi",
+    "uvicorn[standard]",
+    "openai>=1.0.0",
+]
+classify = [
+    "joblib",
+    "numpy",
+    "pandas",
+    "pyyaml",
+    "scikit-learn",
+]
+openai = [
+    "openai>=1.0.0",
+]
+fineweb = [
+    "datasets",
+]
+qwen = [
+    "transformers",
+    "vllm",
+]
 regmix = [
     "pyyaml",
     "numpy",
@@ -44,6 +69,12 @@ regmix-train = [
 
 [project.scripts]
 security-corpus-ingest = "ingest.commands:main"
+security-scope = "securityclip.cli:main"
+security-scope-mcp = "securityclip.mcp_server:main"
+security-scope-web = "securityclip.web.app:main"
+securityclip = "securityclip.cli:main"
+securityclip-mcp = "securityclip.mcp_server:main"
+securityclip-web = "securityclip.web.app:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]

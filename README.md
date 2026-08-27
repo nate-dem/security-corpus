@@ -52,6 +52,53 @@ security-corpus-ingest nvd
 
 The command implementation lives in `src/ingest/commands.py`; `scripts/ingest.py` is only a thin wrapper so direct repo usage and installed CLI usage share the same paths and behavior.
 
+Audit normalized output before making downstream filtering decisions:
+
+```bash
+python scripts/audit_normalized_corpus.py
+python scripts/audit_normalized_corpus.py --output-dir reports/normalized_audit
+```
+
+The audit writes a Markdown report and CSV tables covering per-source token counts, length distributions, missing required fields, exact duplicates, Q&A quality signals, vulnerability fields, CloudTrail session outliers, and license totals.
+
+## Security Scope
+
+Security Scope is the research interface over the final cleaned corpus. It provides a local web UI plus shell-native retrieval commands: `search`, `ls`, `cat`, `head`, `grep`, result handles, and an optional MCP wrapper for agent retrieval.
+
+The historical package and command names remain available as compatibility aliases. You can use either `security-scope` or `securityclip` for the CLI.
+
+Set the index once:
+
+```bash
+export SECURITYCLIP_INDEX=/scratch/m000091-pm05/natedem/securityclip-index/v1
+```
+
+Then use it without repeating `--index`:
+
+```bash
+security-scope ls /
+security-scope search "CVE-2021-44228" -n 10
+security-scope grep -i "alphamissense" /papers/ --limit 5
+```
+
+See [docs/securityscope.md](docs/securityscope.md) for the full usage guide.
+
+The optional web UI runs on top of the same index:
+
+```bash
+python -m pip install -e ".[web]"
+cd web && npm install && npm run build && cd ..
+security-scope-web --host 127.0.0.1 --port 8765
+```
+
+Build the first downstream training-clean export:
+
+```bash
+python scripts/build_training_clean_v1.py
+```
+
+This writes filtered Parquet to `data/training-clean-v1/normalized/` and summary reports to `reports/training-clean-v1/`. The v1 policy drops invalid/empty records, Q&A records with no answers/comments plus non-positive score, and exact duplicate content.
+
 Run tests:
 
 ```bash

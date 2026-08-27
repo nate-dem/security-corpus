@@ -208,6 +208,10 @@ __marimo__/
 
 # Data sources
 data/
+.tmp/
+
+# Trained classifier artifacts
+models/
 
 # Inspection scripts and reports
 scripts/inspect_*.py
@@ -217,6 +221,13 @@ reports/
 # Claude
 .claude/
 
-docs/
+docs/*
+!docs/
+!docs/filtering.md
+!docs/securityclip.md
 
 AGENTS.md
+
+# Securityclip web frontend
+web/node_modules/
+web/dist/
