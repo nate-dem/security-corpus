@@ -4,8 +4,6 @@ import gzip
 import json
 from pathlib import Path
 
-import pytest
-
 from ingest.connectors.logs.cloudtrail import (
     CloudTrailSessionConnector,
     _extract_identity_short,
@@ -248,7 +246,7 @@ class TestNormalize:
         connector = CloudTrailSessionConnector()
         record = self._make_session_record()
         result = connector.normalize(record)
-        assert "flaws.cloud" in result.license
+        assert result.license == "NOASSERTION"
 
 
 # --- Content assembly tests ---
@@ -272,7 +270,7 @@ class TestContentAssembly:
             events=events,
         )
         # Each event becomes one JSON line after the header
-        json_lines = [l for l in content.split("\n") if l.startswith("{")]
+        json_lines = [line for line in content.split("\n") if line.startswith("{")]
         assert len(json_lines) == 50
 
 

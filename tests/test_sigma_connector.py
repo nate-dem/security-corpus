@@ -43,7 +43,6 @@ def test_normalize_maps_description_title_date():
 def test_iter_records_skips_deprecated():
     connector = SigmaConnector()
     records = list(connector.iter_records(FIXTURES / "sample_tree"))
-    ids = [str(r["id"]) for r in records]
     # The deprecated fixture is not under sample_tree, but let's verify
     # no deprecated records come through by checking status
     for r in records:
@@ -82,7 +81,6 @@ def test_normalize_populates_detection_rule_fields():
     assert result.rule_source is not None  # YAML text of the rule
     assert result.content_hash is not None
     assert result.content_length is not None
-    assert result.license is not None
+    assert result.license == "DRL-1.1"
     # raw is not set for Sigma (dropped per schema rules)
     assert result.raw is None
-

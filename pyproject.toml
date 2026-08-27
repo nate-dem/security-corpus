@@ -1,45 +1,34 @@
 [project]
 name = "security-corpus"
-version = "0.0.1"
+version = "0.1.0"
+description = "Reproducible ingestion and filtering for a cybersecurity mid-training corpus"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "duckdb",
-    "ijson",
-    "lxml",
-    "pydantic",
-    "pyarrow",
-    "beautifulsoup4",
-    "markdownify",
-    "tiktoken",
-    "zstandard",
-    "sickle>=0.7.0",
-    "xmltodict",
-    "pypdf",
+    "duckdb==1.5.2",
+    "ijson==3.5.0",
+    "lxml==6.1.0",
+    "markdownify==1.2.2",
+    "pydantic==2.13.3",
+    "pyarrow==23.0.1",
+    "pypdf==6.11.0",
+    "PyYAML==6.0.3",
+    "requests==2.33.1",
+    "sickle==0.7.0",
+    "tiktoken==0.12.0",
+    "xmltodict==1.0.4",
+    "zstandard==0.25.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest",
+    "pytest==9.0.3",
+    "ruff==0.15.12",
 ]
-regmix = [
-    "pyyaml",
-    "numpy",
-    "scipy",
-    "scikit-learn",
-    "lightgbm",
-    "pandas",
-]
-regmix-train = [
-    "pyyaml",
-    "numpy",
-    "scipy",
-    "scikit-learn",
-    "lightgbm",
-    "pandas",
-    "torch",
-    "transformers",
-    "accelerate",
-    "datasets",
+qwen = [
+    "huggingface-hub==0.36.0",
+    "transformers>=4.51,<5",
+    "vllm==0.13.0",
 ]
 
 [project.scripts]
@@ -54,6 +43,9 @@ markers = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+ingest = ["assets/*.tiktoken", "assets/*.md"]
 
 [build-system]
 requires = ["setuptools"]

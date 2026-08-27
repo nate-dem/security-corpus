@@ -8,6 +8,8 @@ from ingest.connectors.stackexchange.common import (
     extract_closure,
     html_to_markdown,
     parse_tag_string,
+    stackexchange_content_license,
+    stackexchange_license_expression,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "stackexchange-infosec"
@@ -84,6 +86,23 @@ def test_parse_tag_string_pipe_delimited():
 def test_parse_tag_string_empty():
     assert parse_tag_string("") == []
     assert parse_tag_string(None) == []
+
+
+def test_stackexchange_content_license_prefers_post_metadata():
+    assert (
+        stackexchange_content_license("CC BY-SA 3.0", "2024-01-01")
+        == "CC-BY-SA-3.0"
+    )
+
+
+def test_stackexchange_license_expression_tracks_mixed_thread():
+    contributions = [
+        {"content_license": "CC BY-SA 2.5"},
+        {"content_license": "CC BY-SA 4.0"},
+    ]
+    assert stackexchange_license_expression(contributions) == (
+        "CC-BY-SA-2.5 AND CC-BY-SA-4.0"
+    )
 
 
 def test_assemble_qa_content_orders_answers_by_score():
@@ -164,7 +183,7 @@ def test_normalize_populates_base_fields():
     assert result.content_hash is not None
     assert result.content_length is not None
     assert result.content_length > 0
-    assert result.license is not None
+    assert result.license == "CC-BY-SA-3.0"
     assert result.published_at is not None
     # raw is None for Q&A sources
     assert result.raw is None

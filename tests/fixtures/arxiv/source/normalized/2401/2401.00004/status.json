@@ -2,6 +2,7 @@
   "aid": "2401.00004",
   "timestamp": "2024-01-15T10:00:00",
   "completed": false,
+  "normalizer_version": "latex-v2",
   "tex_merged": false,
   "errors": ["No main file found"]
 }

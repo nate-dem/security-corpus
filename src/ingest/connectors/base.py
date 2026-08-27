@@ -29,7 +29,7 @@ class NormalizedData(BaseModel):
 
 
 class VulnerabilityData(NormalizedData):
-    """NVD CVEs, CISA KEV, GitHub Advisory DB."""
+    """NVD CVEs and CISA KEV entries."""
     cve_id: str | None = None
     severity: str | None = None
     cvss_score: float | None = None
@@ -58,15 +58,6 @@ class QAThreadData(NormalizedData):
     has_accepted_answer: bool | None = None
     closed: bool | None = None
     tags: list[str] = Field(default_factory=list)
-
-
-class TranscriptData(NormalizedData):
-    """YouTube transcripts and similar spoken-word video corpora."""
-    video_id: str | None = None
-    channel: str | None = None
-    channel_id: str | None = None
-    language: str | None = None          # transcription_language (BCP-47 code)
-    word_count: int | None = None
 
 
 class CloudTrailSessionData(NormalizedData):

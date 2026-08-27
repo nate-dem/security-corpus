@@ -7,7 +7,7 @@ import yaml
 
 from ingest.connectors.base import DetectionRuleData
 from ingest.readers import read
-from ingest.utils import compute_content_hash, compute_token_count, DETECTION_RULE_LICENSE_LGPL_2_1
+from ingest.utils import DETECTION_RULE_LICENSE, compute_content_hash, compute_token_count
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ class SigmaConnector:
             content_hash=compute_content_hash(content),
             title=record.get("title"),
             ingested_at=datetime.now(timezone.utc),
-            license=DETECTION_RULE_LICENSE_LGPL_2_1,
+            license=DETECTION_RULE_LICENSE,
             published_at=published_at,
             source_url=f"https://github.com/SigmaHQ/sigma/blob/master/{record.get('relative_path', '')}",
             # detection rule fields

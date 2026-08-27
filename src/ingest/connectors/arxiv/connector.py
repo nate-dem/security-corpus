@@ -6,6 +6,7 @@ In-memory two-pass approach:
 
 Scope filters:
   - Skip papers with incomplete normalization (status.json completed=false)
+  - Skip papers not produced by a supported, versioned normalizer
   - Skip papers without metadata (orphan normalizations)
   - Skip papers without normalized content (metadata-only)
 
@@ -31,6 +32,8 @@ from ingest.connectors.arxiv.metadata import (
 from ingest.utils import compute_content_hash, compute_token_count
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_NORMALIZER_VERSIONS = {"latex-v2", "pdf-text-v1"}
 
 
 def _paper_dir_to_arxiv_id(paper_dir_name: str) -> str:
@@ -89,6 +92,7 @@ class ArxivConnector:
 
         emitted = 0
         skipped_incomplete = 0
+        skipped_legacy_normalizer = 0
         skipped_no_metadata = 0
         skipped_empty = 0
 
@@ -113,6 +117,9 @@ class ArxivConnector:
                             continue
                         if status.get("auto_ignore", False):
                             skipped_incomplete += 1
+                            continue
+                        if status.get("normalizer_version") not in SUPPORTED_NORMALIZER_VERSIONS:
+                            skipped_legacy_normalizer += 1
                             continue
                     except (json.JSONDecodeError, OSError):
                         skipped_incomplete += 1
@@ -164,8 +171,13 @@ class ArxivConnector:
 
         logger.info(
             "iter_records: emitted=%d, skipped_incomplete=%d, "
-            "skipped_no_metadata=%d, skipped_empty=%d",
-            emitted, skipped_incomplete, skipped_no_metadata, skipped_empty,
+            "skipped_legacy_normalizer=%d, skipped_no_metadata=%d, "
+            "skipped_empty=%d",
+            emitted,
+            skipped_incomplete,
+            skipped_legacy_normalizer,
+            skipped_no_metadata,
+            skipped_empty,
         )
 
     def normalize(self, record: dict) -> AcademicPaperData:

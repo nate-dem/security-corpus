@@ -25,11 +25,10 @@ import gzip
 import json
 import logging
 import re
-import shutil
 import tarfile
 import tempfile
 from concurrent.futures import ProcessPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 logging.basicConfig(
@@ -39,7 +38,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-SUPPORTED_SUFFIXES = (".tar.gz", ".gz", ".pdf")
+SUPPORTED_SUFFIXES = (".tar.gz", ".tar", ".gz", ".pdf")
+LATEX_NORMALIZER_VERSION = "latex-v2"
+PDF_NORMALIZER_VERSION = "pdf-text-v1"
+MAX_ARCHIVE_MEMBERS = 20_000
+MAX_ARCHIVE_UNPACKED_BYTES = 2 * 1024 * 1024 * 1024
 PDF_WHITESPACE_RE = re.compile(r"[ \t]+")
 PDF_BLANK_LINES_RE = re.compile(r"(\n\s*){3,}")
 
@@ -70,28 +73,60 @@ def parse_args():
 
 
 def _extract_source(archive_path: Path, extract_dir: Path) -> bool:
-    """Extract a .tar.gz, .gz, or .tar source archive to extract_dir."""
+    """Extract one source archive with traversal and expansion protections."""
     extract_dir.mkdir(parents=True, exist_ok=True)
 
     try:
         # Try as tar.gz / tar first
         if tarfile.is_tarfile(str(archive_path)):
             with tarfile.open(archive_path) as tf:
-                tf.extractall(path=extract_dir)
+                members = tf.getmembers()
+                if len(members) > MAX_ARCHIVE_MEMBERS:
+                    raise ValueError(
+                        f"Archive has {len(members)} members; limit is "
+                        f"{MAX_ARCHIVE_MEMBERS}"
+                    )
+                unpacked_bytes = sum(member.size for member in members if member.isfile())
+                if unpacked_bytes > MAX_ARCHIVE_UNPACKED_BYTES:
+                    raise ValueError(
+                        f"Archive expands to {unpacked_bytes} bytes; limit is "
+                        f"{MAX_ARCHIVE_UNPACKED_BYTES}"
+                    )
+                root = extract_dir.resolve()
+                for member in members:
+                    if member.issym() or member.islnk() or member.isdev():
+                        raise ValueError(
+                            f"Archive contains unsupported link/device: {member.name}"
+                        )
+                    destination = (root / member.name).resolve()
+                    try:
+                        destination.relative_to(root)
+                    except ValueError as error:
+                        raise ValueError(
+                            f"Archive member escapes extraction root: {member.name}"
+                        ) from error
+                for member in members:
+                    tf.extract(member, path=root, set_attrs=False)
             return True
-    except (tarfile.TarError, EOFError, OSError):
+    except (tarfile.TarError, EOFError, OSError, ValueError) as error:
+        logger.warning("Tar extraction failed for %s: %s", archive_path, error)
         pass
 
     try:
         # Try as plain gzip (single file)
         with gzip.open(archive_path, "rb") as gz:
-            content = gz.read()
+            content = gz.read(MAX_ARCHIVE_UNPACKED_BYTES + 1)
+        if len(content) > MAX_ARCHIVE_UNPACKED_BYTES:
+            raise ValueError(
+                f"Gzip expands beyond {MAX_ARCHIVE_UNPACKED_BYTES} bytes"
+            )
         # Write as a .tex file
         arxiv_id = archive_path.stem.replace(".tar", "")
         out_file = extract_dir / f"{arxiv_id}.tex"
         out_file.write_bytes(content)
         return True
-    except (gzip.BadGzipFile, EOFError, OSError):
+    except (gzip.BadGzipFile, EOFError, OSError, ValueError) as error:
+        logger.warning("Gzip extraction failed for %s: %s", archive_path, error)
         pass
 
     return False
@@ -151,13 +186,23 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
     tgt = output_dir / yymm / arxiv_id
     tgt.mkdir(parents=True, exist_ok=True)
 
-    # Already done?
+    expected_version = (
+        PDF_NORMALIZER_VERSION
+        if archive_path.name.endswith(".pdf")
+        else LATEX_NORMALIZER_VERSION
+    )
+
+    # Skip only output produced by the current normalizer. Completed legacy
+    # status files are deliberately reprocessed during recovery.
     status_file = tgt / "status.json"
     if status_file.exists():
         try:
             with open(status_file, "r", encoding="utf-8") as f:
                 status = json.load(f)
-            if status.get("completed", False):
+            if (
+                status.get("completed", False)
+                and status.get("normalizer_version") == expected_version
+            ):
                 return (arxiv_id, 0, 1, 0)
         except Exception:
             pass
@@ -165,8 +210,9 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
     if archive_path.name.endswith(".pdf"):
         status = {
             "aid": arxiv_id,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "completed": False,
+            "normalizer_version": PDF_NORMALIZER_VERSION,
             "source_format": "pdf",
             "pdf_extracted": False,
             "errors": [],
@@ -189,8 +235,9 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
 
     status = {
         "aid": arxiv_id,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "completed": False,
+        "normalizer_version": LATEX_NORMALIZER_VERSION,
         "source_format": "latex",
         "tex_merged": False,
         "errors": [],
@@ -206,14 +253,16 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
         if check_auto_ignore(extract_dir, arxiv_id):
             write_status_json(tgt, {
                 "aid": arxiv_id,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "completed": True,
                 "auto_ignore": True,
+                "normalizer_version": LATEX_NORMALIZER_VERSION,
             })
             return (arxiv_id, 0, 1, 0)
 
         try:
-            merge_project(extract_dir, tgt / "main.tex")
+            diagnostics = merge_project(extract_dir, tgt / "main.tex")
+            status["include_diagnostics"] = diagnostics.to_dict()
             status["tex_merged"] = True
             status["completed"] = True
             write_status_json(tgt, status)

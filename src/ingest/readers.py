@@ -7,6 +7,7 @@ from typing import Any, Iterator
 import ijson
 import yaml
 from lxml import etree
+import zstandard as zstd
 
 
 def read(path: Path, json_path: str | None = None, xml_tag: str | None = None) -> Iterator[Any]:
@@ -56,8 +57,6 @@ def _read_yaml(path: Path) -> Iterator[Any]:
 
 def _read_jsonl_zst(path: Path) -> Iterator[Any]:
     """Stream JSON objects from a zstandard-compressed JSONL file."""
-    import zstandard as zstd
-
     dctx = zstd.ZstdDecompressor()
     with open(path, "rb") as fh:
         with dctx.stream_reader(fh) as reader:
@@ -73,7 +72,7 @@ def _read_xml(path: Path, xml_tag: str | None) -> Iterator[Any]:
         raise ValueError("xml_tag is required for XML files")
 
     context = etree.iterparse(str(path), events=("end",), tag=xml_tag)
-    for _event, elem in context:
+    for _, elem in context:
         yield elem
         # free memory: clear this element and drop parent references
         elem.clear()

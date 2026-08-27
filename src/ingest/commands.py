@@ -66,27 +66,6 @@ SIMPLE_SOURCES = (
         label="sigma",
     ),
     SimpleSourcePlan(
-        source="bron",
-        default_input=Path("data/bron/raw"),
-        default_output=Path("data/bron/normalized"),
-        label="bron",
-        missing_hint="Run python scripts/export/bron.py first.",
-    ),
-    SimpleSourcePlan(
-        source="github-advisory",
-        default_input=Path("data/github-advisory/raw"),
-        default_output=Path("data/github-advisory/normalized"),
-        label="github-advisory",
-        missing_hint="Run python scripts/export/github_advisory.py first.",
-    ),
-    SimpleSourcePlan(
-        source="youtube-transcripts",
-        default_input=Path("data/youtube-transcripts/raw"),
-        default_output=Path("data/youtube-transcripts/normalized"),
-        label="youtube-transcripts",
-        missing_hint="Run python scripts/export/youtube_transcripts.py first.",
-    ),
-    SimpleSourcePlan(
         source="arxiv",
         default_input=Path("data/arxiv/raw"),
         default_output=Path("data/arxiv/normalized"),
@@ -406,4 +385,3 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

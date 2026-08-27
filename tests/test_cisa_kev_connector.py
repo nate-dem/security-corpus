@@ -45,6 +45,6 @@ def test_normalize_populates_new_fields():
     assert result.content_hash is not None
     assert result.content_length is not None
     assert result.content_length > 0
-    assert result.license is not None
+    assert result.license == "CC0-1.0"
     assert result.cve_id == "CVE-2021-27104"
     assert result.exploited_in_wild is True

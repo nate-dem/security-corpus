@@ -1,3 +1,5 @@
+import io
+import tarfile
 from datetime import timezone
 from pathlib import Path
 
@@ -11,12 +13,13 @@ from ingest.connectors.arxiv.metadata import (
     _parse_oai_record,
     build_metadata_index,
 )
+from ingest.connectors.arxiv.latex_processing import clean_latex, merge_project
+from scripts.arxiv.normalize_sources import _extract_source
 from ingest.utils import (
     ARXIV_PERPETUAL_NON_EXCLUSIVE,
     CC_BY_4_0,
     CC_BY_SA_4_0,
     CC_BY_NC_SA_4_0,
-    PUBLIC_DOMAIN,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "arxiv"
@@ -82,7 +85,7 @@ def test_map_license_known_urls():
     assert _map_license("http://creativecommons.org/licenses/by/4.0/") == CC_BY_4_0
     assert _map_license("http://creativecommons.org/licenses/by-sa/4.0/") == CC_BY_SA_4_0
     assert _map_license("http://creativecommons.org/licenses/by-nc-sa/4.0/") == CC_BY_NC_SA_4_0
-    assert _map_license("http://creativecommons.org/publicdomain/zero/1.0/") == PUBLIC_DOMAIN
+    assert _map_license("http://creativecommons.org/publicdomain/zero/1.0/") == "CC0-1.0"
     assert _map_license("http://arxiv.org/licenses/nonexclusive-distrib/1.0/") == ARXIV_PERPETUAL_NON_EXCLUSIVE
 
 
@@ -338,6 +341,7 @@ def test_iter_records_reads_pdf_text(tmp_path):
     )
     paper_dir.joinpath("status.json").write_text(
         '{"aid": "2401.00006", "completed": true, '
+        '"normalizer_version": "pdf-text-v1", '
         '"source_format": "pdf", "pdf_extracted": true, "errors": []}',
         encoding="utf-8",
     )
@@ -355,6 +359,29 @@ def test_iter_records_reads_pdf_text(tmp_path):
 
     normalized = connector.normalize(records[0])
     assert normalized.source_format == "pdf"
+
+
+def test_iter_records_skips_unversioned_legacy_output(tmp_path):
+    raw_dir = tmp_path / "raw"
+    metadata_dir = raw_dir / "metadata" / "cs_CR"
+    paper_dir = raw_dir / "source" / "normalized" / "2401" / "2401.00007"
+    metadata_dir.mkdir(parents=True)
+    paper_dir.mkdir(parents=True)
+    metadata_dir.joinpath("2401.jsonl").write_text(
+        '{"record": {"header": {"identifier": "oai:arXiv.org:2401.00007", '
+        '"datestamp": "2024-01-18"}, "metadata": {"arXiv": {'
+        '"id": "2401.00007", "title": "Legacy Paper", '
+        '"authors": {"author": {"keyname": "Reader"}}, '
+        '"abstract": "Legacy abstract.", "categories": "cs.CR"}}}}\n',
+        encoding="utf-8",
+    )
+    paper_dir.joinpath("status.json").write_text(
+        '{"aid": "2401.00007", "completed": true}',
+        encoding="utf-8",
+    )
+    paper_dir.joinpath("main.tex").write_text("legacy", encoding="utf-8")
+
+    assert list(ArxivConnector().iter_records(raw_dir)) == []
 
 
 def test_normalize_populates_base_fields():
@@ -414,3 +441,88 @@ def test_normalize_citation_paper():
     assert result.primary_category == "cs.LG"
     assert result.categories == ["cs.LG", "cs.AI"]
     assert result.authors == ["Li Zhang", "Min Park"]
+
+
+def test_merge_project_resolves_nested_inputs_and_imports(tmp_path):
+    project = tmp_path / "project"
+    (project / "sections" / "nested").mkdir(parents=True)
+    (project / "main.tex").write_text(
+        "\\documentclass{article}\n"
+        "\\begin{document}\n"
+        "\\input{sections/intro}\n"
+        "\\import{sections/}{methods}\n"
+        "\\end{document}\n",
+        encoding="utf-8",
+    )
+    (project / "sections" / "intro.tex").write_text(
+        "Introduction.\\input{nested/details}\n",
+        encoding="utf-8",
+    )
+    (project / "sections" / "nested" / "details.tex").write_text(
+        "Nested details.\n",
+        encoding="utf-8",
+    )
+    (project / "sections" / "methods.tex").write_text(
+        "Methods.\n",
+        encoding="utf-8",
+    )
+
+    output = tmp_path / "main.tex"
+    diagnostics = merge_project(project, output)
+
+    content = output.read_text(encoding="utf-8")
+    assert "Introduction." in content
+    assert "Nested details." in content
+    assert "Methods." in content
+    assert diagnostics.includes_found == 3
+    assert diagnostics.includes_inlined == 3
+    assert diagnostics.missing_includes == []
+
+
+def test_merge_project_records_outside_and_circular_includes(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "main.tex").write_text(
+        "\\documentclass{article}\n"
+        "\\begin{document}\n"
+        "\\input{loop}\n"
+        "\\input{../secret}\n"
+        "\\end{document}\n",
+        encoding="utf-8",
+    )
+    (project / "loop.tex").write_text("\\input{main}\n", encoding="utf-8")
+    (tmp_path / "secret.tex").write_text("must not be inlined", encoding="utf-8")
+
+    output = tmp_path / "assembled.tex"
+    diagnostics = merge_project(project, output)
+
+    assert "must not be inlined" not in output.read_text(encoding="utf-8")
+    assert len(diagnostics.circular_includes) == 1
+    assert len(diagnostics.outside_project_includes) == 1
+
+
+def test_clean_latex_preserves_percent_in_code_environments():
+    source = (
+        "ordinary % remove this\n"
+        "escaped \\% remains\n"
+        "\\begin{verbatim}\n"
+        "value % stays\n"
+        "\\end{verbatim}\n"
+    )
+    cleaned = clean_latex(source)
+    assert "remove this" not in cleaned
+    assert r"escaped \% remains" in cleaned
+    assert "value % stays" in cleaned
+
+
+def test_extract_source_rejects_tar_path_traversal(tmp_path):
+    archive = tmp_path / "paper.tar"
+    with tarfile.open(archive, "w") as handle:
+        payload = b"outside"
+        member = tarfile.TarInfo("../escaped.tex")
+        member.size = len(payload)
+        handle.addfile(member, io.BytesIO(payload))
+
+    extraction_root = tmp_path / "extracted"
+    assert _extract_source(archive, extraction_root) is False
+    assert not (tmp_path / "escaped.tex").exists()

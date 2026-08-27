@@ -11,8 +11,6 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterator
-
 from ingest.utils import ARXIV_LICENSE_MAP, ARXIV_PERPETUAL_NON_EXCLUSIVE
 
 logger = logging.getLogger(__name__)

@@ -10,7 +10,7 @@ if str(SRC) in sys.path:
     sys.path.remove(str(SRC))
 sys.path.insert(0, str(SRC))
 
-from ingest.commands import main
+from ingest.commands import main  # noqa: E402
 
 
 if __name__ == "__main__":
