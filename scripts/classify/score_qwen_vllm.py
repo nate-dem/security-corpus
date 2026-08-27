@@ -9,9 +9,15 @@ manually by the researcher.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 from fnmatch import fnmatchcase
+from hashlib import sha1
+from importlib.metadata import PackageNotFoundError, version
 import json
+import os
 from pathlib import Path
+import platform
+import re
 import sys
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -39,7 +45,8 @@ from classify.qwen import (  # noqa: E402
 from classify.sidecar import qwen_sidecar_schema, write_sidecar_rows  # noqa: E402
 
 
-DEFAULT_MODEL = "Qwen/Qwen3-4B"
+DEFAULT_MODEL = "Qwen/Qwen3-8B"
+IMMUTABLE_REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -47,10 +54,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     task = coerce_task(args.task)
     prompt_version = args.prompt_version or QWEN_PROMPT_VERSIONS[task]
 
-    candidate_keys = _load_candidate_keys(
-        args.candidate_sidecar,
-        args.candidate_keep_column,
-    )
     source_ids, source_like = _resolve_source_filters(args)
     existing_keys = _load_existing_output_keys(args.output_dir) if args.output_dir else set()
 
@@ -59,7 +62,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             args,
             task,
             prompt_version,
-            candidate_keys,
             existing_keys,
             source_ids,
             source_like,
@@ -74,12 +76,14 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.output_dir is None:
         raise ValueError("--output-dir is required for real Qwen inference")
+    if not args.model_revision:
+        raise ValueError("--model-revision is required for reproducible inference")
+    _validate_model_revision(args.model_revision)
 
     _run_vllm_scoring(
         args=args,
         task=task,
         prompt_version=prompt_version,
-        candidate_keys=candidate_keys,
         existing_keys=existing_keys,
         source_ids=source_ids,
         source_like=source_like,
@@ -98,33 +102,21 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--output-dir", type=Path, default=None, help="Shard output/cache directory.")
     parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument(
+        "--model-revision",
+        help="Pinned Hugging Face model commit required for real inference.",
+    )
     parser.add_argument("--prompt-version", default=None)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--max-records", type=int, default=None)
     parser.add_argument("--max-content-chars", type=int, default=24_000)
     parser.add_argument("--max-tokens", type=int, default=96)
     parser.add_argument("--max-model-len", type=int, default=32_768)
+    parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--dtype", default="bfloat16")
     parser.add_argument("--tensor-parallel-size", type=int, default=1)
     parser.add_argument("--shard-id", default="0")
     parser.add_argument("--num-shards", type=int, default=1)
-    parser.add_argument(
-        "--candidate-sidecar",
-        type=Path,
-        default=None,
-        help="Optional sidecar whose keys define records eligible for scoring.",
-    )
-    parser.add_argument(
-        "--candidate-keep-column",
-        default=None,
-        help="Optional boolean column in --candidate-sidecar; only true rows are loaded.",
-    )
-    parser.add_argument(
-        "--parse-failure-should-keep",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Fallback should_keep value for parse failures. Defaults to keep-for-review.",
-    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--source-id",
@@ -157,7 +149,6 @@ def _collect_dry_run_prompts(
     args: argparse.Namespace,
     task: QwenTask,
     prompt_version: str,
-    candidate_keys: set[tuple[str, str, str]] | None,
     existing_keys: set[tuple[str, str, str]],
     source_ids: set[str],
     source_like: list[str],
@@ -166,7 +157,6 @@ def _collect_dry_run_prompts(
     for row in _iter_input_rows(
         args,
         task,
-        candidate_keys,
         existing_keys,
         source_ids,
         source_like,
@@ -192,7 +182,6 @@ def _run_vllm_scoring(
     args: argparse.Namespace,
     task: QwenTask,
     prompt_version: str,
-    candidate_keys: set[tuple[str, str, str]] | None,
     existing_keys: set[tuple[str, str, str]],
     source_ids: set[str],
     source_like: list[str],
@@ -201,15 +190,25 @@ def _run_vllm_scoring(
     from vllm import LLM, SamplingParams
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    _write_run_config(args, task, prompt_version)
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.model,
+        revision=args.model_revision,
+        trust_remote_code=False,
+    )
     llm = LLM(
         model=args.model,
+        revision=args.model_revision,
         dtype=args.dtype,
         max_model_len=args.max_model_len,
         enable_prefix_caching=True,
         tensor_parallel_size=args.tensor_parallel_size,
     )
-    sampling_params = SamplingParams(temperature=0.0, max_tokens=args.max_tokens)
+    sampling_params = SamplingParams(
+        temperature=0.0,
+        max_tokens=args.max_tokens,
+        seed=args.seed,
+    )
 
     schema = qwen_sidecar_schema(qwen_schema_extra_fields(task))
     batch_rows: list[dict[str, Any]] = []
@@ -220,7 +219,6 @@ def _run_vllm_scoring(
     for row in _iter_input_rows(
         args,
         task,
-        candidate_keys,
         existing_keys,
         source_ids,
         source_like,
@@ -244,11 +242,11 @@ def _run_vllm_scoring(
                 output_dir=args.output_dir,
                 task=task,
                 model=args.model,
+                model_revision=args.model_revision,
                 prompt_version=prompt_version,
                 shard_id=args.shard_id,
                 part_index=part_index,
                 scored=scored,
-                parse_failure_should_keep=args.parse_failure_should_keep,
             )
             batch_rows = []
             batch_prompts = []
@@ -265,11 +263,11 @@ def _run_vllm_scoring(
             output_dir=args.output_dir,
             task=task,
             model=args.model,
+            model_revision=args.model_revision,
             prompt_version=prompt_version,
             shard_id=args.shard_id,
             part_index=part_index,
             scored=scored,
-            parse_failure_should_keep=args.parse_failure_should_keep,
         )
 
     print(f"Scored {scored} records into {args.output_dir}")
@@ -285,26 +283,28 @@ def _score_and_write_batch(
     output_dir: Path,
     task: QwenTask,
     model: str,
+    model_revision: str,
     prompt_version: str,
     shard_id: str,
     part_index: int,
     scored: int,
-    parse_failure_should_keep: bool | None,
 ) -> tuple[int, int]:
     outputs = llm.generate(prompts, sampling_params)
+    if len(outputs) != len(rows):
+        raise RuntimeError(
+            f"vLLM returned {len(outputs)} outputs for {len(rows)} prompts"
+        )
     sidecar_rows = []
     for row, output in zip(rows, outputs):
         response_text = output.outputs[0].text if output.outputs else ""
-        parsed = parse_qwen_response(
-            response_text,
-            parse_failure_should_keep=parse_failure_should_keep,
-        )
+        parsed = parse_qwen_response(response_text)
         sidecar_rows.append(
             make_qwen_sidecar_row(
                 row,
                 parsed,
                 task=task,
                 model=model,
+                model_revision=model_revision,
                 prompt_version=prompt_version,
                 shard_id=shard_id,
                 raw_response=response_text,
@@ -319,7 +319,6 @@ def _score_and_write_batch(
 def _iter_input_rows(
     args: argparse.Namespace,
     task: QwenTask,
-    candidate_keys: set[tuple[str, str, str]] | None,
     existing_keys: set[tuple[str, str, str]],
     source_ids: set[str],
     source_like: list[str],
@@ -333,17 +332,12 @@ def _iter_input_rows(
     if shard_id < 0 or shard_id >= args.num_shards:
         raise ValueError("--shard-id must be in the range [0, --num-shards)")
     emitted = 0
-    global_index = 0
     for batch in scanner.to_batches():
         for row in batch.to_pylist():
             if not _source_matches(row.get("source_id"), source_ids, source_like):
                 continue
             key = _key(row)
-            if args.num_shards > 1 and global_index % args.num_shards != shard_id:
-                global_index += 1
-                continue
-            global_index += 1
-            if candidate_keys is not None and key not in candidate_keys:
+            if _shard_for_key(key, args.num_shards) != shard_id:
                 continue
             if key in existing_keys:
                 continue
@@ -495,27 +489,6 @@ def _is_missing_prompt_value(value: Any) -> bool:
     return False
 
 
-def _load_candidate_keys(
-    path: Path | None,
-    keep_column: str | None,
-) -> set[tuple[str, str, str]] | None:
-    if path is None:
-        return None
-    dataset = ds.dataset(str(path), format="parquet", partitioning="hive")
-    columns = ["source_id", "record_id", "content_hash"]
-    if keep_column is not None:
-        if keep_column not in dataset.schema.names:
-            raise ValueError(f"Candidate sidecar is missing {keep_column}")
-        columns.append(keep_column)
-    keys = set()
-    for batch in dataset.scanner(columns=columns).to_batches():
-        for row in batch.to_pylist():
-            if keep_column is not None and not row.get(keep_column):
-                continue
-            keys.add(_key(row))
-    return keys
-
-
 def _load_existing_output_keys(output_dir: Path | None) -> set[tuple[str, str, str]]:
     if output_dir is None or not output_dir.exists():
         return set()
@@ -532,7 +505,78 @@ def _load_existing_output_keys(output_dir: Path | None) -> set[tuple[str, str, s
 
 def _next_part_index(output_dir: Path, shard_id: str) -> int:
     existing = sorted(output_dir.glob(f"part-shard-{shard_id}-*.parquet"))
-    return len(existing)
+    if not existing:
+        return 0
+    indices = []
+    for path in existing:
+        match = re.search(r"-(\d+)\.parquet$", path.name)
+        if match:
+            indices.append(int(match.group(1)))
+    return max(indices, default=-1) + 1
+
+
+def _validate_model_revision(value: str) -> None:
+    if not IMMUTABLE_REVISION_RE.fullmatch(value):
+        raise ValueError(
+            "--model-revision must be a full 40-character lowercase Git commit SHA"
+        )
+
+
+def _write_run_config(
+    args: argparse.Namespace,
+    task: QwenTask,
+    prompt_version: str,
+) -> None:
+    inference = {
+        "task": task.value,
+        "model": args.model,
+        "model_revision": args.model_revision,
+        "prompt_version": prompt_version,
+        "max_content_chars": args.max_content_chars,
+        "max_output_tokens": args.max_tokens,
+        "max_model_len": args.max_model_len,
+        "dtype": args.dtype,
+        "tensor_parallel_size": args.tensor_parallel_size,
+        "temperature": 0.0,
+        "seed": args.seed,
+        "num_shards": args.num_shards,
+        "shard_id": str(args.shard_id),
+    }
+    payload = {
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "inference": inference,
+        "runtime": {
+            "python": platform.python_version(),
+            "platform": platform.platform(),
+            "transformers": _package_version("transformers"),
+            "vllm": _package_version("vllm"),
+        },
+    }
+    destination = args.output_dir / "run-config.json"
+    if destination.exists():
+        existing = json.loads(destination.read_text(encoding="utf-8"))
+        if existing.get("inference") != inference:
+            raise ValueError(
+                f"Existing run configuration does not match this invocation: {destination}"
+            )
+        return
+
+    temporary = destination.with_name(f".{destination.name}.{os.getpid()}.tmp")
+    try:
+        temporary.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _package_version(package: str) -> str | None:
+    try:
+        return version(package)
+    except PackageNotFoundError:
+        return None
 
 
 def _key(row: Mapping[str, Any]) -> tuple[str, str, str]:
@@ -541,6 +585,11 @@ def _key(row: Mapping[str, Any]) -> tuple[str, str, str]:
         str(row.get("record_id") or ""),
         str(row.get("content_hash") or ""),
     )
+
+
+def _shard_for_key(key: tuple[str, str, str], num_shards: int) -> int:
+    digest = sha1("\x1f".join(key).encode("utf-8")).hexdigest()
+    return int(digest, 16) % num_shards
 
 
 def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:

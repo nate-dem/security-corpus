@@ -213,7 +213,7 @@ def test_assemble_produces_valid_qa_fields(so_env):
     assert row["source_record_id"][0] == "question-100"
     assert row["title"][0] == "Does an established HTTPS connection mean a line is really secure?"
     assert row["source_url"][0] == "https://stackoverflow.com/questions/100"
-    assert row["license"][0] == "CC-BY-SA-4.0"
+    assert row["license"][0] == "CC-BY-SA-3.0"
     assert row["content_hash"][0] is not None
     assert row["content_length"][0] > 0
     assert row["score"][0] == 47

@@ -18,7 +18,7 @@ class QwenTask(str, Enum):
 
 
 QWEN_PROMPT_VERSIONS: dict[QwenTask, str] = {
-    QwenTask.QA: "qwen-qa-v1",
+    QwenTask.QA: "qwen-qa-v3-all-records-head-tail",
     QwenTask.ARXIV_ABSTRACT: "qwen-arxiv-abstract-v1",
     QwenTask.ARXIV_FULL: "qwen-arxiv-full-v1",
 }
@@ -80,8 +80,9 @@ QWEN_OPTIONAL_COLUMNS: dict[QwenTask, tuple[str, ...]] = {
 
 _SYSTEM_PROMPT = (
     "You label records for a cybersecurity continued-pretraining corpus. "
-    "Return exactly one compact JSON object and no markdown. Do not include "
-    "chain-of-thought or any explanation outside the JSON object."
+    "Return exactly one compact JSON object and no markdown. Be selective: "
+    "most merely plausible, basic, thin, generic, or helpdesk-like records "
+    "should be dropped. Do not include chain-of-thought or explanation outside JSON."
 )
 
 _OUTPUT_CONTRACT = (
@@ -90,7 +91,20 @@ _OUTPUT_CONTRACT = (
     "security_relevance: 0 not security-relevant, 1 weak/general technical, "
     "2 security-adjacent or useful security context, 3 directly security-relevant. "
     "quality: 0 garbage/broken/spam, 1 low value or thin, 2 usable, "
-    "3 high quality/substantive."
+    "3 high quality/substantive. Set should_keep=true only for records clearly "
+    "worth spending training tokens on. When uncertain, prefer lower scores "
+    "and should_keep=false."
+)
+
+_QA_KEEP_RULES = (
+    "Keep only substantive cybersecurity, privacy, cryptography, reverse "
+    "engineering, malware, vulnerability, exploit, detection, incident response, "
+    "network security, authentication, authorization, cloud security, secure "
+    "coding, or systems-security content. Drop ordinary programming or debugging "
+    "unless security is central. Drop product support, shopping, account recovery, "
+    "career advice, shallow recommendations, homework, opinion polls, jokes, social "
+    "chatter, duplicate low-information answers, and generic IT administration. "
+    "A thread from a security site can still be too thin or speculative to keep."
 )
 
 
@@ -168,12 +182,12 @@ def render_prompt(
 def parse_qwen_response(
     response_text: str,
     *,
-    parse_failure_should_keep: bool | None = True,
+    parse_failure_should_keep: bool | None = None,
 ) -> QwenParsedResponse:
     """Parse Qwen's compact JSON response.
 
     Strict JSON is tried first. If that fails, the first balanced JSON object is
-    extracted and parsed. Failures are explicit and keep-for-review by default.
+    extracted and parsed. Failures are explicit and have no keep/drop decision.
     """
     stripped = response_text.strip()
     payload: Any
@@ -233,6 +247,7 @@ def make_qwen_sidecar_row(
     *,
     task: str | QwenTask,
     model: str,
+    model_revision: str | None = None,
     prompt_version: str | None = None,
     scored_at: str | None = None,
     shard_id: str | None = None,
@@ -251,6 +266,7 @@ def make_qwen_sidecar_row(
         "qwen_reason": parsed.reason,
         "qwen_parse_status": parsed.parse_status,
         "qwen_model": model,
+        "qwen_model_revision": model_revision,
         "qwen_prompt_version": prompt_version or QWEN_PROMPT_VERSIONS[qwen_task],
         "qwen_scored_at": timestamp,
         "qwen_shard_id": shard_id,
@@ -275,9 +291,8 @@ def _qa_user_prompt(row: Mapping[str, Any], *, max_content_chars: int) -> str:
     tags = _join_list(row.get("tags"))
     parts = [
         "Evaluate this Q&A/social thread for a security-domain mid-training corpus.",
-        "Judge whether it is actually security-relevant and useful for continued pretraining.",
-        "Consider coherence, substance, answer quality, low-noise structure, and whether accepted/high-score answers contain technical content.",
-        "Reject generic/off-topic/homework-like/opinion-only/social chatter/spam/low-signal threads.",
+        "Judge whether it teaches useful security concepts, techniques, failure modes, artifacts, or reasoning.",
+        _QA_KEEP_RULES,
         _OUTPUT_CONTRACT,
         "",
         "Record metadata:",
@@ -363,13 +378,17 @@ def _validate_payload(payload: Any, status: str) -> QwenParsedResponse | None:
 
 
 def _parse_failure(parse_failure_should_keep: bool | None) -> QwenParsedResponse:
+    if parse_failure_should_keep is None:
+        reason = "parse_failure_requires_rescore"
+    elif parse_failure_should_keep:
+        reason = "parse_failure_keep_for_review"
+    else:
+        reason = "parse_failure_no_keep_fallback"
     return QwenParsedResponse(
         security_relevance=None,
         quality=None,
         should_keep=parse_failure_should_keep,
-        reason="parse_failure_keep_for_review"
-        if parse_failure_should_keep
-        else "parse_failure_no_keep_fallback",
+        reason=reason,
         parse_status="parse_failure",
     )
 
@@ -420,7 +439,8 @@ def _join_list(value: Any) -> str:
 def _truncate(text: str, max_chars: int) -> str:
     if max_chars <= 0 or len(text) <= max_chars:
         return text
-    trimmed = text[:max_chars].rsplit("\n", 1)[0].rstrip()
-    if not trimmed:
-        trimmed = text[:max_chars].rstrip()
-    return f"{trimmed}\n[TRUNCATED]"
+    head_chars = max_chars * 2 // 3
+    tail_chars = max_chars - head_chars
+    head = text[:head_chars].rsplit("\n", 1)[0].rstrip() or text[:head_chars].rstrip()
+    tail = text[-tail_chars:].split("\n", 1)[-1].lstrip() or text[-tail_chars:].lstrip()
+    return f"{head}\n[TRUNCATED: MIDDLE OMITTED]\n{tail}"

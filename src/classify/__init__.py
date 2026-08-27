@@ -1,11 +1,5 @@
-"""Downstream classifier utilities for corpus filtering."""
+"""Qwen and structural filtering utilities."""
 
-from classify.schema import DEFAULT_TASKS, ID_COLUMNS, TEXT_COLUMN, TaskSpec, get_task
+from classify.sidecar import ID_COLUMNS
 
-__all__ = [
-    "DEFAULT_TASKS",
-    "ID_COLUMNS",
-    "TEXT_COLUMN",
-    "TaskSpec",
-    "get_task",
-]
+__all__ = ["ID_COLUMNS"]

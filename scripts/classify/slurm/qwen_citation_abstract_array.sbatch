@@ -13,14 +13,13 @@
 
 set -euo pipefail
 
-# Citation-only arXiv title+abstract filtering.
-# Input is the citation-only paper-level Parquet produced by ingest_arxiv.py
-# after adding metadata/citations.
+# Exact-deduplicated citation-paper title+abstract filtering.
 
 PROJECT_DIR="${PROJECT_DIR:-/scratch/m000091-pm05/natedem/security-corpus}"
-INPUT="${INPUT:-data/arxiv/normalized/source_id=arxiv/raw.parquet}"
-OUTPUT_ROOT="${OUTPUT_ROOT:-data/filtering/v3/qwen_citation_abstract_shards}"
-MODEL="${MODEL:-Qwen/Qwen3-14B}"
+INPUT="${INPUT:-data/filtering/v4/citation_abstract_universe.parquet}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-data/filtering/v4/qwen_citation_abstract_shards}"
+MODEL="${MODEL:-Qwen/Qwen3-8B}"
+MODEL_REVISION="${MODEL_REVISION:-b968826d9c46dd6066d109eabc6255188de91218}"
 SHARD_ID="${SLURM_ARRAY_TASK_ID}"
 NUM_SHARDS="${SLURM_ARRAY_TASK_COUNT}"
 
@@ -30,12 +29,16 @@ export PYTHONPATH="${PROJECT_DIR}/src"
 
 mkdir -p "${OUTPUT_ROOT}" logs/qwen_citations
 
-python scripts/classify/citation_paper_qwen_filtering.py \
+python scripts/classify/score_qwen_vllm.py \
   --input "${INPUT}" \
-  --output "${OUTPUT_ROOT}/shard-${SHARD_ID}.jsonl" \
+  --task arxiv-abstract \
+  --source-id arxiv \
+  --output-dir "${OUTPUT_ROOT}/shard-${SHARD_ID}" \
   --model "${MODEL}" \
+  --model-revision "${MODEL_REVISION}" \
   --tensor-parallel-size 1 \
   --dtype float16 \
   --batch-size 32 \
   --shard-id "${SHARD_ID}" \
-  --num-shards "${NUM_SHARDS}"
+  --num-shards "${NUM_SHARDS}" \
+  --max-tokens 96

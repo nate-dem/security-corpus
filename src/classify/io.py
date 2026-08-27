@@ -1,4 +1,4 @@
-"""Shared I/O helpers for downstream classifier workflows."""
+"""Shared I/O helpers for downstream filtering workflows."""
 
 from __future__ import annotations
 

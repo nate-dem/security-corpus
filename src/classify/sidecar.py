@@ -1,8 +1,9 @@
-"""Sidecar Parquet schemas and small write helpers for V3 filtering."""
+"""Sidecar Parquet schemas and write helpers for filtering decisions."""
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+import os
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +11,9 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from classify.io import ensure_parent
-from classify.schema import ID_COLUMNS
+
+
+ID_COLUMNS = ("source_id", "record_id", "content_hash")
 
 
 QWEN_SIDECAR_CORE_FIELDS = (
@@ -23,29 +26,13 @@ QWEN_SIDECAR_CORE_FIELDS = (
     ("qwen_reason", pa.string()),
     ("qwen_parse_status", pa.string()),
     ("qwen_model", pa.string()),
+    ("qwen_model_revision", pa.string()),
     ("qwen_prompt_version", pa.string()),
     ("qwen_scored_at", pa.string()),
     ("qwen_shard_id", pa.string()),
     ("qwen_task", pa.string()),
     ("qwen_input_kind", pa.string()),
     ("qwen_raw_response", pa.string()),
-)
-
-QA_CANDIDATE_FIELDS = (
-    ("source_id", pa.string()),
-    ("record_id", pa.string()),
-    ("content_hash", pa.string()),
-    ("qa_candidate_for_qwen", pa.bool_()),
-    ("qa_candidate_reason", pa.string()),
-    ("qa_quality_score", pa.float64()),
-    ("qa_quality_predicted_label", pa.string()),
-    ("qa_quality_classifier_confidence", pa.float64()),
-    ("qa_quality_classifier_uncertainty", pa.float64()),
-    ("qa_quality_classifier_model", pa.string()),
-    ("qa_quality_classifier_version", pa.string()),
-    ("qa_quality_scored_at", pa.string()),
-    ("qa_candidate_selected_at", pa.string()),
-    ("qa_candidate_selection_version", pa.string()),
 )
 
 ARTIFACT_QUALITY_CORE_FIELDS = (
@@ -71,11 +58,6 @@ def qwen_sidecar_schema(
     changing the common downstream contract.
     """
     return _schema_from_fields(QWEN_SIDECAR_CORE_FIELDS, extra_fields)
-
-
-def qa_candidate_schema() -> pa.Schema:
-    """Return the QA-to-Qwen candidate sidecar schema."""
-    return _schema_from_fields(QA_CANDIDATE_FIELDS)
 
 
 def artifact_quality_schema(
@@ -116,7 +98,12 @@ def write_sidecar_rows(
         raise FileExistsError(f"Refusing to overwrite existing sidecar: {output_path}")
     ensure_parent(output_path)
     table = rows_to_table(rows, schema)
-    pq.write_table(table, output_path, compression="snappy")
+    temporary = output_path.with_name(f".{output_path.name}.{os.getpid()}.tmp")
+    try:
+        pq.write_table(table, temporary, compression="zstd")
+        os.replace(temporary, output_path)
+    finally:
+        temporary.unlink(missing_ok=True)
     return table.num_rows
 
 

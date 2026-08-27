@@ -52,5 +52,6 @@ def test_write_sidecar_rows_refuses_overwrite(tmp_path):
 
     assert write_sidecar_rows(path, [row], schema) == 1
     assert pq.read_table(path).num_rows == 1
+    assert not list(tmp_path.glob("*.tmp"))
     with pytest.raises(FileExistsError):
         write_sidecar_rows(path, [row], schema)

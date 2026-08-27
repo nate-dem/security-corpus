@@ -22,9 +22,10 @@ from ingest.connectors.stackexchange.common import (
     html_to_markdown,
     parse_se_datetime,
     parse_tag_string,
+    stackexchange_license_expression,
 )
 from ingest.readers import read
-from ingest.utils import CC_BY_SA_4_0, compute_content_hash, compute_token_count
+from ingest.utils import compute_content_hash, compute_token_count
 
 
 class StackExchangeSiteConnector:
@@ -72,7 +73,7 @@ class StackExchangeSiteConnector:
             content_hash=compute_content_hash(content),
             title=q["title"],
             ingested_at=datetime.now(timezone.utc),
-            license=CC_BY_SA_4_0,
+            license=stackexchange_license_expression([q, *record["answers"]]),
             published_at=parse_se_datetime(q.get("creation_date")),
             source_url=f"https://{self.site_domain}/questions/{qid}",
             # QA-specific fields
@@ -102,6 +103,8 @@ def _build_answers_index(extracted_dir: Path) -> dict[int, list[dict]]:
             "id": int(attrs["Id"]),
             "body_html": attrs.get("Body", ""),
             "score": int(attrs.get("Score", 0)),
+            "creation_date": attrs.get("CreationDate"),
+            "content_license": attrs.get("ContentLicense"),
         })
     # sort by score descending
     for qid in answers:
@@ -126,6 +129,7 @@ def _assemble_question_record(
         "body_html": body_html,
         "body_md": html_to_markdown(body_html),
         "creation_date": attrs.get("CreationDate"),
+        "content_license": attrs.get("ContentLicense"),
         "score": int(attrs.get("Score", 0)),
         "answer_count": int(attrs.get("AnswerCount", 0)),
         "accepted_answer_id": accepted_answer_id,
@@ -142,6 +146,8 @@ def _assemble_question_record(
             "body_html": ans_html,
             "body_md": html_to_markdown(ans_html),
             "score": ans["score"],
+            "creation_date": ans.get("creation_date"),
+            "content_license": ans.get("content_license"),
             "is_accepted": ans["id"] == accepted_answer_id if accepted_answer_id else False,
             "has_code": detect_code_in_html(ans_html),
         })

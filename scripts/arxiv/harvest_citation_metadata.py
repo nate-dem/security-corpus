@@ -19,7 +19,6 @@ import logging
 import os
 import sys
 import time
-from collections import defaultdict
 from pathlib import Path
 
 import requests

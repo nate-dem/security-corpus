@@ -8,7 +8,7 @@ from typing import Any
 
 
 ARTIFACT_QUALITY_MODEL = "structural_checks"
-ARTIFACT_QUALITY_VERSION = "v3-structural-2026-05-25"
+ARTIFACT_QUALITY_VERSION = "structural-v1-2026-08-26"
 
 # RESEARCHER: tune thresholds from data audits before using these as filters.
 DEFAULT_MIN_CONTENT_LENGTH: int | None = None

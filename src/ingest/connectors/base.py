@@ -29,7 +29,7 @@ class NormalizedData(BaseModel):
 
 
 class VulnerabilityData(NormalizedData):
-    """NVD CVEs, CISA KEV, GitHub Advisory DB."""
+    """NVD CVEs and CISA KEV entries."""
     cve_id: str | None = None
     severity: str | None = None
     cvss_score: float | None = None
@@ -60,15 +60,6 @@ class QAThreadData(NormalizedData):
     tags: list[str] = Field(default_factory=list)
 
 
-class TranscriptData(NormalizedData):
-    """YouTube transcripts and similar spoken-word video corpora."""
-    video_id: str | None = None
-    channel: str | None = None
-    channel_id: str | None = None
-    language: str | None = None          # transcription_language (BCP-47 code)
-    word_count: int | None = None
-
-
 class CloudTrailSessionData(NormalizedData):
     """CloudTrail log sessions (grouped by source IP + time gap)."""
     event_count: int | None = None
@@ -91,12 +82,6 @@ class AcademicPaperData(NormalizedData):
     primary_category: str | None = None
     doi: str | None = None
     journal_ref: str | None = None
-
-
-class WebDocumentData(NormalizedData):
-    """General web documents selected from broad web corpora."""
-    dsir_score: float | None = None
-    language: str | None = None
 
 
 class Connector(Protocol):

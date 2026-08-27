@@ -1,0 +1,81 @@
+schema_version: 1
+reviewed_on: 2026-08-26
+disclaimer: >-
+  Engineering release gate based on source-published terms. This is not legal
+  advice and does not replace Stanford review or source permission.
+
+license_aliases:
+  http://creativecommons.org/licenses/by/3.0/: CC-BY-3.0
+  http://creativecommons.org/licenses/by-nc-sa/3.0/: CC-BY-NC-SA-3.0
+  http://creativecommons.org/licenses/publicdomain/: Public Domain
+
+policies:
+  - source_patterns: [nvd]
+    state: conditional
+    expected_licenses: [CVE Terms of Use / NIST public data]
+    requirements:
+      - Reproduce the CVE copyright designation and license notice.
+      - Attribute NIST and distinguish corpus transformations from source data.
+
+  - source_patterns: [cisa-kev]
+    state: conditional
+    expected_licenses: [CC0-1.0]
+    requirements:
+      - Do not imply CISA or DHS endorsement or use protected marks.
+
+  - source_patterns: [mitre-attack, mitre-cwe, capec]
+    state: conditional
+    expected_licenses: [MITRE Terms of Use]
+    requirements:
+      - Reproduce the applicable MITRE copyright designation and license.
+
+  - source_patterns: [sigma]
+    state: conditional
+    expected_licenses: [DRL-1.1]
+    requirements:
+      - Preserve the rule author field and DRL-1.1 notice.
+
+  - source_patterns: [stackoverflow, stackexchange-*]
+    state: blocked
+    expected_licenses:
+      - CC-BY-SA-2.5
+      - CC-BY-SA-3.0
+      - CC-BY-SA-4.0
+    blocker: >-
+      The recovered assembled rows do not preserve per-contribution author and
+      license attribution. Re-ingest with the repaired connector or obtain a
+      reviewed attribution plan before release.
+
+  - source_patterns: [reddit-*]
+    state: blocked
+    expected_licenses: [NOASSERTION]
+    blocker: >-
+      Reddit policies are not a public redistribution license for this bulk
+      derived dataset. Written permission or a reviewed research agreement is
+      required before publication.
+
+  - source_patterns: [cloudtrail-flaws]
+    state: blocked
+    expected_licenses: [NOASSERTION]
+    blocker: >-
+      No authoritative license or permission for the recovered log files is
+      stored with the checkpoint.
+
+  - source_patterns: [arxiv]
+    state: per_license
+    license_states:
+      CC-BY-4.0: conditional
+      CC-BY-3.0: conditional
+      CC-BY-SA-4.0: conditional
+      CC0-1.0: conditional
+      Public Domain: conditional
+      CC-BY-NC-SA-4.0: review_required
+      CC-BY-NC-SA-3.0: review_required
+      CC-BY-NC-ND-4.0: blocked
+      arXiv Perpetual Non-Exclusive License: blocked
+    requirements:
+      - Preserve paper-level title, authors, source URL, and license.
+      - Apply attribution, ShareAlike, and noncommercial terms per record.
+    blocker: >-
+      The default arXiv license limits third-party reuse. NoDerivatives papers
+      are also blocked because the corpus contains transformed extracted text.

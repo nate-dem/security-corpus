@@ -19,7 +19,7 @@ from typing import Iterator
 
 from ingest.connectors.base import CloudTrailSessionData
 from ingest.readers import read
-from ingest.utils import FLAWS_CLOUD_PUBLIC, compute_content_hash, compute_token_count
+from ingest.utils import FLAWS_CLOUD_TERMS, compute_content_hash, compute_token_count
 
 
 _EXCLUDED_IPS: set[str] = {
@@ -112,7 +112,7 @@ class CloudTrailSessionConnector:
             content_hash=compute_content_hash(content),
             ingested_at=datetime.now(timezone.utc),
             published_at=session_start,
-            license=FLAWS_CLOUD_PUBLIC,
+            license=FLAWS_CLOUD_TERMS,
             source_ip=source_ip,
             event_count=event_count,
             session_duration_seconds=duration,

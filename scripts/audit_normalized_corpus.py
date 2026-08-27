@@ -452,7 +452,7 @@ def _vulnerability_report(available_columns: set[str]) -> QueryReport:
                 {cvss_exprs}
                 {exploited_expr}
             FROM corpus
-            WHERE source_id IN ('nvd', 'cisa-kev', 'github-advisory')
+            WHERE source_id IN ('nvd', 'cisa-kev')
             GROUP BY source_id
             ORDER BY records DESC
         """,
@@ -504,12 +504,11 @@ def _license_report() -> QueryReport:
 def _source_family_case() -> str:
     return """
         CASE
-            WHEN source_id IN ('nvd', 'cisa-kev', 'github-advisory') THEN 'vulnerability'
-            WHEN source_id IN ('mitre-attack', 'mitre-cwe', 'capec', 'bron') THEN 'knowledge-base'
+            WHEN source_id IN ('nvd', 'cisa-kev') THEN 'vulnerability'
+            WHEN source_id IN ('mitre-attack', 'mitre-cwe', 'capec') THEN 'knowledge-base'
             WHEN source_id = 'sigma' THEN 'detection-rules'
             WHEN source_id = 'cloudtrail-flaws' THEN 'logs'
             WHEN source_id = 'arxiv' THEN 'academic-papers'
-            WHEN source_id = 'youtube-transcripts' THEN 'transcripts'
             WHEN source_id = 'stackoverflow' THEN 'qa-stackoverflow'
             WHEN source_id LIKE 'stackexchange-%' THEN 'qa-stackexchange'
             WHEN source_id LIKE 'reddit-%' THEN 'qa-reddit'

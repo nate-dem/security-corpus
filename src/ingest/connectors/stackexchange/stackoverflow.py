@@ -32,8 +32,9 @@ from ingest.connectors.stackexchange.common import (
     html_to_markdown,
     parse_se_datetime,
     parse_tag_string,
+    stackexchange_license_expression,
 )
-from ingest.utils import CC_BY_SA_4_0, compute_content_hash, compute_token_count
+from ingest.utils import compute_content_hash, compute_token_count
 
 
 logger = logging.getLogger(__name__)
@@ -299,11 +300,12 @@ class StackOverflowConnector:
         marker = answers_dir / "_DONE"
 
         if marker.exists():
-            logger.info("Pass 2/3: Answer index already built, skipping")
-            total = 0
-            for f in answers_dir.glob("batch_*.parquet"):
-                total += pq.read_metadata(f).num_rows
-            return total
+            parquet_files = sorted(answers_dir.glob("batch_*.parquet"))
+            required = {"creation_date", "content_license"}
+            if parquet_files and required.issubset(pq.read_schema(parquet_files[0]).names):
+                logger.info("Pass 2/3: Answer index already built, skipping")
+                return sum(pq.read_metadata(path).num_rows for path in parquet_files)
+            logger.warning("Pass 2/3: Cached answer index lacks license metadata")
 
         # Incomplete previous run — clean up and restart
         if answers_dir.exists():
@@ -345,6 +347,8 @@ class StackOverflowConnector:
                         "parent_id": int(parent_id),
                         "body_html": attrs.get("Body", ""),
                         "score": int(attrs.get("Score", 0)),
+                        "creation_date": attrs.get("CreationDate"),
+                        "content_license": attrs.get("ContentLicense"),
                     }
                 )
                 total_answers += 1
@@ -407,7 +411,8 @@ class StackOverflowConnector:
                 # Query answers from DuckDB
                 if has_answer_index:
                     answer_rows = con.execute(
-                        "SELECT id, body_html, score FROM answers "
+                        "SELECT id, body_html, score, creation_date, content_license "
+                        "FROM answers "
                         "WHERE parent_id = ? ORDER BY score DESC",
                         [qid],
                     ).fetchall()
@@ -428,6 +433,7 @@ class StackOverflowConnector:
                     "body_html": body_html,
                     "body_md": html_to_markdown(body_html),
                     "creation_date": attrs.get("CreationDate"),
+                    "content_license": attrs.get("ContentLicense"),
                     "score": int(attrs.get("Score", 0)),
                     "answer_count": int(attrs.get("AnswerCount", 0)),
                     "accepted_answer_id": accepted_answer_id,
@@ -438,13 +444,15 @@ class StackOverflowConnector:
                 # Build assembled answers list
                 answers = []
                 for row in answer_rows:
-                    ans_id, ans_html, ans_score = row
+                    ans_id, ans_html, ans_score, ans_creation_date, ans_license = row
                     answers.append(
                         {
                             "id": ans_id,
                             "body_html": ans_html,
                             "body_md": html_to_markdown(ans_html),
                             "score": ans_score,
+                            "creation_date": ans_creation_date,
+                            "content_license": ans_license,
                             "is_accepted": (
                                 ans_id == accepted_answer_id
                                 if accepted_answer_id
@@ -466,7 +474,7 @@ class StackOverflowConnector:
                     content_hash=compute_content_hash(content),
                     title=question["title"],
                     ingested_at=datetime.now(timezone.utc),
-                    license=CC_BY_SA_4_0,
+                    license=stackexchange_license_expression([question, *answers]),
                     published_at=parse_se_datetime(question.get("creation_date")),
                     source_url=f"https://stackoverflow.com/questions/{qid}",
                     score=question["score"],
@@ -508,6 +516,12 @@ def _flush_answer_batch(
                 [r["body_html"] for r in batch], type=pa.string()
             ),
             "score": pa.array([r["score"] for r in batch], type=pa.int64()),
+            "creation_date": pa.array(
+                [r["creation_date"] for r in batch], type=pa.string()
+            ),
+            "content_license": pa.array(
+                [r["content_license"] for r in batch], type=pa.string()
+            ),
         }
     )
     out = answers_dir / f"batch_{batch_num:06d}.parquet"

@@ -12,6 +12,8 @@ from markdownify import markdownify
 
 _TAG_RE = re.compile(r"<([^>]+)>")
 _COLLAPSE_NEWLINES_RE = re.compile(r"\n{3,}")
+_CC_BY_SA_3_START = datetime(2011, 4, 8, tzinfo=timezone.utc)
+_CC_BY_SA_4_START = datetime(2018, 5, 2, tzinfo=timezone.utc)
 
 
 def html_to_markdown(html: str) -> str:
@@ -58,6 +60,38 @@ def parse_se_datetime(value: str | None) -> datetime | None:
         return dt
     except ValueError:
         return None
+
+
+def stackexchange_content_license(
+    content_license: str | None,
+    creation_date: str | None,
+) -> str:
+    """Return the CC BY-SA identifier for one contribution."""
+    if content_license:
+        normalized = content_license.upper().replace(" ", "-")
+        if normalized in {"CC-BY-SA-2.5", "CC-BY-SA-3.0", "CC-BY-SA-4.0"}:
+            return normalized
+
+    published = parse_se_datetime(creation_date)
+    if published is None:
+        return "CC-BY-SA (version unknown)"
+    if published < _CC_BY_SA_3_START:
+        return "CC-BY-SA-2.5"
+    if published < _CC_BY_SA_4_START:
+        return "CC-BY-SA-3.0"
+    return "CC-BY-SA-4.0"
+
+
+def stackexchange_license_expression(contributions: list[dict]) -> str:
+    """Combine licenses for a question and all included answers."""
+    licenses = {
+        stackexchange_content_license(
+            item.get("content_license"),
+            item.get("creation_date"),
+        )
+        for item in contributions
+    }
+    return " AND ".join(sorted(licenses))
 
 
 def assemble_qa_content(question: dict, answers: list[dict]) -> str:

@@ -1,8 +1,14 @@
+import pytest
+
 from classify.qwen import (
     QwenTask,
     build_messages,
     make_qwen_sidecar_row,
     parse_qwen_response,
+)
+from scripts.classify.score_qwen_vllm import (
+    _next_part_index,
+    _validate_model_revision,
 )
 
 
@@ -35,8 +41,8 @@ def test_parse_qwen_response_marks_failures_for_audit():
     assert parsed.parse_status == "parse_failure"
     assert parsed.security_relevance is None
     assert parsed.quality is None
-    assert parsed.should_keep is True
-    assert parsed.reason == "parse_failure_keep_for_review"
+    assert parsed.should_keep is None
+    assert parsed.reason == "parse_failure_requires_rescore"
 
 
 def test_qa_prompt_has_compact_json_contract_without_cot_request():
@@ -84,6 +90,7 @@ def test_make_qwen_sidecar_row_preserves_key_and_model_metadata():
         parsed,
         task="arxiv-abstract",
         model="Qwen/Qwen3-4B",
+        model_revision="0123456789abcdef",
         prompt_version="test-prompt",
         shard_id="7",
         raw_response="{}",
@@ -91,6 +98,19 @@ def test_make_qwen_sidecar_row_preserves_key_and_model_metadata():
 
     assert row["source_id"] == "arxiv"
     assert row["qwen_model"] == "Qwen/Qwen3-4B"
+    assert row["qwen_model_revision"] == "0123456789abcdef"
     assert row["qwen_prompt_version"] == "test-prompt"
     assert row["qwen_shard_id"] == "7"
     assert row["arxiv_id"] == "1"
+
+
+def test_model_revision_requires_full_commit_sha():
+    _validate_model_revision("b968826d9c46dd6066d109eabc6255188de91218")
+    with pytest.raises(ValueError, match="40-character"):
+        _validate_model_revision("main")
+
+
+def test_next_part_index_uses_maximum_existing_suffix(tmp_path):
+    (tmp_path / "part-shard-3-000000.parquet").touch()
+    (tmp_path / "part-shard-3-000004.parquet").touch()
+    assert _next_part_index(tmp_path, "3") == 5

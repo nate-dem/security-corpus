@@ -2,6 +2,7 @@
   "aid": "2401.00001",
   "timestamp": "2024-01-15T10:00:00",
   "completed": true,
+  "normalizer_version": "latex-v2",
   "tex_merged": true,
   "errors": []
 }
