@@ -78,16 +78,6 @@ reported for researcher review rather than silently discarded.
 
 ## High-level design
 
-```mermaid
-flowchart LR
-    A["Raw source data"] --> B["Streaming source connector"]
-    B --> C["Immutable normalized Parquet"]
-    C --> D["Exact-content deduplication"]
-    D --> E["Quality and filtering sidecars"]
-    E --> F["Human audit and source policy"]
-    F --> G["Versioned release candidate"]
-```
-
 The pipeline follows several design rules:
 
 - **Quality over volume.** Obvious garbage is rejected early; substantive
