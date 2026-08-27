@@ -204,5 +204,4 @@ The final candidate must also pass:
 python scripts/release/audit_source_licenses.py PATH [PATH ...]
 ```
 
-See `docs/source_licenses.md` for the source-specific release boundary. The
-end-to-end cluster handoff is in `docs/marlowe_recovery.md`.
+See `docs/source_licenses.md` for the source-specific release boundary.

@@ -25,6 +25,7 @@ data/
 reports/
 recovery/
 models/
+docs/marlowe_recovery.md
 
 # Local assistant and editor state.
 .claude/
