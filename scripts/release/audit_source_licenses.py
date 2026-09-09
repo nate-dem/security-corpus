@@ -48,10 +48,17 @@ def _discover_parquet(inputs: Sequence[Path]) -> list[Path]:
     files: set[Path] = set()
     for value in inputs:
         path = value.resolve()
+        if not path.exists():
+            raise FileNotFoundError(path)
         if path.is_file() and path.suffix == ".parquet":
             files.add(path)
         elif path.is_dir():
-            files.update(candidate for candidate in path.rglob("*.parquet"))
+            found = list(path.rglob("*.parquet"))
+            if not found:
+                raise FileNotFoundError(f"No Parquet files found under {path}")
+            files.update(found)
+        else:
+            raise ValueError(f"Expected Parquet file or directory: {path}")
     return sorted(files)
 
 
@@ -149,6 +156,8 @@ def _classify_license(policy: dict | None, license_value: str) -> tuple[str, str
     state = policy["state"]
     if state == "per_license":
         state = policy.get("license_states", {}).get(license_value, "unknown")
+    if state not in BLOCKING_STATES | {"conditional", "allowed"}:
+        return "unknown", "Unrecognized policy state"
     issue = policy.get("blocker") if state in BLOCKING_STATES else None
     return state, issue
 

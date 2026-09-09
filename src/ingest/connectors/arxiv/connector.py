@@ -30,10 +30,11 @@ from ingest.connectors.arxiv.metadata import (
     _parse_datestamp,
 )
 from ingest.utils import compute_content_hash, compute_token_count
+from ingest.connectors.arxiv.latex_processing import LATEX_NORMALIZER_VERSION
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_NORMALIZER_VERSIONS = {"latex-v2", "pdf-text-v1"}
+SUPPORTED_NORMALIZER_VERSIONS = {LATEX_NORMALIZER_VERSION, "pdf-text-v1"}
 
 
 def _paper_dir_to_arxiv_id(paper_dir_name: str) -> str:
@@ -65,6 +66,9 @@ class ArxivConnector:
     """
 
     source_id = "arxiv"
+
+    def __init__(self, allowed_ids: set[str] | None = None):
+        self.allowed_ids = allowed_ids
 
     def iter_records(self, path: Path) -> Iterator[dict]:
         """Yield one assembled record per successfully normalized paper.
@@ -104,14 +108,22 @@ class ArxivConnector:
                     continue
 
                 arxiv_id = _paper_dir_to_arxiv_id(paper_dir.name)
+                if self.allowed_ids is not None and arxiv_id not in self.allowed_ids:
+                    continue
                 status: dict = {}
 
                 # Check normalization status
                 status_file = paper_dir / "status.json"
+                if not status_file.is_file():
+                    skipped_incomplete += 1
+                    continue
                 if status_file.exists():
                     try:
                         with open(status_file, "r", encoding="utf-8") as f:
                             status = json.load(f)
+                        if not isinstance(status, dict):
+                            skipped_incomplete += 1
+                            continue
                         if not status.get("completed", False):
                             skipped_incomplete += 1
                             continue
@@ -129,18 +141,16 @@ class ArxivConnector:
                 # PDF-only normalizations write extracted text to main.txt.
                 main_tex = paper_dir / "main.tex"
                 main_txt = paper_dir / "main.txt"
-                if main_tex.exists():
+                if status["normalizer_version"] == LATEX_NORMALIZER_VERSION and main_tex.is_file():
                     content_path = main_tex
                     inferred_source_format = "latex"
-                elif main_txt.exists():
+                elif status["normalizer_version"] == "pdf-text-v1" and main_txt.is_file():
                     content_path = main_txt
                     inferred_source_format = "pdf"
                 else:
                     skipped_incomplete += 1
                     continue
-                source_format = status.get("source_format")
-                if source_format not in {"latex", "pdf"}:
-                    source_format = inferred_source_format
+                source_format = inferred_source_format
 
                 content = content_path.read_text(encoding="utf-8", errors="ignore")
                 if not content.strip():

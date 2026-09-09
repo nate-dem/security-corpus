@@ -25,7 +25,7 @@ The current research checkpoint contains **2,089,231 documents** and
 | **Total** | **2,089,231** | **2,703,091,696** | **Pre-release working set** |
 
 These are checkpoint counts, not the final Hugging Face release size. Final
-counts will be lower after semantic filtering, paper reprocessing,
+counts will change after semantic filtering, paper reprocessing,
 cross-family duplicate resolution, CloudTrail chunking, researcher policy
 decisions, and redistribution review.
 
@@ -252,3 +252,16 @@ hash, token-count, provenance, deduplication, and license audits.
 The corpus does not have one blanket data license. Any public dataset must
 preserve per-record license and attribution metadata and may contain a smaller
 source set than the internal research corpus.
+
+The [recovery review](docs/recovery_review.md) records validated findings,
+implemented repairs, and the remaining release decisions. Audit candidate files
+without changing them:
+
+```bash
+python scripts/release/audit_corpus_integrity.py PATH [PATH ...] \
+  --workers 8 --output reports/release/integrity.json
+```
+
+This recomputes content hashes and reference token counts and records file
+checksums. `--skip-token-check` is available for diagnostic scans; those scans
+cannot pass release integrity. License and semantic-review gates remain separate.

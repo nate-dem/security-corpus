@@ -29,7 +29,8 @@ def _decision_row(arxiv_id: str, keep: bool) -> dict:
         "qwen_parse_status": "ok",
         "qwen_model": "Qwen/Qwen3-8B",
         "qwen_model_revision": DEFAULT_REVISION,
-        "qwen_prompt_version": "test",
+        "qwen_prompt_version": "qwen-arxiv-abstract-v1",
+        "qwen_scored_at": "2026-09-09T00:00:00+00:00",
         "qwen_task": "arxiv_abstract",
     }
 

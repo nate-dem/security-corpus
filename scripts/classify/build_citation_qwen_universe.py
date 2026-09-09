@@ -7,8 +7,13 @@ import argparse
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import sys
+import tempfile
 
 import duckdb
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+from classify.io import publish_outputs  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +26,19 @@ DEFAULT_OUTPUT_ROOT = ROOT / "data" / "filtering" / "v4"
 
 def main() -> None:
     args = _parse_args()
+    destination = args.output_root.resolve()
+    names = ("citation_abstract_universe.parquet", "citation_abstract_exact_duplicates.parquet",
+             "citation_abstract_manifest.json")
+    if not args.overwrite and any((destination / name).exists() for name in names):
+        raise FileExistsError(f"Refusing to replace citation outputs in {destination}")
+    destination.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".citation-build-", dir=destination) as temporary:
+        args.output_root = Path(temporary)
+        _build(args, destination)
+        publish_outputs({args.output_root / name: destination / name for name in names})
+
+
+def _build(args: argparse.Namespace, destination: Path) -> None:
     if not args.input.is_file():
         raise FileNotFoundError(args.input)
     universe = args.output_root / "citation_abstract_universe.parquet"
@@ -30,9 +48,6 @@ def main() -> None:
     existing = [path for path in targets if path.exists()]
     if existing and not args.overwrite:
         raise FileExistsError("Refusing to replace: " + ", ".join(map(str, existing)))
-    if args.overwrite:
-        for path in existing:
-            path.unlink()
     args.output_root.mkdir(parents=True, exist_ok=True)
 
     connection = duckdb.connect()
@@ -115,8 +130,8 @@ def main() -> None:
             "Re-score every unique abstract with a pinned Qwen model revision; "
             "the recovered decisions recorded only a mutable model name."
         ),
-        "universe": str(universe.resolve()),
-        "duplicates": str(duplicates.resolve()),
+        "universe": str(destination / universe.name),
+        "duplicates": str(destination / duplicates.name),
     }
     manifest.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     connection.close()

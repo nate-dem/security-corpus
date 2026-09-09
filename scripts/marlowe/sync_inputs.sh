@@ -43,6 +43,12 @@ rsync -az --progress \
   --exclude 'data/' \
   --exclude 'reports/' \
   --exclude 'recovery/' \
+  --exclude '.env' \
+  --exclude '.env.*' \
+  --exclude '.claude/' \
+  --exclude '.codex/' \
+  --exclude '.agents/' \
+  --exclude 'logs/' \
   --exclude '__pycache__/' \
   --exclude '.pytest_cache/' \
   --exclude '.ruff_cache/' \

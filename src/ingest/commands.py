@@ -95,7 +95,20 @@ def _ingest_simple(args: argparse.Namespace) -> int:
             print(plan.missing_hint)
         return 1
 
-    count = ingest_and_store(input_path, source=plan.source, output_dir=output_dir)
+    if plan.source == "arxiv" and args.id_file is not None:
+        from ingest.connectors.arxiv.connector import ArxivConnector
+
+        allowed_ids = {
+            line.strip() for line in args.id_file.read_text().splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        }
+        if not allowed_ids:
+            raise ValueError("The arXiv --id-file is empty")
+        connector = ArxivConnector(allowed_ids=allowed_ids)
+        records = (connector.normalize(row) for row in connector.iter_records(input_path))
+        count = write_parquet(records, output_dir, source=plan.source, input_path=input_path)
+    else:
+        count = ingest_and_store(input_path, source=plan.source, output_dir=output_dir)
     print(f"{plan.label}: {count} records")
     return 0
 
@@ -293,6 +306,9 @@ def build_parser() -> argparse.ArgumentParser:
             aliases=list(plan.aliases),
             help=f"Ingest {plan.label}.",
         )
+        if plan.source == "arxiv":
+            source_parser.add_argument("--id-file", type=_path_arg,
+                                      help="Explicit selected paper IDs; excludes stale cached papers.")
         source_parser.add_argument(
             "--input",
             type=_path_arg,

@@ -43,8 +43,8 @@ policies:
       - CC-BY-SA-4.0
     blocker: >-
       The recovered assembled rows do not preserve per-contribution author and
-      license attribution. Re-ingest with the repaired connector or obtain a
-      reviewed attribution plan before release.
+      license attribution. Approve and implement contribution-level attribution,
+      then re-ingest from source dumps before release.
 
   - source_patterns: [reddit-*]
     state: blocked

@@ -7,9 +7,13 @@ import argparse
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import sys
 from typing import Any, Sequence
 
 import duckdb
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+from classify.validation import decision_issues  # noqa: E402
 
 
 VALID_PARSE_STATUSES = {"ok", "extracted_json"}
@@ -62,6 +66,8 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("--decisions", type=Path, required=True)
     parser.add_argument("--expected-model")
     parser.add_argument("--expected-revision")
+    parser.add_argument("--expected-prompt-version")
+    parser.add_argument("--expected-task", choices=["qa", "arxiv_abstract", "arxiv_full"])
     parser.add_argument("--output", type=Path)
     return parser.parse_args(argv)
 
@@ -131,21 +137,21 @@ def _build_report(
     outcome_rows = connection.execute(
         """
         SELECT
-            qwen_should_keep,
+                d.qwen_should_keep,
             count(*),
             coalesce(sum(c.content_length), 0)
         FROM decisions d
         JOIN corpus c USING (source_id, record_id, content_hash)
-        GROUP BY qwen_should_keep
-        ORDER BY qwen_should_keep
+        GROUP BY d.qwen_should_keep
+        ORDER BY d.qwen_should_keep
         """
         if _has_column(connection, "corpus", "content_length")
         else """
-        SELECT qwen_should_keep, count(*), NULL
+        SELECT d.qwen_should_keep, count(*), NULL
         FROM decisions d
         JOIN corpus c USING (source_id, record_id, content_hash)
-        GROUP BY qwen_should_keep
-        ORDER BY qwen_should_keep
+        GROUP BY d.qwen_should_keep
+        ORDER BY d.qwen_should_keep
         """
     ).fetchall()
     configurations = connection.execute(
@@ -160,6 +166,7 @@ def _build_report(
     model_mismatches = _expected_mismatches(connection, args)
 
     issues = {
+        "empty_corpus": int(corpus_records == 0),
         "corpus_duplicate_keys": int(corpus_duplicate_keys),
         "decision_duplicate_keys": int(decision_duplicate_keys),
         "missing_decisions": int(missing),
@@ -169,6 +176,19 @@ def _build_report(
         "invalid_provenance_rows": int(invalid_provenance),
         "expected_model_or_revision_mismatches": int(model_mismatches),
     }
+    issues.update(decision_issues(
+        connection,
+        expected_model=args.expected_model,
+        expected_revision=args.expected_revision,
+        expected_prompt_version=args.expected_prompt_version,
+        expected_task=args.expected_task,
+    ))
+    issues["invalid_corpus_keys"] = int(connection.execute("""
+        SELECT count(*) FROM corpus
+        WHERE source_id IS NULL OR trim(source_id) = ''
+           OR record_id IS NULL OR trim(record_id) = ''
+           OR content_hash IS NULL OR trim(content_hash) = ''
+    """).fetchone()[0])
     return {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "corpus": args.corpus.resolve().as_posix(),

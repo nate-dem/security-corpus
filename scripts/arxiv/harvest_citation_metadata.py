@@ -27,6 +27,9 @@ from requests.adapters import HTTPAdapter
 from sickle import Sickle
 from urllib3.util.retry import Retry
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+from ingest.connectors.arxiv.metadata import build_metadata_index  # noqa: E402
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
@@ -71,7 +74,7 @@ def _make_session():
     """Create a requests.Session that retries on HTTP 503 with Retry-After."""
     session = requests.Session()
     retry = Retry(
-        total=None,
+        total=5,
         status_forcelist=[503],
         respect_retry_after_header=True,
         backoff_factor=0,
@@ -122,8 +125,10 @@ def harvest_by_id(
     rate_limit: float,
 ):
     """Fetch metadata for each arXiv ID via GetRecord, writing YYMM.jsonl files."""
-    completed = _load_checkpoint(checkpoint_file)
-    remaining = [aid for aid in arxiv_ids if aid not in completed]
+    # Legacy checkpoints also contain failed requests and may be ahead of
+    # buffered JSONL writes. Only durable, parseable metadata proves completion.
+    completed = set(build_metadata_index(output_dir))
+    remaining = [aid for aid in dict.fromkeys(arxiv_ids) if aid not in completed]
 
     logger.info(
         "Total: %d, already fetched: %d, remaining: %d",
@@ -156,6 +161,8 @@ def harvest_by_id(
                 file_handles[yymm].write(
                     json.dumps(obj, ensure_ascii=False) + "\n"
                 )
+                file_handles[yymm].flush()
+                os.fsync(file_handles[yymm].fileno())
                 fetched += 1
                 _save_checkpoint(checkpoint_file, arxiv_id)
 
@@ -166,8 +173,6 @@ def harvest_by_id(
                 else:
                     logger.error("Error fetching %s: %s", arxiv_id, e)
                 failed += 1
-                # Still checkpoint so we don't retry
-                _save_checkpoint(checkpoint_file, arxiv_id)
 
             if (i + 1) % 100 == 0:
                 logger.info(
@@ -185,6 +190,7 @@ def harvest_by_id(
         "Complete: fetched=%d, failed=%d, total=%d",
         fetched, failed, len(remaining),
     )
+    return failed
 
 
 def main():
@@ -211,10 +217,11 @@ def main():
     session = _make_session()
     requests.get = session.get
 
-    sickle = Sickle(args.oai_endpoint)
-    harvest_by_id(sickle, arxiv_ids, output_dir, checkpoint_file, args.rate_limit)
+    sickle = Sickle(args.oai_endpoint, timeout=60)
+    failed = harvest_by_id(sickle, arxiv_ids, output_dir, checkpoint_file, args.rate_limit)
     logger.info("Done.")
+    return 2 if failed else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

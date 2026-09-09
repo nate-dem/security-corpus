@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=qwen-qa-filter
-#SBATCH --array=0-99
+#SBATCH --array=0-99%4
 #SBATCH --account=marlowe-m000091-pm05
 #SBATCH --partition=preempt
 #SBATCH --qos=preempt
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=12:00:00
+#SBATCH --time=4:00:00
 #SBATCH --output=logs/qwen_qa/%A_%a.out
 #SBATCH --error=logs/qwen_qa/%A_%a.err
 
@@ -20,7 +20,8 @@ CORPUS_DIR="${CORPUS_DIR:-data/filtering/v4/qa_to_score}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-data/filtering/v4/qwen_qa_shards}"
 MODEL="${MODEL:-Qwen/Qwen3-8B}"
 MODEL_REVISION="${MODEL_REVISION:-b968826d9c46dd6066d109eabc6255188de91218}"
-NUM_SHARDS="${SLURM_ARRAY_TASK_COUNT:-100}"
+# Keep the original hash modulus when retrying a subset such as --array=7,42.
+NUM_SHARDS="${NUM_SHARDS:-100}"
 SHARD_ID="${SLURM_ARRAY_TASK_ID}"
 
 cd "${PROJECT_DIR}"

@@ -15,7 +15,9 @@ Usage:
 import argparse
 import json
 import logging
+import os
 import sys
+import tarfile
 import time
 from pathlib import Path
 
@@ -147,15 +149,16 @@ def download_papers(paper_ids: list[str], output_dir: Path,
         month_dir.mkdir(parents=True, exist_ok=True)
 
         # Check for existing file (could be .tar.gz, .gz, or .pdf)
-        existing = [f for f in month_dir.glob(f"{safe_name}.*")
-                    if not f.name.endswith(".failed")]
+        existing = [month_dir / f"{safe_name}{suffix}" for suffix in (".tar.gz", ".tar", ".gz", ".pdf")]
+        existing = [f for f in existing if f.is_file() and f.stat().st_size > 0]
         if existing:
             skipped += 1
             continue
 
         url = SOURCE_URL.format(arxiv_id=arxiv_id)
+        temporary = month_dir / f".{safe_name}.{os.getpid()}.download.tmp"
         try:
-            resp = session.get(url, timeout=30)
+            resp = session.get(url, timeout=30, stream=True)
 
             if resp.status_code == 429:
                 retry_after = int(resp.headers.get("Retry-After", 30))
@@ -163,21 +166,28 @@ def download_papers(paper_ids: list[str], output_dir: Path,
                     "Rate limited — waiting %d seconds", retry_after
                 )
                 time.sleep(retry_after)
-                resp = session.get(url, timeout=30)
+                resp.close()
+                resp = session.get(url, timeout=30, stream=True)
 
             resp.raise_for_status()
 
-            # Determine file extension from Content-Type
-            content_type = resp.headers.get("Content-Type", "")
-            if "application/x-eprint-tar" in content_type or "gzip" in content_type:
-                ext = ".tar.gz"
-            elif "application/pdf" in content_type:
+            with resp, temporary.open("wb") as handle:
+                for chunk in resp.iter_content(chunk_size=1024 * 1024):
+                    handle.write(chunk)
+            with temporary.open("rb") as handle:
+                magic = handle.read(5)
+            if magic.startswith(b"%PDF-"):
                 ext = ".pdf"
-            else:
+            elif magic.startswith(b"\x1f\x8b"):
                 ext = ".tar.gz"
+            elif tarfile.is_tarfile(temporary):
+                ext = ".tar"
+            else:
+                raise ValueError("Source response is not gzip, tar, or PDF")
 
             out_path = month_dir / f"{safe_name}{ext}"
-            out_path.write_bytes(resp.content)
+            temporary.replace(out_path)
+            (month_dir / f"{safe_name}.failed").unlink(missing_ok=True)
             downloaded += 1
 
             if (downloaded + skipped) % 100 == 0:
@@ -186,20 +196,22 @@ def download_papers(paper_ids: list[str], output_dir: Path,
                     i + 1, total, downloaded, skipped, failed,
                 )
 
-            # Only rate-limit after successful downloads
-            time.sleep(rate_limit)
-
         except Exception as e:
             failed += 1
             logger.error("Failed to download %s: %s", arxiv_id, e)
-            # Write a marker so we don't retry on restart
+            # Record failure, but leave it eligible for retry on restart.
             marker = month_dir / f"{safe_name}.failed"
             marker.write_text(str(e), encoding="utf-8")
+        finally:
+            temporary.unlink(missing_ok=True)
+            time.sleep(rate_limit)
 
     logger.info(
         "Complete: downloaded=%d, skipped=%d, failed=%d, total=%d",
         downloaded, skipped, failed, total,
     )
+    session.close()
+    return failed
 
 
 def _load_ids_from_file(id_file: Path) -> list[str]:
@@ -242,8 +254,9 @@ def main():
         return
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    download_papers(paper_ids, output_dir, args.rate_limit)
+    failed = download_papers(list(dict.fromkeys(paper_ids)), output_dir, args.rate_limit)
+    return 2 if failed else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

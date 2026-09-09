@@ -342,7 +342,7 @@ def _restart_summary(
     downloads_root = args.normalized_source_root.parent / "downloads"
     return {
         "preserved_full_text_checkpoint_ids": int(seed_ids + selected_ids),
-        "seed_ids_to_reextract_with_latex_v2": int(seed_ids),
+        "seed_ids_to_reextract_with_current_normalizer": int(seed_ids),
         "citation_metadata_ids_to_rescore_with_pinned_qwen": int(citation_ids),
         "currently_selected_citation_ids_to_reextract": int(selected_ids),
         "local_source_downloads_present": downloads_root.is_dir(),

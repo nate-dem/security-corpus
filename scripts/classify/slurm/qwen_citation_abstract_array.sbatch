@@ -21,7 +21,8 @@ OUTPUT_ROOT="${OUTPUT_ROOT:-data/filtering/v4/qwen_citation_abstract_shards}"
 MODEL="${MODEL:-Qwen/Qwen3-8B}"
 MODEL_REVISION="${MODEL_REVISION:-b968826d9c46dd6066d109eabc6255188de91218}"
 SHARD_ID="${SLURM_ARRAY_TASK_ID}"
-NUM_SHARDS="${SLURM_ARRAY_TASK_COUNT}"
+# Keep the original hash modulus when retrying only failed array indices.
+NUM_SHARDS="${NUM_SHARDS:-24}"
 
 cd "${PROJECT_DIR}"
 source .venv/bin/activate

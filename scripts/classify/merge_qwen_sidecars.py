@@ -7,6 +7,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 from typing import Sequence
@@ -21,6 +22,7 @@ if str(SRC) in sys.path:
 sys.path.insert(0, str(SRC))
 
 from classify.io import ensure_parent, write_json  # noqa: E402
+from classify.validation import decision_issues  # noqa: E402
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -30,12 +32,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise FileNotFoundError(f"No Qwen shard parquet files found in {args.input_dir}")
     if args.output.exists() and not args.overwrite:
         raise FileExistsError(f"Output exists; pass --overwrite to replace: {args.output}")
+    if args.output.resolve().is_relative_to(args.input_dir.resolve()):
+        raise ValueError("Merged output must be outside --input-dir to avoid ingesting itself")
+
+    run_configs = _validate_run_configs(part_files)
 
     ensure_parent(args.output)
     con = duckdb.connect()
     file_expr = _read_parquet_expr(part_files)
     _validate_parts(con, file_expr)
-    con.sql(f"""
+    temporary = args.output.with_name(f".{args.output.name}.{os.getpid()}.tmp")
+    try:
+        con.sql(f"""
         COPY (
             SELECT * EXCLUDE (rn)
             FROM (
@@ -44,6 +52,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     row_number() OVER (
                         PARTITION BY source_id, record_id, content_hash
                         ORDER BY
+                            (qwen_parse_status IN ('ok', 'extracted_json')
+                             AND qwen_should_keep IS NOT NULL) DESC NULLS LAST,
                             qwen_scored_at DESC,
                             qwen_prompt_version DESC,
                             qwen_model_revision DESC,
@@ -53,11 +63,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             WHERE rn = 1
         )
-        TO {_sql_string(args.output.as_posix())}
+        TO {_sql_string(temporary.as_posix())}
         (FORMAT PARQUET, COMPRESSION ZSTD)
-    """)
+        """)
+        os.replace(temporary, args.output)
+    finally:
+        temporary.unlink(missing_ok=True)
 
-    run_configs = sorted(args.input_dir.glob("**/run-config.json"))
     manifest = _build_manifest(con, args.output, part_files, run_configs)
     manifest_path = args.manifest or args.output.with_suffix(".manifest.json")
     write_json(manifest_path, manifest)
@@ -169,6 +181,45 @@ def _validate_parts(con: duckdb.DuckDBPyConnection, file_expr: str) -> None:
         raise ValueError(
             f"Qwen shards contain {invalid} rows without model revision or scored_at"
         )
+    con.execute(f"CREATE TEMP VIEW decisions AS SELECT * FROM {file_expr}")
+    issues = decision_issues(con)
+    # Failed attempts remain auditable. Successful retries take precedence;
+    # the coverage gate blocks keys with no successful attempt.
+    for name in ("undecided_rows", "invalid_parse_rows"):
+        issues.pop(name, None)
+    if issues:
+        raise ValueError(f"Incompatible or invalid Qwen shards: {issues}")
+    conflicts = con.execute("""
+        SELECT count(*) FROM (
+            SELECT source_id, record_id, content_hash
+            FROM decisions
+            WHERE qwen_parse_status IN ('ok', 'extracted_json')
+              AND qwen_should_keep IS NOT NULL
+            GROUP BY source_id, record_id, content_hash
+            HAVING count(DISTINCT qwen_should_keep) > 1
+        )
+    """).fetchone()[0]
+    if conflicts:
+        raise ValueError(f"Conflicting successful keep/drop decisions for {conflicts} keys")
+
+
+def _validate_run_configs(part_files: Sequence[Path]) -> list[Path]:
+    configs = sorted({path.parent / "run-config.json" for path in part_files})
+    reference = None
+    for path in configs:
+        if not path.is_file():
+            raise ValueError(f"Shard provenance is missing: {path}")
+        config = json.loads(path.read_text(encoding="utf-8"))
+        inference = dict(config.get("inference", {}))
+        if not inference or not config.get("runtime"):
+            raise ValueError(f"Incomplete shard provenance: {path}")
+        inference.pop("shard_id", None)
+        runtime = {key: config["runtime"].get(key) for key in ("python", "vllm", "transformers")}
+        signature = (inference, runtime)
+        if reference is not None and signature != reference:
+            raise ValueError(f"Mixed inference settings or runtimes: {path}")
+        reference = signature
+    return configs
 
 
 def _read_parquet_expr(files: Sequence[Path]) -> str:

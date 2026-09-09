@@ -9,9 +9,14 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import sys
 from typing import Sequence
 
 import duckdb
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+from classify.qwen import QWEN_PROMPT_VERSIONS, QwenTask  # noqa: E402
+from classify.validation import decision_issues  # noqa: E402
 
 
 DEFAULT_MODEL = "Qwen/Qwen3-8B"
@@ -114,6 +119,7 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     )
     parser.add_argument("--expected-model", default=DEFAULT_MODEL)
     parser.add_argument("--expected-revision", default=DEFAULT_REVISION)
+    parser.add_argument("--expected-prompt-version", default=QWEN_PROMPT_VERSIONS[QwenTask.ARXIV_ABSTRACT])
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args(argv)
@@ -179,7 +185,22 @@ def _validate(
         """,
         [args.expected_model, args.expected_revision],
     ).fetchone()[0]
-    problems: dict[str, int] = {}
+    problems = decision_issues(
+        connection,
+        expected_model=args.expected_model,
+        expected_revision=args.expected_revision,
+        expected_prompt_version=args.expected_prompt_version,
+        expected_task="arxiv_abstract",
+    )
+    invalid_ids = connection.execute("""
+        SELECT count(*) FROM universe
+        WHERE source_id IS DISTINCT FROM 'arxiv'
+           OR arxiv_id IS NULL OR trim(arxiv_id) = ''
+           OR record_id IS NULL OR trim(record_id) = ''
+           OR content_hash IS NULL OR trim(content_hash) = ''
+    """).fetchone()[0]
+    if invalid_ids:
+        problems["invalid universe identifiers"] = int(invalid_ids)
     for label, value in (
         ("duplicate universe keys", universe_count - universe_keys),
         ("duplicate universe arxiv_ids", universe_count - universe_ids),

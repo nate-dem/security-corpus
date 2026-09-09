@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 from fnmatch import fnmatchcase
-from hashlib import sha1
+from hashlib import sha1, sha256
 from importlib.metadata import PackageNotFoundError, version
 import json
 import os
@@ -51,6 +51,15 @@ IMMUTABLE_REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
+    for name in ("batch_size", "num_shards", "max_tokens", "max_model_len", "tensor_parallel_size"):
+        if getattr(args, name) <= 0:
+            raise ValueError(f"--{name.replace('_', '-')} must be positive")
+    if args.max_records is not None and args.max_records <= 0:
+        raise ValueError("--max-records must be positive")
+    if args.max_tokens >= args.max_model_len:
+        raise ValueError("--max-tokens must be smaller than --max-model-len")
+    if not 0 <= int(args.shard_id) < args.num_shards:
+        raise ValueError("--shard-id must be in the range [0, --num-shards)")
     task = coerce_task(args.task)
     prompt_version = args.prompt_version or QWEN_PROMPT_VERSIONS[task]
 
@@ -79,6 +88,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.model_revision:
         raise ValueError("--model-revision is required for reproducible inference")
     _validate_model_revision(args.model_revision)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    _write_run_config(args, task, prompt_version)
 
     _run_vllm_scoring(
         args=args,
@@ -189,8 +200,6 @@ def _run_vllm_scoring(
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    _write_run_config(args, task, prompt_version)
     tokenizer = AutoTokenizer.from_pretrained(
         args.model,
         revision=args.model_revision,
@@ -199,10 +208,13 @@ def _run_vllm_scoring(
     llm = LLM(
         model=args.model,
         revision=args.model_revision,
+        tokenizer=args.model,
+        tokenizer_revision=args.model_revision,
         dtype=args.dtype,
         max_model_len=args.max_model_len,
         enable_prefix_caching=True,
         tensor_parallel_size=args.tensor_parallel_size,
+        seed=args.seed,
     )
     sampling_params = SamplingParams(
         temperature=0.0,
@@ -223,15 +235,21 @@ def _run_vllm_scoring(
         source_ids,
         source_like,
     ):
-        batch_rows.append(row)
-        batch_prompts.append(
-            render_prompt(
+        prompt = render_prompt(
                 row,
                 task,
                 tokenizer=tokenizer,
                 max_content_chars=args.max_content_chars,
             )
-        )
+        prompt_tokens = len(tokenizer.encode(prompt, add_special_tokens=False))
+        if prompt_tokens + args.max_tokens > args.max_model_len:
+            raise ValueError(
+                f"Prompt for {row['record_id']} needs {prompt_tokens} input tokens plus "
+                f"{args.max_tokens} output tokens; --max-model-len={args.max_model_len}. "
+                "Use a reviewed prompt/context configuration in a new output directory."
+            )
+        batch_rows.append(row)
+        batch_prompts.append(prompt)
         if len(batch_rows) >= args.batch_size:
             part_index, scored = _score_and_write_batch(
                 llm=llm,
@@ -497,9 +515,14 @@ def _load_existing_output_keys(output_dir: Path | None) -> set[tuple[str, str, s
         return set()
     dataset = ds.dataset([str(path) for path in files], format="parquet")
     keys = set()
-    for batch in dataset.scanner(columns=["source_id", "record_id", "content_hash"]).to_batches():
+    for batch in dataset.scanner(columns=[
+        "source_id", "record_id", "content_hash", "qwen_parse_status", "qwen_should_keep",
+    ]).to_batches():
         for row in batch.to_pylist():
-            keys.add(_key(row))
+            if row["qwen_parse_status"] in {"ok", "extracted_json"} and isinstance(
+                row["qwen_should_keep"], bool
+            ):
+                keys.add(_key(row))
     return keys
 
 
@@ -541,6 +564,13 @@ def _write_run_config(
         "seed": args.seed,
         "num_shards": args.num_shards,
         "shard_id": str(args.shard_id),
+        "input": args.input.resolve().as_posix(),
+        "input_dataset_sha256": _input_fingerprint(args),
+        "source_ids": sorted(_resolve_source_filters(args)[0]),
+        "source_like": sorted(_resolve_source_filters(args)[1]),
+        "batch_size": args.batch_size,
+        "scorer_sha256": sha256(Path(__file__).read_bytes()).hexdigest(),
+        "prompt_code_sha256": sha256((SRC / "classify" / "qwen.py").read_bytes()).hexdigest(),
     }
     payload = {
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -559,7 +589,13 @@ def _write_run_config(
             raise ValueError(
                 f"Existing run configuration does not match this invocation: {destination}"
             )
+        for package in ("python", "transformers", "vllm"):
+            if existing.get("runtime", {}).get(package) != payload["runtime"][package]:
+                raise ValueError(f"Resume runtime changed for {package}: {destination}")
         return
+
+    if any(args.output_dir.glob("*.parquet")):
+        raise ValueError("Existing shard outputs have no run-config.json; use a fresh output directory")
 
     temporary = destination.with_name(f".{destination.name}.{os.getpid()}.tmp")
     try:
@@ -577,6 +613,25 @@ def _package_version(package: str) -> str | None:
         return version(package)
     except PackageNotFoundError:
         return None
+
+
+def _input_fingerprint(args: argparse.Namespace) -> str:
+    """Bind resume to input bytes, including metadata used by the prompt."""
+    sources, patterns = _resolve_source_filters(args)
+    files = _source_filtered_parquet_files(args.input, sources, patterns)
+    if files is None:
+        files = ([args.input] if args.input.is_file() else sorted(args.input.rglob("*.parquet")))
+    if not files:
+        raise FileNotFoundError(f"No Parquet files under {args.input}")
+    fingerprint = sha256()
+    root = args.input if args.input.is_dir() else args.input.parent
+    for path in files:
+        digest = sha256()
+        with path.open("rb") as handle:
+            while chunk := handle.read(8 * 1024 * 1024):
+                digest.update(chunk)
+        fingerprint.update(json.dumps([path.relative_to(root).as_posix(), digest.hexdigest()]).encode())
+    return fingerprint.hexdigest()
 
 
 def _key(row: Mapping[str, Any]) -> tuple[str, str, str]:
