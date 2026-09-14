@@ -9,7 +9,8 @@ import json
 
 from scripts.youtube_filter import rubric as base, rubric_segments as segments_rubric
 
-VERSION='content-review-v1-independent-evidence'
+VERSION='content-review-v2-quality-concerns'
+QUALITY_CONCERNS=('apparent_technical_error', 'unsupported_security_guarantee', 'damaged_or_missing_content')
 COMMON='''Assess source text for a research corpus for continued pretraining on
 cybersecurity and directly supporting operating systems, networking, cloud
 infrastructure, and software engineering. Quality matters more than token volume.
@@ -49,6 +50,22 @@ a positive judgment and reconsider that judgment; use uncertain when unresolved.
 No generated quotations, confidence probabilities, or keep/drop decisions.
 content_form briefly identifies the actual content; rationale explains the
 judgments without claiming independent technical fact verification.
+
+Also return quality_concerns, an array of zero to three distinct concerns. Each
+has kind, evidence_ids (one or two focal segment IDs), and a short reason:
+- apparent_technical_error: a concrete incorrect procedure, contradictory
+  explanation, or materially confused technical concept. Readable text can
+  still teach an error; do not reduce readability merely to represent error.
+- unsupported_security_guarantee: an unjustified absolute claim of security,
+  anonymity, safety, or successful exploitation. Distinguish a myth being
+  refuted from a claim the author endorses.
+- damaged_or_missing_content: missing essential commands, equations, options,
+  code delimiters, or visual context; pervasive mistranslation or stitched text.
+Explain the specific issue; do not flag content just for being short, old,
+introductory, informal, a vendor article, an abstract, or offensive security.
+Do not invent a correction. Empty concerns means none identified in this pass,
+not that all technical claims have been verified. When unsure about an essential
+meaning, use the existing uncertain label rather than fabricating evidence.
 '''
 GUIDANCE={
  'youtube':'''Transcript guidance: informal speech is acceptable. Assess corrupted
@@ -77,6 +94,11 @@ def schema(focal):
                           'label':{'type':'string','enum':base.LABELS[dimension]}},
             'required':['evidence_ids','label']}
     properties['rationale']={'type':'string','minLength':1,'maxLength':1200}
+    properties['quality_concerns']={'type':'array','maxItems':3,'items':{
+        'type':'object','additionalProperties':False,'required':['kind','evidence_ids','reason'],
+        'properties':{'kind':{'type':'string','enum':list(QUALITY_CONCERNS)},
+            'evidence_ids':{'type':'array','minItems':1,'maxItems':2,'items':{'type':'integer','enum':ids}},
+            'reason':{'type':'string','minLength':1,'maxLength':500}}}}
     return {'type':'object','additionalProperties':False,'properties':properties,'required':list(properties)}
 
 
@@ -98,7 +120,27 @@ def parse_response(raw,focal,start,finish_reason):
                 raise ValueError('Invalid evidence IDs')
             labels[dimension]=item['label']
             evidence.extend({'dimension':dimension,'segment_id':i} for i in ids)
-        return segments_rubric.parse_response(json.dumps({**labels,'evidence':evidence}),focal,start,finish_reason)
+        concerns=value['quality_concerns']
+        if not isinstance(concerns,list) or len(concerns)>3:
+            raise ValueError('Invalid quality concerns')
+        indexed={s['segment_id']:s for s in segments_rubric.segments(focal,start)}
+        kinds=set()
+        resolved=[]
+        for concern in concerns:
+            if not isinstance(concern,dict) or set(concern)!={'kind','evidence_ids','reason'}:
+                raise ValueError('Invalid quality concern fields')
+            kind,ids,reason=concern['kind'],concern['evidence_ids'],concern['reason']
+            if kind not in QUALITY_CONCERNS or kind in kinds or not isinstance(reason,str) or not 1<=len(reason.strip())<=500:
+                raise ValueError('Invalid or repeated quality concern')
+            if (not isinstance(ids,list) or not 1<=len(ids)<=2 or any(type(i) is not int or i not in indexed or not indexed[i]['text'].strip() for i in ids)
+                    or len(set(ids))!=len(ids)):
+                raise ValueError('Quality concern needs valid focal evidence')
+            kinds.add(kind)
+            resolved.append({**concern,'evidence_offsets':[indexed[i] for i in ids]})
+        result=segments_rubric.parse_response(json.dumps({**labels,'evidence':evidence}),focal,start,finish_reason)
+        if result['parse_status']=='ok':
+            result['labels']['quality_concerns']=resolved
+        return result
     except (KeyError,TypeError,ValueError) as exc:
         return {'parse_status':'invalid_response','labels':None,'evidence_offsets':[],'error':str(exc)}
 

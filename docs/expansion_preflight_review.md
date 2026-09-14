@@ -1,5 +1,10 @@
 # Review of completed CPU jobs — 2026-09-14
 
+**Update:** the user delegated the manual-review work to the assistant. The
+original examples are assessed and a revised 89-case comparison is ready. Use
+[the current commands](../scripts/curation/README.md); the manual steps below
+remain as historical instructions, not a pending task for the user.
+
 Jobs 485980 (English preparation) and 485981 (baseline preflight) completed.
 Transferred JSON reports were checked locally against their manifest/configuration
 hashes, producing Python modules, tokenizer identity, prior profile, and count

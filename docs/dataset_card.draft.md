@@ -49,6 +49,12 @@ Publish before release:
 No downstream training benefit, precision/recall, or corpus-wide factual
 verification has yet been established for the additions.
 
+Development review now includes 89 assistant-assessed examples, including
+explicit supporting excerpts and quality concerns. These are disclosed as
+assistant judgments; they do not establish human agreement, independent
+ground truth, or representative production retention. The 8B/32B comparison
+has been prepared but has not yet run on Marlowe.
+
 ## Limitations and appropriate use
 
 Expect source and sampling biases, outdated technical claims, and errors in
