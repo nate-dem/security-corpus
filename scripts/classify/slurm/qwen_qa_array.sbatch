@@ -15,7 +15,7 @@ set -euo pipefail
 
 # Submit manually after auditing dry-run prompts. Codex must not run sbatch.
 
-PROJECT_DIR="${PROJECT_DIR:-/scratch/m000091-pm05/natedem/security-corpus}"
+PROJECT_DIR="${PROJECT_DIR:-/scratch/m000091/natedem/security-corpus}"
 CORPUS_DIR="${CORPUS_DIR:-data/filtering/v4/qa_to_score}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-data/filtering/v4/qwen_qa_shards}"
 MODEL="${MODEL:-Qwen/Qwen3-8B}"

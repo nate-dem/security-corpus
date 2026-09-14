@@ -18,6 +18,6 @@ jobs:
       - run: python -m ruff check src scripts tests
       - run: python -m pytest -m 'not data_quality'
       - run: |
-          for script in scripts/marlowe/*.sh scripts/classify/slurm/*.sbatch; do
+          for script in scripts/marlowe/*.sh scripts/classify/slurm/*.sbatch scripts/youtube/*.sh scripts/youtube/*.sbatch scripts/web_corpora/*.sh scripts/web_corpora/*.sbatch scripts/youtube_filter/*.sh scripts/youtube_filter/*.sbatch scripts/release/*.sbatch; do
             bash -n "$script"
           done

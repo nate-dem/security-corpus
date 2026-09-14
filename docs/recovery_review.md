@@ -6,6 +6,46 @@ hashes, and separate semantic-decision sidecars. The recovery checkpoint is
 usable for continued work. It is not yet a release candidate, and neither
 classifier effectiveness nor downstream model improvement has been established.
 
+**Scope correction (2026-09-09):** the large recovery checkpoint audited below
+is an upstream working set, not the previously cleaned and filtered selection.
+Existing retained outputs were subsequently checked and are documented here.
+The initial recommendation to begin another Qwen run was premature. Preserve
+the existing selection, reconcile its component files, and validate that
+candidate before deciding whether any specific records need reprocessing.
+Missing immutable model-revision metadata limits reproducibility; it does not
+by itself demonstrate that existing filtering decisions are wrong.
+
+## Existing cleaned and filtered outputs
+
+| Component | Existing path | Rows | Stored tokens |
+|---|---|---:|---:|
+| Qwen-retained Q&A | `data/filtering/v3/qwen_qa_kept/` | 217,279 | 284,619,801 |
+| Cleaned seed papers | `data/final-no-chunk/academic_papers/arxiv_cs_cr_full.parquet` | 46,273 | 661,806,017 |
+| Cleaned retained citation papers | `data/final-no-chunk/academic_papers/arxiv_citation_qwen_kept_full.parquet` | 17,067 | 247,649,077 |
+| CloudTrail sessions | `data/final-no-chunk/normalized/source_id=cloudtrail-flaws/part-00000.parquet` | 56,043 | 246,135,664 |
+| Sigma rules | `data/final-no-chunk/normalized/source_id=sigma/part-00000.parquet` | 3,706 | 1,678,011 |
+
+These counts were read from the actual files. All four `final-no-chunk` files
+match that directory's manifest counts and token totals. Every retained Q&A
+row matches a successful keep decision in
+`data/filtering/v3/qwen_qa_decisions.parquet` on source, record ID, and content
+hash. Other cleaned structured sources exist under
+`data/training-clean-v2/normalized/`. The retained components span directories;
+a consolidated, publish-ready all-source candidate has not yet been verified.
+The checks above establish artifact presence and selection consistency, not a
+new full content-quality assessment or token recomputation.
+
+Including the five cleaned structured sources (NVD, KEV, ATT&CK, CWE, CAPEC),
+the retained baseline totals **659,147 records and 1,467,709,789 stored
+`cl100k_base` tokens**, excluding YouTube. The local per-component count report
+is `reports/recovery/review-2026-09-09/retained_token_inventory.json`.
+The researcher's current direction is to carry this baseline forward and
+proceed to YouTube ingestion and filtering.
+
+The historical training-clean-v2 manifest lists 4,545 YouTube transcript rows,
+but no YouTube artifacts were found under the current local `data/` tree.
+Recovering or collecting those transcripts remains the next source task.
+
 This review started at commit `dcef7ed`. It inspected recovery construction,
 Qwen prompts/scoring/restarts/merging, arXiv downloading and extraction, release
 audits, source-license policy, and Marlowe job templates. Existing connector
@@ -40,7 +80,8 @@ token check as insufficient for release integrity.
 Real prompts rendered successfully from all 28 QA source partitions. The
 baseline suite had 236 passing tests; the added regressions cover the failures
 below. Local CPU checks do not establish vLLM/CUDA compatibility, GPU throughput,
-or semantic filtering accuracy. The one-GPU smoke job tests that next.
+or semantic filtering accuracy. The optional one-GPU smoke job exercises
+inference compatibility and output validity only if a new scoring run is needed.
 
 ## Implemented repairs
 
@@ -69,9 +110,14 @@ No source selection, semantic prompt policy, numeric quality threshold, schema
 field, or license permission was invented. Existing recovered data files were
 left intact. GitHub Actions now runs lint, unit tests, and shell syntax checks.
 
-## Decisions and work still required
+## Checks to reconcile against the retained candidate
 
-1. **Validate the classifier policy before the full run.** Qwen's system prompt
+The original review below assessed the larger recovery working set. Its counts
+and proposed reruns must not be treated as evidence of defects in the retained
+selection. First establish which existing cleaned files form the intended
+candidate, then apply the relevant checks to those files.
+
+1. **Validate the classifier policy if another run is needed.** Qwen's system prompt
    prefers dropping uncertain/basic material, while the citation prompt asks
    to keep borderline adjacent research. That tension is a research choice.
    The QA prompt also sees community scores and only the head/tail of long
@@ -80,11 +126,14 @@ left intact. GitHub Actions now runs lint, unit tests, and shell syntax checks.
    checker validates supplied rows, but does not yet prove they are the original
    sample or bind approval to final release bytes. Retain the original sample
    manifest and require explicit signoff at assembly.
-2. **Finish the academic recovery.** Current preserved source statuses are
-   unversioned. Re-download/re-extract the 46,273 seed IDs plus the newly accepted
-   citation set. Record each selected ID as emitted or an explained extraction
-   failure; don't substitute the legacy 17,067 citation selection. Preserve raw
-   archives and extraction diagnostics. Archive hashes identify exact input
+2. **Validate the existing cleaned papers and their provenance.** The cleaned
+   46,273 seed papers and 17,067 retained citation papers already exist in
+   `data/final-no-chunk/`. Inspect these outputs and reconcile their extraction
+   history before proposing replacements. Preserved source statuses are
+   unversioned, so provenance needs further verification. If specific papers
+   require re-extraction, record each selected ID as emitted or an explained
+   failure and preserve raw archives and diagnostics. Changing the citation
+   selection requires a researcher decision. Archive hashes identify exact input
    bytes, but a mutable `/src/{id}` request plus separately harvested metadata
    does not itself prove that a paper version and its license match. Bind
    version-specific metadata before public full-text release. LaTeX macro and
@@ -104,8 +153,10 @@ left intact. GitHub Actions now runs lint, unit tests, and shell syntax checks.
    for the 28,311 structured duplicate copies. The existing QA canonical rule
    prefers a prior exact-key decision, then source/record ID; confirm that it
    remains the intended source/metadata precedence for release.
-5. **Resolve source policies.** NVD still includes 16,529 Rejected records
-   (682,974 stored tokens). Decide their treatment. Under the existing release
+5. **Resolve source policies for the candidate.** The upstream NVD checkpoint
+   includes 16,529 Rejected records (682,974 stored tokens); this does not show
+   that the cleaned NVD selection retains them. Check the selected files before
+   reopening that filtering decision. Under the existing release
    policy, Reddit and CloudTrail remain blocked pending permission/provenance;
    restricted arXiv licenses require source-specific treatment. Conditional
    license-audit results are not proof that required notices/attribution were
@@ -124,18 +175,24 @@ not justify changing corpus policy. The pinned GPU environment and model
 revision still need resolution and execution on Marlowe; no GPU job was run in
 this review.
 
-## Next compute step
+## Optional compute preflight
 
-Start with `scripts/classify/slurm/qwen_smoke.sbatch`: one H100, eight CPUs,
+Do not submit a Qwen rerun solely because of this review. If candidate
+validation establishes a need for new scoring, start with
+`scripts/classify/slurm/qwen_smoke.sbatch`: one H100, eight CPUs,
 64 GiB host RAM, one hour. It selects the shortest and longest QA record per
 source plus two citation abstracts, then verifies decision coverage. This is
 an implementation smoke test, not a representative human-quality sample.
 
-After reviewing its outputs, the existing arrays request one GPU per shard,
+The script writes separate sample/decision files and does not replace the
+existing cleaned corpus. It does not collect YouTube transcripts.
+
+For an approved scoring rerun, the existing arrays request one GPU per shard,
 with four concurrent jobs. Full token recomputation and paper extraction need
 CPUs, not GPUs. The local Marlowe runbook contains exact commands and remains
-excluded from Git. YouTube collection follows this recovery review as a
-separate source-design step.
+excluded from Git. The immediate work is to reconcile the existing cleaned
+candidate and recover/add the missing YouTube transcripts; no GPU allocation
+is currently required for that reconciliation.
 
 Primary references checked during review:
 

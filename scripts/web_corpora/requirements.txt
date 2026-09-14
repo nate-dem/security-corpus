@@ -1,0 +1,5 @@
+# CPU download/profile only; no CUDA, torch, transformers, or vLLM.
+huggingface-hub==0.36.0
+pyarrow==23.0.1
+duckdb==1.5.2
+tiktoken==0.12.0

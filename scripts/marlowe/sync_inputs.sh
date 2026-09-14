@@ -5,7 +5,7 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REMOTE_HOST="${REMOTE_HOST:-marlowe}"
-REMOTE_ROOT="${REMOTE_ROOT:-/scratch/m000091-pm05/natedem/security-corpus}"
+REMOTE_ROOT="${REMOTE_ROOT:-/scratch/m000091/natedem/security-corpus}"
 INCLUDE_LEGACY_PAPERS=0
 
 if [[ "${1:-}" == "--include-legacy-papers" ]]; then

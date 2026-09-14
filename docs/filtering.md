@@ -1,6 +1,28 @@
 # Filtering and release protocol
 
+## Current execution scope (2026-09-09)
+
+Carry forward the existing cleaned and filtered corpus and proceed to YouTube.
+The retained baseline is 659,147 records and 1,467,709,789 stored reference
+tokens, excluding YouTube; its component paths are recorded in
+`docs/recovery_review.md`. The v4 rebuild and rescoring instructions below are
+an optional recovery workflow, not prerequisites for adding transcripts.
+Legacy model-revision gaps alone do not require repeating completed filtering.
+The stronger provenance requirements below apply to newly generated decisions;
+existing outputs retain their documented provenance limitations.
+
 ## Invariants
+
+On 2026-09-14 the researcher clarified that **3B retained cl100k_base tokens is
+aspirational, not a release minimum**. A smaller, high-quality and publishable
+research corpus is preferable to adding weak material. Quality, provenance,
+reproducibility, and honest evaluation determine readiness; volume does not.
+The approved scope remains security plus directly supporting operating systems,
+networking, cloud infrastructure, and software engineering. RedSage-CFW and
+Primus-FineWeb remain approved candidates alongside YouTube. General educational
+replay is not automatically in scope. Candidate downloads and upstream token
+totals do not establish retained yield. Historical reports retain the earlier
+target wording as provenance, not current release policy.
 
 Filtering never overwrites normalized source Parquet. Every semantic decision
 is a sidecar keyed by:
@@ -222,6 +244,9 @@ A release candidate is ready only when all of these pass:
 8. Source licenses, attribution, provenance, and redistribution terms are documented.
 9. Per-source and total record/token counts are generated from the final files.
 10. The Hugging Face data card matches the immutable release manifest.
+11. Report actual retained tokens after cleaning, filtering, and deduplication,
+    with 3B as an aspirational reference only. A smaller corpus can pass release.
+    Repeated epochs, duplicates, and overlapping context do not add unique tokens.
 
 Run `scripts/release/audit_corpus_integrity.py` on the exact candidate paths to
 recompute hashes and token counts and detect duplicate record IDs. The report

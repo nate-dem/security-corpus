@@ -11,7 +11,7 @@
 
 set -euo pipefail
 
-PROJECT_DIR="${PROJECT_DIR:-/scratch/m000091-pm05/natedem/security-corpus}"
+PROJECT_DIR="${PROJECT_DIR:-/scratch/m000091/natedem/security-corpus}"
 cd "${PROJECT_DIR}"
 source .venv/bin/activate
 export PYTHONPATH="${PROJECT_DIR}/src"

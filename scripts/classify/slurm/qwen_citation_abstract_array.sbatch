@@ -15,7 +15,7 @@ set -euo pipefail
 
 # Exact-deduplicated citation-paper title+abstract filtering.
 
-PROJECT_DIR="${PROJECT_DIR:-/scratch/m000091-pm05/natedem/security-corpus}"
+PROJECT_DIR="${PROJECT_DIR:-/scratch/m000091/natedem/security-corpus}"
 INPUT="${INPUT:-data/filtering/v4/citation_abstract_universe.parquet}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-data/filtering/v4/qwen_citation_abstract_shards}"
 MODEL="${MODEL:-Qwen/Qwen3-8B}"

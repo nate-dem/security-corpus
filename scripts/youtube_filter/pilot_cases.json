@@ -1,0 +1,70 @@
+{
+  "purpose": "English counterparts of cases discussed in docs/youtube_profile_review.md. Diagnostic enrichment only, never a production allowlist or ground truth.",
+  "cases": [
+    {
+      "video_id": "5thPD-K9fRk",
+      "diagnostic_sample_index": 236,
+      "title_for_review_only": "Automated Triage Collection at Scale in the AWS Cloud"
+    },
+    {
+      "video_id": "ec56KiYcBws",
+      "diagnostic_sample_index": 360,
+      "title_for_review_only": "Just 5 seconds to Create a 4 Digit Pin Wordlist Using Crunch Tool | #kalilinux  #wordlist \ud83d\udc47\ud83d\udc47\ud83d\udc47"
+    },
+    {
+      "video_id": "95LvhPNKvo8",
+      "diagnostic_sample_index": 61,
+      "title_for_review_only": "Software Engineering: Persisting type in Java - should I be using flags?"
+    },
+    {
+      "video_id": "ffKk4P2nM28",
+      "diagnostic_sample_index": 89,
+      "title_for_review_only": "How assertive should I be in handling exceptions in objects? (6 Solutions!!)"
+    },
+    {
+      "video_id": "6IBJbYPxRmw",
+      "diagnostic_sample_index": 313,
+      "title_for_review_only": "GIS: bringToFront() method equivalent in OpenLayers"
+    },
+    {
+      "video_id": "60g6vQ0Zsj8",
+      "diagnostic_sample_index": 369,
+      "title_for_review_only": "Ubuntu: Recovering data from a faulty disk (2 Solutions!!)"
+    },
+    {
+      "video_id": "vm_Kl61l0xE",
+      "diagnostic_sample_index": 374,
+      "title_for_review_only": "Ubuntu: Second Monitor Not Detected, Displays Underscore 16.04"
+    },
+    {
+      "video_id": "3y_ip0gRKZQ",
+      "diagnostic_sample_index": 226,
+      "title_for_review_only": "Post-Installation Tasks for Autodesk 2014 Software"
+    },
+    {
+      "video_id": "FMxa2cXphEo",
+      "diagnostic_sample_index": 29,
+      "title_for_review_only": "Cyber Strike Deck Profiles And Combos"
+    },
+    {
+      "video_id": "Wmq0pHj20mE",
+      "diagnostic_sample_index": 24,
+      "title_for_review_only": "HLCI - LiveCoding as Systems Exploration"
+    },
+    {
+      "video_id": "Ei3PUbnjwQg",
+      "diagnostic_sample_index": 426,
+      "title_for_review_only": "Become a Data Driven Organization Through Unified Metadata Using ODPi Egeria - Mandy Chessell, IBM"
+    },
+    {
+      "video_id": "sFDR87Ai6n8",
+      "diagnostic_sample_index": 203,
+      "title_for_review_only": "Tony Jones: Introduction to performance analysis on openSUSE using Perf"
+    },
+    {
+      "video_id": "Cbk574HyMPk",
+      "diagnostic_sample_index": 282,
+      "title_for_review_only": "GraphQL for frontend developers at Adobe"
+    }
+  ]
+}

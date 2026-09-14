@@ -14,7 +14,48 @@ academic papers retain normalized LaTeX or extracted PDF text.
 
 ## Current corpus inventory
 
-The current research checkpoint contains **2,089,231 documents** and
+The existing cleaned and filtered components contain **659,147 records** and
+**1,467,709,789 `cl100k_base` reference tokens**, excluding YouTube. These totals
+were read from the retained Parquet files on 2026-09-09; no new filtering or
+token recomputation was performed.
+
+| Retained component | Records | Tokens |
+|---|---:|---:|
+| Qwen-retained Q&A and communities | 217,279 | 284,619,801 |
+| Cleaned seed and citation papers | 63,340 | 909,455,094 |
+| CloudTrail sessions | 56,043 | 246,135,664 |
+| Sigma rules | 3,706 | 1,678,011 |
+| Cleaned NVD, KEV, and MITRE knowledge sources | 318,779 | 25,821,219 |
+| **Total, excluding YouTube** | **659,147** | **1,467,709,789** |
+
+The selected files are Q&A under `data/filtering/v3/qwen_qa_kept/`, papers,
+CloudTrail and Sigma under `data/final-no-chunk/`, and the other five structured
+sources under `data/training-clean-v2/normalized/`. See
+[the retained-output inventory](docs/recovery_review.md#existing-cleaned-and-filtered-outputs).
+These components are the baseline for adding YouTube; another full-corpus
+classification run is not the next step. Publication packaging remains separate.
+
+To collect the missing YouTube source, copy the standalone
+[`scripts/youtube/`](scripts/youtube/README.md) directory to Marlowe. It downloads
+all shards from a pinned YouTube-Commons snapshot, resumes interrupted transfers,
+and verifies upstream checksums without applying content filters.
+
+The researcher clarified on 2026-09-14 that **3B retained tokens is aspirational**;
+research quality and publishability take priority over volume. Approved scope is
+security plus directly supporting technical material. RedSage-CFW and
+Primus-FineWeb are approved expansion candidates alongside YouTube. The
+[web-corpus runbook](scripts/web_corpora/README.md) covers pinned downloads,
+CPU token profiling, and overlap measurement on Marlowe. These additions are
+not yet included in the retained totals above; reaching 3B would require another
+1,532,290,211 tokens after filtering and deduplication, but a smaller release is
+acceptable when it better meets the quality objective.
+
+See the [current completion plan](docs/finish_plan.md) for completed jobs,
+remaining implementation, and the path to GitHub and Hugging Face publication.
+
+### Upstream recovery working set
+
+The larger, upstream recovery checkpoint contains **2,089,231 documents** and
 **2,703,091,696 `cl100k_base` reference tokens** across three source families.
 
 | Family | Documents | Tokens | Current stage |
@@ -24,10 +65,10 @@ The current research checkpoint contains **2,089,231 documents** and
 | Structured knowledge and artifacts | 408,596 | 275,145,829 | Structurally validated checkpoint |
 | **Total** | **2,089,231** | **2,703,091,696** | **Pre-release working set** |
 
-These are checkpoint counts, not the final Hugging Face release size. Final
-counts will change after semantic filtering, paper reprocessing,
-cross-family duplicate resolution, CloudTrail chunking, researcher policy
-decisions, and redistribution review.
+These are upstream checkpoint counts, not the retained corpus total above or
+the final Hugging Face release size. The recovery workflow below describes
+rebuilding from that working set if needed; it does not require replacing the
+existing cleaned selection.
 
 ### Q&A and community sources
 

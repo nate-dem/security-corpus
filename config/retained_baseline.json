@@ -1,0 +1,17 @@
+{
+  "description": "Existing retained selection reconciled on 2026-09-09; no semantic rescoring or source changes.",
+  "expected_records": 659147,
+  "reference_stored_tokens": 1467709789,
+  "inputs": [
+    "data/filtering/v3/qwen_qa_kept",
+    "data/final-no-chunk/academic_papers/arxiv_cs_cr_full.parquet",
+    "data/final-no-chunk/academic_papers/arxiv_citation_qwen_kept_full.parquet",
+    "data/final-no-chunk/normalized/source_id=cloudtrail-flaws",
+    "data/final-no-chunk/normalized/source_id=sigma",
+    "data/training-clean-v2/normalized/source_id=nvd",
+    "data/training-clean-v2/normalized/source_id=cisa-kev",
+    "data/training-clean-v2/normalized/source_id=mitre-attack",
+    "data/training-clean-v2/normalized/source_id=mitre-cwe",
+    "data/training-clean-v2/normalized/source_id=capec"
+  ]
+}

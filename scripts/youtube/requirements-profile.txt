@@ -1,0 +1,3 @@
+# CPU profiling only; versions match the main corpus project.
+duckdb==1.5.2
+pyarrow==23.0.1
