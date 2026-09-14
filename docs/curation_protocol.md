@@ -5,6 +5,13 @@ Retain useful, well-supported research data and accept a smaller public corpus
 when quality or publication terms require it. Historical model and inventory
 outputs remain immutable, including their earlier target wording.
 
+**Current status:** jobs 485980 and 485981 completed and their reports have been
+reviewed. English candidates contain 7,312,515,096 exact-unique cl100k_base
+tokens; the existing baseline recount is 1,467,709,789. See
+[the findings and immediate review step](expansion_preflight_review.md).
+The submission commands below document the completed preparation; do not
+resubmit them for the current run.
+
 ## Work now implemented
 
 1. `scripts/youtube/prepare_english.py` prepares the complete approved English

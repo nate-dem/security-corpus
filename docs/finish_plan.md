@@ -1,8 +1,12 @@
 # Corpus completion status — 2026-09-14
 
 **Current priority: research quality and publishability.** The researcher
-clarified that 3B is aspirational, not required. Two CPU jobs are now prepared:
-full English candidate preparation and a read-only baseline release preflight.
+clarified that 3B is aspirational, not required. CPU jobs 485980 and 485981
+completed, and their transferred reports were checked against the producing
+code, configuration, and aggregate counts. English preparation yielded
+7,312,515,096 exact-unique candidate tokens; the baseline was independently
+recounted at 1,467,709,789 tokens. See [the report review](expansion_preflight_review.md)
+for the remaining integrity and publication findings.
 See [the current commands and curation protocol](curation_protocol.md).
 The completed download/profile jobs and old evidence repair should not be repeated.
 
@@ -10,12 +14,12 @@ The completed download/profile jobs and old evidence repair should not be repeat
 
 | Workstream | Completed | Still missing |
 |---|---|---|
-| Existing baseline | Existing cleaned selection reconciled: 659,147 records, 1,467,709,789 stored cl100k_base tokens | Final release assembly and verification; no new blanket LLM scoring is planned |
-| YouTube | All 439 shards downloaded and profiled; full English preparation implemented and tested | Run the CPU job for all 3,262,750 English rows; validate production filtering and produce retained output |
+| Existing baseline | 659,147 records, 1,467,709,789 recomputed cl100k_base tokens; stored hashes and token counts match | Resolve two ATT&CK ID collisions and missing CloudTrail provenance; final release assembly and verification |
+| YouTube | All 439 shards prepared; 3,262,750 English rows, including translations; 2,944,120 exact-unique nonblank texts / 7,312,515,096 candidate tokens | Validate production filtering and produce retained output |
 | YouTube classifier | 487-text / 637-span pilot; 631 evidence-valid spans after repair | Reviewed accuracy evaluation, resolution of scope/quality disagreements, scalable production runner and selection |
 | RedSage and Primus | All 1,724 files downloaded and profiled; exact overlap measured; development review packet and source-specific scorer implemented | Human review and independent evaluation, production filtering, near deduplication, retained output |
-| Release | Read-only baseline preflight and draft manifest implemented; dataset card drafted | Run preflight, consolidate final Parquet, complete attribution/provenance, validate and publish |
-| GitHub | Implementation and tests prepared for checkpointing | Commit reviewed changes incrementally, then push; code license remains a researcher choice |
+| Release | Baseline preflight complete; draft manifest and dataset card exist | Resolve reported source-policy mismatches and permission/attribution gaps, consolidate final Parquet, validate and publish |
+| GitHub | Implementation checkpoint pushed on codex/corpus-recovery-20260826 at 24c3d16 | Commit subsequent changes incrementally; code license remains a researcher choice |
 
 The two web sources supply **13,708,013,960 novel exact-unique candidate tokens**
 after comparison with the baseline. Reaching the aspirational 3B target would
@@ -23,10 +27,10 @@ require another **1,532,290,211 tokens**, or about 11.18% of that web pool befor
 any YouTube contribution. This is arithmetic, not a yield prediction or a reason
 to admit weak material. A smaller corpus can meet the release objective.
 
-No final YouTube or web additions have been counted. Full English YouTube token
-volume has not been measured with cl100k_base; metadata word counts and pilot
-tokens are not a substitute. The current baseline is a retained working corpus,
-not yet a verified public release.
+No final YouTube or web additions have been counted. The 7.313B YouTube tokens
+are candidates before semantic filtering and near deduplication. Exact overlap
+with the baseline and web additions has not yet been subtracted from that total.
+The current baseline is a retained working corpus, not yet a verified public release.
 
 ## Recommended order to finish
 
@@ -37,7 +41,7 @@ not yet a verified public release.
    Separate development examples from independently reviewed evaluation data.
    Existing language and supporting-topic approvals remain in force. Present
    unresolved boundaries and final selection rules concretely for researcher
-   review. Build full English preparation and resumable, partitioned production
+   review. Full English preparation is complete. Build resumable, partitioned production
    scoring; the current `prepare.py` and `score.py` are bounded pilot tools.
 2. **Run the validated expansion workflow on Marlowe.** Compare the sources by
    quality and complementary contribution. CPU jobs prepare and deduplicate candidates; GPU jobs classify;
@@ -59,11 +63,11 @@ not yet a verified public release.
    upload the approved release to Hugging Face, verify the uploaded inventory,
    and retain a durable copy of manifests and decisions off scratch.
 
-Steps 1 and release-policy preparation use current local artifacts. The English
-preparation and baseline preflight CPU jobs can run now using the existing web
-environment. No dependency reinstall or download is needed. GPU development
-evaluation follows review of the new packet; production scoring and near-dedup
-assembly remain unfinished.
+Steps 1 and release-policy preparation use current local artifacts. Do not
+resubmit the completed English preparation or baseline preflight jobs.
+GPU development evaluation follows review of the new packet; production scoring
+and near-dedup assembly remain unfinished. No dependency reinstall or download
+is needed for the current review.
 
 ## Evidence and detailed runbooks
 

@@ -14,9 +14,13 @@ tokens is an aspiration; a smaller release is acceptable.
 ## Data and provenance
 
 The current working baseline has 659,147 retained documents and 1,467,709,789
-stored reference tokens. These are not final release counts. Candidate additions
+recomputed reference tokens (job 485981; stored counts and hashes matched).
+These are not final release counts. Candidate additions
 are English YouTube-Commons transcripts, including translations, and qualifying
-RedSage-CFW and Primus-FineWeb records. Final source inclusion is pending.
+RedSage-CFW and Primus-FineWeb records. Full English preparation produced
+2,944,120 exact-unique texts and 7,312,515,096 candidate tokens before semantic
+selection. Final source inclusion is pending; baseline integrity and source
+publication findings are recorded in `docs/expansion_preflight_review.md`.
 
 For each released artifact, publish a manifest with exact SHA-256 checksums,
 record and recomputed token counts, source revisions, and the processing code
