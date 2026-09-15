@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -62,6 +64,7 @@ def test_compile_receives_headers_and_reports_real_failure(
     tmp_path, monkeypatch, compile_ok
 ):
     include = installed_headers(tmp_path, monkeypatch)
+    monkeypatch.setattr(cuda, "check_ninja", lambda: {"version": "fixture"})
     nvcc = tmp_path / "nvcc"
     nvcc.write_text("fixture compiler")
     monkeypatch.setattr(cuda, "nvcc_path", lambda: nvcc)
@@ -102,3 +105,101 @@ def test_compile_receives_headers_and_reports_real_failure(
         with pytest.raises(RuntimeError, match="before model loading.*\n.*nv/target"):
             cuda.configure_and_check()
     assert len(calls) == (4 if compile_ok else 2)
+
+
+def test_ninja_must_be_visible_to_child_processes(tmp_path, monkeypatch):
+    scripts = tmp_path / "venv/bin"
+    scripts.mkdir(parents=True)
+    ninja = scripts / "ninja"
+    ninja.write_text("#!/bin/sh\nprintf '1.13.2\\n'\n")
+    ninja.chmod(0o755)
+    monkeypatch.setattr(cuda.sysconfig, "get_path", lambda key: str(scripts))
+    monkeypatch.setenv("PATH", str(tmp_path / "unrelated"))
+    with pytest.raises(RuntimeError, match="not on PATH"):
+        cuda.check_ninja()
+    monkeypatch.setenv("PATH", str(scripts))
+    report = cuda.check_ninja()
+    assert report == {
+        "path": str(ninja),
+        "version": "1.13.2",
+        "sha256": cuda.sha256(ninja),
+    }
+    wrong = tmp_path / "wrong/bin"
+    wrong.mkdir(parents=True)
+    (wrong / "ninja").write_bytes(ninja.read_bytes())
+    (wrong / "ninja").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{wrong}:{scripts}")
+    with pytest.raises(RuntimeError, match="Expected this environment"):
+        cuda.check_ninja()
+
+
+def test_launcher_exposes_environment_tools_with_absolute_python(tmp_path):
+    """Reproduce the missing-PATH condition in the actual shell launcher."""
+    scripts = tmp_path / "scripts/curation"
+    scripts.mkdir(parents=True)
+    source = Path(cuda.__file__).with_name("run_first_batch.sh")
+    launcher = scripts / source.name
+    launcher.write_bytes(source.read_bytes())
+    bin_dir = scripts / ".venv-next/bin"
+    bin_dir.mkdir(parents=True)
+    python = bin_dir / "python"
+    python.write_text("#!/bin/sh\ncommand -v ninja\nninja --version\n")
+    python.chmod(0o755)
+    ninja = bin_dir / "ninja"
+    ninja.write_text("#!/bin/sh\nprintf 'fixture-ninja\\n'\n")
+    ninja.chmod(0o755)
+    env = {**os.environ, "PATH": "/usr/bin:/bin"}
+    result = subprocess.run(
+        ["/bin/bash", str(launcher), "--check-env"],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.splitlines() == [str(ninja), "fixture-ninja"]
+
+
+@pytest.mark.parametrize("observed", [[7, 99], [7, 98]])
+def test_sampler_preflight_requires_known_gpu_outputs(monkeypatch, observed):
+    assigned = {}
+    freed = []
+
+    class Logits:
+        def __setitem__(self, index, value):
+            assigned[index] = value
+
+    def full(shape, value, **kwargs):
+        assert shape == (2, 128) and value == -100.0
+        assert kwargs == {"dtype": "float32", "device": "cuda"}
+        return Logits()
+
+    def sample(logits, **kwargs):
+        assert assigned == {(0, 7): 1.0, (1, 99): 1.0}
+        assert kwargs == {"top_k": 1, "top_p": 1.0}
+        return SimpleNamespace(cpu=lambda: SimpleNamespace(tolist=lambda: observed))
+
+    monkeypatch.setitem(
+        sys.modules,
+        "torch",
+        SimpleNamespace(
+            full=full,
+            float32="float32",
+            cuda=SimpleNamespace(
+                is_available=lambda: True,
+                get_device_name=lambda _: "fixture H100",
+                empty_cache=lambda: freed.append(True),
+            ),
+        ),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "flashinfer.sampling",
+        SimpleNamespace(top_k_top_p_sampling_from_logits=sample),
+    )
+    monkeypatch.setattr(cuda.importlib.metadata, "version", lambda _: "0.6.18")
+    if observed == [7, 99]:
+        assert cuda.check_sampler()["observed"] == observed
+        assert freed == [True]
+    else:
+        with pytest.raises(RuntimeError, match="expected \\[7, 99\\]"):
+            cuda.check_sampler()

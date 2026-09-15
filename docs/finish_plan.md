@@ -10,11 +10,12 @@ for the remaining integrity and publication findings.
 See [the current commands and curation protocol](curation_protocol.md).
 The completed download/profile jobs and old evidence repair should not be repeated.
 
-**Immediate next jobs:** [setup and bounded model comparison](../scripts/curation/FIRST_BATCH.md).
-Setup job 486840 completed. GPU tasks 486841_0/1 loaded their models but failed
-before classification because the CUDA compiler could not find installed CCCL
-headers. The corrected retry uses `--reuse-setup`, the same two models and one
-GPU each, with new output `first-batch-v2`. No model download is needed.
+**Immediate next jobs:** [bounded model comparison retry](../scripts/curation/FIRST_BATCH.md).
+Setup job 486840 completed. The CCCL header fix passed in tasks 486864_0/1; both
+models loaded and captured graphs, then stopped at a missing `ninja` executable
+on PATH. The launcher now exposes the installed environment's executables and
+checks a small GPU sampler call before model loading. Reuse setup with the same
+two models and one GPU each, with new output `first-batch-v3`. No download is needed.
 CPU preparation and GPU quality review completed. The prepared inventory contains
 19,310,285 work-unit texts / 21,020,784,191 candidate tokens. The old 8B/32B pair
 still accepts weak or damaged content; assistant review of 48 jointly accepted
@@ -79,9 +80,9 @@ The current baseline is a retained working corpus, not yet a verified public rel
 
 Steps 1 and release-policy preparation use current local artifacts. Do not
 resubmit the completed English preparation or baseline preflight jobs.
-Assistant review and the v3/critic comparison reviews are complete. The next
-setup job installs a separate environment and downloads the two pinned FP8 models
-on Marlowe. Production GPU execution and near-dedup assembly remain unfinished.
+Assistant review and the v3/critic comparison reviews are complete. The separate
+environment and two pinned FP8 models are installed on Marlowe; retry only the
+GPU comparison. Production GPU execution and near-dedup assembly remain unfinished.
 
 ## Evidence and detailed runbooks
 

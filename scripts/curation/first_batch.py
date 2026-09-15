@@ -166,6 +166,7 @@ def main(argv=None):
     output.mkdir(parents=True, exist_ok=True)
     with _directory_lock(output):
         compiler = cuda_preflight.configure_and_check()
+        sampler = cuda_preflight.check_sampler()
         environment = {
             d.metadata["Name"]: d.version
             for d in importlib.metadata.distributions()
@@ -176,6 +177,7 @@ def main(argv=None):
             "model": model,
             "installed_packages": environment,
             "cuda_compiler": compiler,
+            "sampler_preflight": sampler,
         }
         config_path = output / "run-config.json"
         if config_path.exists() and json.loads(config_path.read_text()) != config:

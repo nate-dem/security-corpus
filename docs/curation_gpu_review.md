@@ -53,6 +53,20 @@ are not inherently low quality.
 
 ## Next execution
 
+**Latest, job 486864:** both tasks passed the CUDA header test using system NVCC
+12.9, loaded the models, captured CUDA graphs, and allocated GPU caches. They
+then failed during FlashInfer sampler warm-up with
+`FileNotFoundError: [Errno 2] No such file or directory: 'ninja'`.
+The package was installed, but the launcher did not put `.venv-next/bin` on PATH.
+The correction exposes that directory, checks the selected executable before
+submission, and runs a two-vector GPU sampler check before loading either model.
+The retry writes `first-batch-v3`; v1/v2 remain intact. No corpus classification
+results have been produced by these attempts. Detailed logs are in
+`reports/curation/first-batch-v2-logs/`. The Triton artifact warnings were not the
+fatal error: execution continued through graph capture to sampler warm-up.
+
+Historical failure and first repair:
+
 Setup job 486840 completed. Both tasks in array 486841 failed in DeepGEMM NVCC
 compilation with `fatal error: nv/target: No such file or directory`; neither
 reached classification. Weights loaded successfully using 33.42 GiB for the MoE

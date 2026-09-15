@@ -1,6 +1,8 @@
-"""Expose installed CCCL headers to DeepGEMM's NVCC and test compilation.
+"""Check build tools, expose CCCL headers, and optionally exercise the sampler.
 
-No downloads, package changes, GPU execution or model loading. NVIDIA documents
+The compiler check needs no GPU; check_sampler explicitly executes a tiny GPU
+kernel without model weights. Neither check downloads or installs anything.
+NVIDIA documents
 NVCC_PREPEND_FLAGS for adding -I flags to child compiler invocations. Discover
 headers from wheel metadata because CUDA 13 wheels changed their directory layout.
 """
@@ -11,6 +13,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sysconfig
 import tempfile
 
 
@@ -32,6 +35,62 @@ def sha256(path):
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def check_ninja():
+    """Check the executable child processes use, not just its Python package."""
+    found = shutil.which("ninja")
+    expected = Path(sysconfig.get_path("scripts")) / "ninja"
+    if found is None:
+        raise RuntimeError(
+            f"ninja is not on PATH; prepend {expected.parent} before submitting"
+        )
+    path = Path(found).resolve()
+    if not expected.is_file() or path != expected.resolve():
+        raise RuntimeError(
+            f"Expected this environment's ninja at {expected}, found {path}"
+        )
+    # Use the same bare command that FlashInfer launches.
+    version = subprocess.run(
+        ["ninja", "--version"], capture_output=True, text=True, check=True, timeout=15
+    ).stdout.strip()
+    if not version:
+        raise RuntimeError("ninja --version returned empty output")
+    return {"path": str(path), "version": version, "sha256": sha256(path)}
+
+
+def check_sampler():
+    """Exercise the FlashInfer call that failed during vLLM warm-up."""
+    import torch
+    from flashinfer.sampling import top_k_top_p_sampling_from_logits
+
+    if not torch.cuda.is_available():
+        raise RuntimeError("Sampler preflight requires a GPU allocation")
+    print(
+        "Sampler preflight: building/loading FlashInfer and checking two known outputs",
+        flush=True,
+    )
+    logits = torch.full((2, 128), -100.0, dtype=torch.float32, device="cuda")
+    logits[0, 7] = 1.0
+    logits[1, 99] = 1.0
+    result = top_k_top_p_sampling_from_logits(logits, top_k=1, top_p=1.0)
+    observed = result.cpu().tolist()
+    if observed != [7, 99]:
+        raise RuntimeError(
+            f"FlashInfer sampler preflight returned {observed}, expected [7, 99]"
+        )
+    del logits, result
+    torch.cuda.empty_cache()
+    print(
+        "Sampler preflight passed: FlashInfer compiled, loaded and returned [7, 99]",
+        flush=True,
+    )
+    return {
+        "version": "flashinfer-sampler-preflight-v1",
+        "flashinfer_version": importlib.metadata.version("flashinfer-python"),
+        "gpu": torch.cuda.get_device_name(0),
+        "observed": observed,
+    }
 
 
 def cccl_include():
@@ -70,6 +129,7 @@ def nvcc_path():
 
 
 def configure_and_check():
+    ninja = check_ninja()
     include, version = cccl_include()
     nvcc = nvcc_path()
     # DeepGEMM constructs its NVCC command as shell text. Marlowe paths have no
@@ -130,6 +190,7 @@ def configure_and_check():
         "nvcc": str(nvcc),
         "nvcc_sha256": sha256(nvcc),
         "nvcc_version": compiler_version,
+        "ninja": ninja,
         "cccl_version": version,
         "cccl_include": str(include),
         "nv_target_sha256": sha256(include / "nv/target"),

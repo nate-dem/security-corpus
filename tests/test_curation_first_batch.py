@@ -135,6 +135,9 @@ def test_first_batch_complete_resume_and_changed_binding(tmp_path, monkeypatch):
         "configure_and_check",
         lambda: {"compiler": "fixture"},
     )
+    monkeypatch.setattr(
+        first_batch.cuda_preflight, "check_sampler", lambda: {"sampler": "fixture"}
+    )
     snapshot = tmp_path / "snapshot"
     snapshot.mkdir()
     (snapshot / "config.json").write_text("{}")
@@ -227,6 +230,17 @@ def test_first_batch_complete_resume_and_changed_binding(tmp_path, monkeypatch):
         "--model-index",
         "0",
     ]
+
+    def broken_sampler():
+        raise RuntimeError("sampler warm-up failed")
+
+    monkeypatch.setattr(first_batch.cuda_preflight, "check_sampler", broken_sampler)
+    with pytest.raises(RuntimeError, match="sampler warm-up failed"):
+        first_batch.main(args)
+    assert not loads
+    monkeypatch.setattr(
+        first_batch.cuda_preflight, "check_sampler", lambda: {"sampler": "fixture"}
+    )
     assert first_batch.main(args) == 0 and len(loads) == 1
     monkeypatch.setattr(
         first_batch.cuda_preflight,

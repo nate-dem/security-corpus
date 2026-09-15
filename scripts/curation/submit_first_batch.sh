@@ -9,9 +9,10 @@ export PYTHONPATH="${CURATION_PROJECT}/src:${CURATION_PROJECT}${PYTHONPATH:+:${P
 CURATION_CHECK_PYTHON="${CURATION_CPU_PYTHON:-${CURATION_PROJECT}/scripts/web_corpora/.venv/bin/python}"
 "$CURATION_CHECK_PYTHON" -m scripts.curation.first_batch --project "$CURATION_PROJECT" \
   --input-dir "${CURATION_PREPARED:-/scratch/m000091/${USER}/curation/inputs-v1}" \
-  --output-dir "${CURATION_FIRST_BATCH_OUTPUT:-/scratch/m000091/${USER}/curation/first-batch-v2}" --check-env
+  --output-dir "${CURATION_FIRST_BATCH_OUTPUT:-/scratch/m000091/${USER}/curation/first-batch-v3}" --check-env
 mkdir -p logs/curation
 if [[ "${1:-}" == --reuse-setup ]]; then
+  export PATH="${CURATION_PROJECT}/scripts/curation/.venv-next/bin:${PATH}"
   scripts/curation/.venv-next/bin/python - <<'PY'
 import importlib.metadata as m
 import json
@@ -23,8 +24,9 @@ assert r['requirements_sha256']==_sha256(HERE/'requirements-next.txt')
 for package,version in r['versions'].items():
     assert m.version(package)==version, f'Environment changed: {package}'
 # Check installed header discovery without a compiler/GPU on the login node.
-from scripts.curation.cuda_preflight import cccl_include
+from scripts.curation.cuda_preflight import cccl_include, check_ninja
 print('Existing model setup verified; CCCL headers:', cccl_include()[0])
+print('Build tool verified:', check_ninja())
 PY
   exec sbatch scripts/curation/first_batch.sbatch
 fi

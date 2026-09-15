@@ -25,7 +25,9 @@ for package,version in r['versions'].items():
     assert m.version(package)==version, f'Environment changed: {package}'
 PY
 fi
+export PATH="${CURATION_VENV}/bin:${PATH}"
 "$CURATION_VENV/bin/python" -m pip check
+"$CURATION_VENV/bin/python" -c 'from scripts.curation.cuda_preflight import check_ninja; print(check_ninja())'
 "$CURATION_VENV/bin/python" -m pip freeze > "$CURATION_VENV/installed-packages.txt"
 "$CURATION_VENV/bin/python" -u -m scripts.curation.prepare_next_models
 echo 'Comparison environment and pinned model cache ready. Existing environments were preserved.'

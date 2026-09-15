@@ -1,12 +1,14 @@
 # Current run: model comparison and first complete partitions
 
-**Retry after jobs 486840/486841:** setup completed, but both GPU tasks stopped
-before classification because DeepGEMM's NVCC could not find `nv/target`.
-The installed CCCL wheel already contains the header. The runner now adds its
-include directory to `NVCC_PREPEND_FLAGS`, tests a small H100 CUDA compilation
-before model loading, and binds the compiler/header details to the run config.
-The GPU execution still needs verification on Marlowe. Do not reinstall packages
-or redownload models. The retry uses **`first-batch-v2`**; preserve failed v1 outputs.
+**Retry after job 486864:** the CCCL compiler fix passed, and both models loaded
+and captured CUDA graphs. They then stopped before classification because
+FlashInfer could not execute `ninja`. The launcher selected the new environment's
+Python but omitted its `bin` directory from `PATH`. Ninja was already installed.
+The launcher now exposes that directory; submission checks the actual executable,
+and GPU startup exercises the FlashInfer sampler before loading model weights.
+The existing CCCL/compiler check remains. No reinstall or model download is needed.
+The retry uses **`first-batch-v3`**; preserve failed v1/v2 outputs. Full classification
+still needs to complete on Marlowe.
 
 Jobs **486312** and **486326** completed. Their reports have been transferred and
 reviewed. Do not repeat preparation or the old 8B/32B diagnostic jobs. See
@@ -48,7 +50,10 @@ bash scripts/curation/submit_first_batch.sh --reuse-setup
 ```
 
 The script checks the completed preparation manifest, controls, setup report,
-installed versions and header location, then submits only the two-task GPU array:
+installed versions, header location and `ninja --version`, then submits only the
+two-task GPU array. The startup sampler check uses two tiny synthetic logits
+vectors and requires the known outputs `[7, 99]`; it does not process corpus data.
+Compiler, Ninja and sampler details are recorded with the run configuration.
 
 - Comparison: **1 GPU, 8 CPUs, 96 GB RAM per task, at most 4 hours per task**;
   at most two tasks concurrently, so at most eight allocated GPU-hours. Each
@@ -63,11 +68,13 @@ Job 486840 already completed this work.
 
 The current transferred GPU log reports NVIDIA driver 580.173.02 and CUDA 13.0.
 The pinned vLLM 0.29.0 PyPI build uses CUDA 13.0; Transformers is pinned at 5.10.4.
-Both models loaded successfully (33.42 and 27.67 GiB of GPU memory respectively),
-then failed in DeepGEMM compilation. The driver version does not establish the
-system NVCC version or a complete header search path; the new preflight measures
-those directly. Existing
-YouTube/web environments, model caches and corpus files remain available.
+Both models loaded successfully (33.42 and 27.67 GiB of GPU memory respectively).
+The retry logs identify the system compiler as `/usr/local/cuda-12.9/bin/nvcc`;
+the CCCL preflight passed with this compiler. Graph capture and GPU cache allocation
+also completed before the missing-Ninja error. Earlier Triton cache warnings were
+followed by those successful stages; they were not the terminating exception.
+The driver version is not the system NVCC version. Existing YouTube/web
+environments, model caches and corpus files remain available.
 No Hugging Face login is needed for these publicly available model repositories.
 
 These are `sbatch` jobs; they survive logout and do not require an active tmux
@@ -84,13 +91,13 @@ inside an existing run directory.
 After both GPU tasks finish, on the **Mac**:
 
 ```bash
-mkdir -p /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v2
+mkdir -p /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v3
 rsync -av \
   --include='/*/' --include='/*/summary.json' \
   --include='/*/bundle-summary.json' --include='/*/review-bundle.tar.gz' \
   --exclude='*' \
-  natedem@login-01.marlowe.stanford.edu:/scratch/m000091/natedem/curation/first-batch-v2/ \
-  /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v2/
+  natedem@login-01.marlowe.stanford.edu:/scratch/m000091/natedem/curation/first-batch-v3/ \
+  /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v3/
 ```
 
 Bundles contain only the bounded experiment's packets, raw responses, requests,
@@ -126,3 +133,8 @@ The compiler fix uses NVIDIA's documented
 The pinned vLLM build's [DeepGEMM compiler](https://github.com/deepseek-ai/DeepGEMM/blob/8b1392b978f5a03c828dd1711090d7fb50958b8a/csrc/jit/compiler.hpp)
 honors `DG_JIT_NVCC_COMPILER`; the runner pins that to the compiler tested by the
 preflight. No model weights, precision, prompt, scope or quality policy changed.
+
+Python's [virtual-environment documentation](https://docs.python.org/3/library/venv.html#how-venvs-work)
+distinguishes selecting an interpreter from adding installed executables to PATH.
+FlashInfer's [Ninja launcher](https://github.com/flashinfer-ai/flashinfer/blob/v0.6.18/flashinfer/jit/cpp_ext.py)
+invokes the bare `ninja` command, which requires the latter.
