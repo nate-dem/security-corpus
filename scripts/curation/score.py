@@ -54,6 +54,7 @@ def main(argv=None, model_factory=None):
     parser.add_argument('--max-output-tokens',type=int,default=1024)
     parser.add_argument('--language-model-only',action='store_true',help='Skip multimodal encoders on a compatible vLLM runtime')
     parser.add_argument('--enable-cuda-graphs',action='store_true',help='Use vLLM graph execution; changes the bound runtime configuration')
+    parser.add_argument('--compact-json',action='store_true',help='Pin xgrammar and disallow inter-field JSON whitespace; requires a new run directory')
     args=parser.parse_args(argv)
     active_rubric = {'v2':rubric,'v3':rubric_v3,'critic-v1':critic,'v4':rubric_v4,'critic-v2':critic_v2}[args.rubric_version]
     if not re.fullmatch('[0-9a-f]{40}',args.model_revision) or args.batch_size<1 or args.tensor_parallel_size<1:
@@ -128,6 +129,7 @@ def main(argv=None, model_factory=None):
                 trust_remote_code=False,dtype='bfloat16',max_model_len=args.max_model_len,max_num_seqs=args.batch_size,
                 tensor_parallel_size=args.tensor_parallel_size,gpu_memory_utilization=.85,
                 enable_prefix_caching=True,enforce_eager=not args.enable_cuda_graphs,seed=0,
+                **({'structured_outputs_config':{'backend':'xgrammar','disable_any_whitespace':True}} if args.compact_json else {}),
                 **({'language_model_only':True} if args.language_model_only else {}))
             model_load=time.monotonic()-started
             for offset in range(0,len(pending),args.batch_size):

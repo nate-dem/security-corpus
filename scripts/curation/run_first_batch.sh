@@ -18,7 +18,7 @@ if [[ "${1:-}" == --check-env ]]; then
   exec "$CURATION_PYTHON" -m scripts.curation.first_batch --project "$CURATION_PROJECT" \
     --input-dir "$CURATION_INPUT" --output-dir "$CURATION_OUTPUT" --check-env
 fi
-if [[ $# -ne 1 || ( ! "$1" =~ ^[01]$ && "$1" != --quality-pass ) ]]; then echo 'Usage: run_first_batch.sh --check-env|--quality-pass|0|1' >&2; exit 2; fi
+if [[ $# -ne 1 || ( ! "$1" =~ ^[01]$ && "$1" != --quality-pass && "$1" != --quality-retry ) ]]; then echo 'Usage: run_first_batch.sh --check-env|--quality-pass|--quality-retry|0|1' >&2; exit 2; fi
 "$CURATION_PYTHON" - <<'PY'
 import importlib.metadata as m
 import json
@@ -35,6 +35,11 @@ assert m.version('vllm') == '0.29.0'
 assert torch.cuda.is_available(), 'A compatible GPU allocation is required'
 print('GPU:',torch.cuda.get_device_name(0),'CUDA build:',torch.version.cuda,flush=True)
 PY
+if [[ "$1" == --quality-retry ]]; then
+  exec "$CURATION_PYTHON" -u -m scripts.curation.retry_quality \
+    --prior-dir "${CURATION_RETRY_PRIOR:-/scratch/m000091/${USER}/curation/quality-pass-v1/qwen38-27b-fp8}" \
+    --output-dir "${CURATION_RETRY_OUTPUT:-/scratch/m000091/${USER}/curation/quality-retry-v1/qwen38-27b-fp8}"
+fi
 if [[ "$1" == --quality-pass ]]; then
   exec "$CURATION_PYTHON" -u -m scripts.curation.quality_pass \
     --prior-dir "${CURATION_QUALITY_PRIOR:-/scratch/m000091/${USER}/curation/first-batch-v4/qwen38-27b-fp8}" \

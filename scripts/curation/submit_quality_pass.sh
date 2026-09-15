@@ -3,12 +3,21 @@
 set -euo pipefail
 CURATION_PROJECT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$CURATION_PROJECT"
-if [[ $# -ne 0 ]]; then echo 'Usage: submit_quality_pass.sh' >&2; exit 2; fi
+if [[ $# -gt 1 || ( $# -eq 1 && "$1" != --retry ) ]]; then echo 'Usage: submit_quality_pass.sh [--retry]' >&2; exit 2; fi
 export PYTHONPATH="${CURATION_PROJECT}/src:${CURATION_PROJECT}${PYTHONPATH:+:${PYTHONPATH}}"
 CURATION_CPU_PYTHON="${CURATION_CPU_PYTHON:-${CURATION_PROJECT}/scripts/web_corpora/.venv/bin/python}"
-"$CURATION_CPU_PYTHON" -m scripts.curation.quality_pass \
-  --prior-dir "${CURATION_QUALITY_PRIOR:-/scratch/m000091/${USER}/curation/first-batch-v4/qwen38-27b-fp8}" \
-  --output-dir "${CURATION_QUALITY_OUTPUT:-/scratch/m000091/${USER}/curation/quality-pass-v1/qwen38-27b-fp8}" \
+CURATION_MODULE=scripts.curation.quality_pass
+CURATION_PRIOR="${CURATION_QUALITY_PRIOR:-/scratch/m000091/${USER}/curation/first-batch-v4/qwen38-27b-fp8}"
+CURATION_OUTPUT="${CURATION_QUALITY_OUTPUT:-/scratch/m000091/${USER}/curation/quality-pass-v1/qwen38-27b-fp8}"
+CURATION_JOB=scripts/curation/quality_pass.sbatch
+if [[ "${1:-}" == --retry ]]; then
+  CURATION_MODULE=scripts.curation.retry_quality
+  CURATION_PRIOR="${CURATION_RETRY_PRIOR:-/scratch/m000091/${USER}/curation/quality-pass-v1/qwen38-27b-fp8}"
+  CURATION_OUTPUT="${CURATION_RETRY_OUTPUT:-/scratch/m000091/${USER}/curation/quality-retry-v1/qwen38-27b-fp8}"
+  CURATION_JOB=scripts/curation/quality_retry.sbatch
+fi
+"$CURATION_CPU_PYTHON" -m "$CURATION_MODULE" \
+  --prior-dir "$CURATION_PRIOR" --output-dir "$CURATION_OUTPUT" \
   --check-env
 export PATH="${CURATION_PROJECT}/scripts/curation/.venv-next/bin:${PATH}"
 "${CURATION_PROJECT}/scripts/curation/.venv-next/bin/python" - <<'PY'
@@ -27,4 +36,4 @@ cccl_include()
 print('Runtime and Ninja ready:', check_ninja(), flush=True)
 PY
 mkdir -p logs/curation
-exec sbatch scripts/curation/quality_pass.sbatch
+exec sbatch "$CURATION_JOB"
