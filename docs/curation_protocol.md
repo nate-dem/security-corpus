@@ -5,10 +5,11 @@ Retain useful, well-supported research data and accept a smaller public corpus
 when quality or publication terms require it. Historical model and inventory
 outputs remain immutable, including their earlier target wording.
 
-**Current action:** the 89-case v2 comparison is complete. Neither model is ready
-for production selection: see [the verified failures](curation_benchmark_review.md).
-Run [CPU input preparation and the corrected v3 comparison](../scripts/curation/NEXT_RUN.md)
-concurrently. Earlier comparison/manual-review instructions below are historical.
+**Current action:** v3 reports are reviewed and CPU input preparation is still
+running. Use [the independent GPU follow-up](../scripts/curation/GPU_REVIEW.md)
+to test a source-only quality reviewer and additional examples now. Neither model
+is approved for bulk selection; see [the findings](curation_v3_review.md).
+Earlier comparison/manual-review instructions below are historical.
 No user labeling task is pending; assistant origin is explicitly recorded.
 
 **Inventory status:** jobs 485980 and 485981 completed and their reports have been

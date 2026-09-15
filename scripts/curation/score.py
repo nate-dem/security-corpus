@@ -18,13 +18,13 @@ from ingest.utils import compute_content_hash, compute_token_count
 from scripts.youtube.download import _directory_lock, _write_json
 from scripts.youtube.profile import _sha256
 from scripts.youtube_filter import score as engine, rubric as base, rubric_segments
-from . import review_packet, rubric, rubric_v3
+from . import review_packet, rubric, rubric_v3, critic, runtime
 
 
 def load_packet(path):
     packet=json.loads(path.read_text())
     digest=hashlib.sha256(json.dumps({k:v for k,v in packet.items() if k!='packet_sha256'},sort_keys=True,ensure_ascii=False).encode()).hexdigest()
-    if packet.get('packet_sha256')!=digest or packet.get('purpose')!='development_only':
+    if packet.get('packet_sha256')!=digest or packet.get('purpose') not in {'development_only','candidate_scoring'}:
         raise ValueError('Invalid development packet binding')
     seen=set()
     for case in packet['cases']:
@@ -38,13 +38,13 @@ def load_packet(path):
     return packet
 
 
-def main(argv=None):
+def main(argv=None, model_factory=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--packet',type=Path,required=True)
     parser.add_argument('--output-dir',type=Path,required=True)
     parser.add_argument('--dry-run',action='store_true')
     parser.add_argument('--local-files-only',action='store_true')
-    parser.add_argument('--rubric-version',choices=('v2','v3'),default='v2')
+    parser.add_argument('--rubric-version',choices=('v2','v3','critic-v1'),default='v2')
     parser.add_argument('--model',default='Qwen/Qwen3-32B')
     parser.add_argument('--model-revision',default='9216db5781bf21249d130ec9da846c4624c16137')
     parser.add_argument('--tensor-parallel-size',type=int,default=2)
@@ -53,7 +53,7 @@ def main(argv=None):
     parser.add_argument('--max-model-len',type=int,default=8192)
     parser.add_argument('--max-output-tokens',type=int,default=1024)
     args=parser.parse_args(argv)
-    active_rubric = rubric_v3 if args.rubric_version == 'v3' else rubric
+    active_rubric = {'v2':rubric,'v3':rubric_v3,'critic-v1':critic}[args.rubric_version]
     if not re.fullmatch('[0-9a-f]{40}',args.model_revision) or args.batch_size<1 or args.tensor_parallel_size<1:
         parser.error('Immutable model revision and positive parallelism required')
     packet=load_packet(args.packet)
@@ -67,8 +67,9 @@ def main(argv=None):
         config={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}
         config.update(packet_sha256=packet['packet_sha256'],prompt_version=active_rubric.VERSION,
             versions=engine._versions(args.dry_run),temperature=0,enable_thinking=False,
-            code={m.__name__:_sha256(Path(m.__file__)) for m in (active_rubric,rubric,review_packet,engine,base,rubric_segments)},
+            code={m.__name__:_sha256(Path(m.__file__)) for m in (active_rubric,rubric,rubric_v3,review_packet,engine,base,rubric_segments)},
             runner_sha256=_sha256(Path(__file__)),
+            resident_runtime_sha256=_sha256(Path(runtime.__file__)) if model_factory else None,
             tokenizer_files={n:_sha256(snapshot/n) for n in engine.TOKENIZER_FILES if (snapshot/n).is_file()})
         config_path=output/'run-config.json'
         if config_path.exists() and json.loads(config_path.read_text())!=config:
@@ -119,7 +120,7 @@ def main(argv=None):
             from vllm import LLM, SamplingParams
             from vllm.sampling_params import StructuredOutputsParams
             started=time.monotonic()
-            llm=LLM(model=args.model,revision=args.model_revision,tokenizer=str(snapshot),tokenizer_revision=args.model_revision,
+            llm=(model_factory or LLM)(model=args.model,revision=args.model_revision,tokenizer=str(snapshot),tokenizer_revision=args.model_revision,
                 trust_remote_code=False,dtype='bfloat16',max_model_len=args.max_model_len,max_num_seqs=args.batch_size,
                 tensor_parallel_size=args.tensor_parallel_size,gpu_memory_utilization=.85,
                 enable_prefix_caching=True,enforce_eager=True,seed=0)

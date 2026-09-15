@@ -1,9 +1,9 @@
 # Assistant-reviewed classifier comparison
 
-**Current action:** v2 completed and failed development review. Use
-[NEXT_RUN.md](NEXT_RUN.md) for CPU candidate preparation and the corrected v3
-comparison. Commands below document the completed v2 run; do not repeat it.
-See [the results](../../docs/curation_benchmark_review.md).
+**Current action:** v3 reports are reviewed; CPU preparation is still running.
+Use [GPU_REVIEW.md](GPU_REVIEW.md) for a separate quality-review job that can run
+now. Commands below document the completed v2 run; do not repeat it.
+See [the latest results](../../docs/curation_v3_review.md).
 
 The user delegated review to the assistant on 2026-09-14. No manual-labeling task
 is pending with the user. All 86 original development cases were assessed, then

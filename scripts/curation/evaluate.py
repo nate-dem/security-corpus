@@ -14,7 +14,7 @@ from scripts.youtube.download import _write_json
 from scripts.youtube.profile import _sha256
 from scripts.youtube_filter import score as engine
 from scripts.youtube_filter.rubric import LABELS
-from . import policy, review_packet, rubric, rubric_v3, score
+from . import policy, review_packet, rubric, rubric_v3, critic, score
 
 
 def reference(packet, path):
@@ -45,17 +45,17 @@ def reference_route(row):
     return policy.route({**row['labels'],'quality_concerns':row['quality_concerns']})
 
 
-def evaluate(packet_path, reference_path, score_dir=None):
+def evaluate(packet_path, reference_path=None, score_dir=None):
     packet=score.load_packet(packet_path)
-    refs=reference(packet,reference_path)
+    refs=reference(packet,reference_path) if reference_path else {}
     cases={c['case_id']:c for c in packet['cases']}
-    result={'packet_sha256':packet['packet_sha256'],'reference_sha256':_sha256(reference_path),
+    result={'packet_sha256':packet['packet_sha256'],'reference_sha256':_sha256(reference_path) if reference_path else None,
         'policy_version':policy.VERSION,'policy_sha256':_sha256(Path(policy.__file__)),
         'evaluator_sha256':_sha256(Path(__file__)),
-        'reference_kind':'assistant','human_validated':False,'independent_ground_truth':False,
+        'reference_kind':'assistant' if reference_path else None,'human_validated':False,'independent_ground_truth':False,
         'production_accuracy_established':False,'cases':len(cases),
         'reference_routes':dict(Counter(reference_route(r) for r in refs.values())),
-        'reference_by_source':{s:dict(Counter(reference_route(refs[k]) for k,c in cases.items() if c['source']==s))
+        'reference_by_source':{s:dict(Counter(reference_route(refs[k]) for k,c in cases.items() if c['source']==s and k in refs))
                                for s in sorted({c['source'] for c in cases.values()})},
         'scope':'Development agreement only. Cases are not a representative yield sample or independent ground truth. '
                 'Eligible is a quality candidate, subject to deduplication and publication terms.'}
@@ -63,12 +63,15 @@ def evaluate(packet_path, reference_path, score_dir=None):
         return result
     summary=json.loads((score_dir/'summary.json').read_text())
     config=json.loads((score_dir/'run-config.json').read_text())
-    active_rubric = rubric_v3 if config.get('prompt_version') == rubric_v3.VERSION else rubric
+    active_rubric = {m.VERSION:m for m in (rubric,rubric_v3,critic)}.get(config.get('prompt_version'))
+    if active_rubric is None:
+        raise ValueError('Unknown scoring rubric version')
     config_sha=_sha256(score_dir/'run-config.json')
     if (summary.get('dry_run') is not False or config.get('dry_run') is not False
             or config['packet_sha256']!=packet['packet_sha256'] or summary['packet_sha256']!=packet['packet_sha256']
             or config['prompt_version']!=active_rubric.VERSION or summary['run_config_sha256']!=config_sha
             or config['code'][active_rubric.__name__]!=_sha256(Path(active_rubric.__file__))
+            or (active_rubric is critic and config['code'].get(rubric_v3.__name__)!=_sha256(Path(rubric_v3.__file__)))
             or summary['requests_sha256']!=_sha256(score_dir/'requests.jsonl')):
         raise ValueError('Scoring run/configuration does not match the reviewed packet and rubric')
     by_text=defaultdict(list)
@@ -107,26 +110,27 @@ def evaluate(packet_path, reference_path, score_dir=None):
             raise ValueError('Scoring requests omit or overlap source characters')
         routes=[policy.route(r['labels'],r['parse_status']) for r in spans]
         predicted=routes[0] if len(set(routes))==1 else 'review_required'
-        expected=reference_route(refs[key])
-        confusion[(expected,predicted)]+=1
-        if len(spans)==1 and spans[0]['parse_status']=='ok':
+        expected=reference_route(refs[key]) if key in refs else None
+        if expected is not None:
+            confusion[(expected,predicted)]+=1
+        if key in refs and len(spans)==1 and spans[0]['parse_status']=='ok':
             for dimension in LABELS:
                 dimensions[dimension]['compared']+=1
                 dimensions[dimension]['agreements']+=spans[0]['labels'][dimension]==refs[key]['labels'][dimension]
         comparisons.append({'case_id':key,'source':c['source'],'content_length':c['content_length'],
             'assistant_route':expected,'model_route':predicted,'span_routes':routes,
             'parse_statuses':[r['parse_status'] for r in spans],
-            'assistant_quality_concerns':refs[key]['quality_concerns'],
+            'assistant_quality_concerns':refs[key]['quality_concerns'] if key in refs else None,
             'model_quality_concerns':sorted({v['kind'] for r in spans for v in (r.get('labels') or {}).get('quality_concerns',[])}),
-            'assistant_notes':refs[key]['notes']})
+            'assistant_notes':refs[key]['notes'] if key in refs else None})
     result.update(model=config['model'],model_revision=config['model_revision'],run_config_sha256=config_sha,
         score_summary_sha256=_sha256(score_dir/'summary.json'),
         scoring_coverage_complete=all(r['parse_status']=='ok' for spans in by_case.values() for r in spans),
         model_routes=dict(Counter(r['model_route'] for r in comparisons)),
-        action_agreements=sum(r['model_route']==r['assistant_route'] for r in comparisons),
+        action_agreements=sum(r['model_route']==r['assistant_route'] for r in comparisons) if refs else None,
         action_confusion=[{'assistant':a,'model':b,'cases':n} for (a,b),n in sorted(confusion.items())],
         dimension_agreement_single_span={k:dict(v) for k,v in dimensions.items()},
-        model_eligible_reference_not_eligible=[r['case_id'] for r in comparisons if r['model_route']=='eligible' and r['assistant_route']!='eligible'],
+        model_eligible_reference_not_eligible=[r['case_id'] for r in comparisons if r['model_route']=='eligible' and r['assistant_route'] not in ('eligible',None)],
         reference_eligible_model_not_eligible=[r['case_id'] for r in comparisons if r['assistant_route']=='eligible' and r['model_route']!='eligible'],
         generation=summary['generation_this_invocation'],comparisons=comparisons)
     return result
@@ -135,11 +139,11 @@ def evaluate(packet_path, reference_path, score_dir=None):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--packet',type=Path,required=True)
-    p.add_argument('--reference',type=Path,required=True)
+    p.add_argument('--reference',type=Path,help='Omit for unlabeled diagnostics; no agreement/accuracy is then reported')
     p.add_argument('--score-dir',type=Path)
     p.add_argument('--output',type=Path,required=True)
     args=p.parse_args(argv)
-    if args.output.resolve() in {args.packet.resolve(),args.reference.resolve()} or (args.score_dir and args.output.resolve().is_relative_to(args.score_dir.resolve())):
+    if args.output.resolve() in {args.packet.resolve(),args.reference.resolve() if args.reference else None} or (args.score_dir and args.output.resolve().is_relative_to(args.score_dir.resolve())):
         p.error('Report output must be separate from input artifacts')
     result=evaluate(args.packet,args.reference,args.score_dir)
     _write_json(args.output,result)
