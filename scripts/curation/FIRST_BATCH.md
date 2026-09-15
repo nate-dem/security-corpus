@@ -1,5 +1,13 @@
 # Current run: model comparison and first complete partitions
 
+**Retry after jobs 486840/486841:** setup completed, but both GPU tasks stopped
+before classification because DeepGEMM's NVCC could not find `nv/target`.
+The installed CCCL wheel already contains the header. The runner now adds its
+include directory to `NVCC_PREPEND_FLAGS`, tests a small H100 CUDA compilation
+before model loading, and binds the compiler/header details to the run config.
+The GPU execution still needs verification on Marlowe. Do not reinstall packages
+or redownload models. The retry uses **`first-batch-v2`**; preserve failed v1 outputs.
+
 Jobs **486312** and **486326** completed. Their reports have been transferred and
 reviewed. Do not repeat preparation or the old 8B/32B diagnostic jobs. See
 [the review](../../docs/curation_gpu_review.md).
@@ -36,24 +44,29 @@ are copied. No bulk data or model weights go to the Mac.
 
 ```bash
 cd /scratch/m000091/natedem/security-corpus
-bash scripts/curation/submit_first_batch.sh
+bash scripts/curation/submit_first_batch.sh --reuse-setup
 ```
 
-The script checks the completed preparation manifest and control bindings, then
-submits a CPU setup job and a dependent two-task GPU array:
+The script checks the completed preparation manifest, controls, setup report,
+installed versions and header location, then submits only the two-task GPU array:
 
-- Setup: **4 CPUs, 32 GB RAM, no GPUs, at most 4 hours**. Installs a separate
-  `scripts/curation/.venv-next` and downloads **68.33 GB of model weights** to
-  `/scratch/m000091/natedem/curation-model-cache`. Allow about 130 GB additional
-  scratch for the environment, installation cache, models and bounded results.
 - Comparison: **1 GPU, 8 CPUs, 96 GB RAM per task, at most 4 hours per task**;
   at most two tasks concurrently, so at most eight allocated GPU-hours. Each
   model loads once and stays resident across the five input packets. Four hours
   is a cap, not a measured runtime prediction.
 
+For a fresh installation only, omit `--reuse-setup`: the script first submits a
+4-CPU/32-GB/4-hour setup job and makes the GPU tasks depend on its success. That
+setup downloads 68.33 GB of weights to the scratch model cache and installs
+`scripts/curation/.venv-next`; allow about 130 GB for all dependencies and models.
+Job 486840 already completed this work.
+
 The current transferred GPU log reports NVIDIA driver 580.173.02 and CUDA 13.0.
 The pinned vLLM 0.29.0 PyPI build uses CUDA 13.0; Transformers is pinned at 5.10.4.
-Actual model/kernel execution must still be checked on Marlowe. Existing
+Both models loaded successfully (33.42 and 27.67 GiB of GPU memory respectively),
+then failed in DeepGEMM compilation. The driver version does not establish the
+system NVCC version or a complete header search path; the new preflight measures
+those directly. Existing
 YouTube/web environments, model caches and corpus files remain available.
 No Hugging Face login is needed for these publicly available model repositories.
 
@@ -71,13 +84,13 @@ inside an existing run directory.
 After both GPU tasks finish, on the **Mac**:
 
 ```bash
-mkdir -p /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v1
+mkdir -p /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v2
 rsync -av \
   --include='/*/' --include='/*/summary.json' \
   --include='/*/bundle-summary.json' --include='/*/review-bundle.tar.gz' \
   --exclude='*' \
-  natedem@login-01.marlowe.stanford.edu:/scratch/m000091/natedem/curation/first-batch-v1/ \
-  /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v1/
+  natedem@login-01.marlowe.stanford.edu:/scratch/m000091/natedem/curation/first-batch-v2/ \
+  /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v2/
 ```
 
 Bundles contain only the bounded experiment's packets, raw responses, requests,
@@ -107,3 +120,9 @@ Checked 2026-09-15:
   and [Qwen3.8 recipe](https://recipes.vllm.ai/Qwen/Qwen3.8-27B): text-only serving
   and inference options. Published general benchmarks and parameter counts do
   not prove better filtering or faster throughput on our workload.
+
+The compiler fix uses NVIDIA's documented
+[NVCC environment flags](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#nvcc-environment-variables).
+The pinned vLLM build's [DeepGEMM compiler](https://github.com/deepseek-ai/DeepGEMM/blob/8b1392b978f5a03c828dd1711090d7fb50958b8a/csrc/jit/compiler.hpp)
+honors `DG_JIT_NVCC_COMPILER`; the runner pins that to the compiler tested by the
+preflight. No model weights, precision, prompt, scope or quality policy changed.

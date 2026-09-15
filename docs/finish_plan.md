@@ -11,6 +11,10 @@ See [the current commands and curation protocol](curation_protocol.md).
 The completed download/profile jobs and old evidence repair should not be repeated.
 
 **Immediate next jobs:** [setup and bounded model comparison](../scripts/curation/FIRST_BATCH.md).
+Setup job 486840 completed. GPU tasks 486841_0/1 loaded their models but failed
+before classification because the CUDA compiler could not find installed CCCL
+headers. The corrected retry uses `--reuse-setup`, the same two models and one
+GPU each, with new output `first-batch-v2`. No model download is needed.
 CPU preparation and GPU quality review completed. The prepared inventory contains
 19,310,285 work-unit texts / 21,020,784,191 candidate tokens. The old 8B/32B pair
 still accepts weak or damaged content; assistant review of 48 jointly accepted

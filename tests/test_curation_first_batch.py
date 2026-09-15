@@ -130,6 +130,11 @@ def test_first_batch_complete_resume_and_changed_binding(tmp_path, monkeypatch):
     from scripts.youtube.profile import _sha256
 
     loads = fake_model(monkeypatch)
+    monkeypatch.setattr(
+        first_batch.cuda_preflight,
+        "configure_and_check",
+        lambda: {"compiler": "fixture"},
+    )
     snapshot = tmp_path / "snapshot"
     snapshot.mkdir()
     (snapshot / "config.json").write_text("{}")
@@ -223,6 +228,19 @@ def test_first_batch_complete_resume_and_changed_binding(tmp_path, monkeypatch):
         "0",
     ]
     assert first_batch.main(args) == 0 and len(loads) == 1
+    monkeypatch.setattr(
+        first_batch.cuda_preflight,
+        "configure_and_check",
+        lambda: {"compiler": "changed"},
+    )
+    with pytest.raises(ValueError, match="binding changed"):
+        first_batch.main(args)
+    assert len(loads) == 1
+    monkeypatch.setattr(
+        first_batch.cuda_preflight,
+        "configure_and_check",
+        lambda: {"compiler": "fixture"},
+    )
     output = tmp_path / "result/qwen36-moe-fp8"
     report = json.loads((output / "summary.json").read_text())
     assert report["complete"] and report["scoring_coverage_complete"]

@@ -53,6 +53,17 @@ are not inherently low quality.
 
 ## Next execution
 
+Setup job 486840 completed. Both tasks in array 486841 failed in DeepGEMM NVCC
+compilation with `fatal error: nv/target: No such file or directory`; neither
+reached classification. Weights loaded successfully using 33.42 GiB for the MoE
+and 27.67 GiB for the dense model. The compiler could not see the installed CCCL
+headers. The retry exposes the wheel's include tree, tests a small CUDA compilation
+before model loading, and records compiler/header bindings. Reuse the installed
+environment and weights, keeping the failed v1 outputs; new results go to
+`first-batch-v2`. This fixes the observed search-path omission; full GPU inference
+remains to be validated. Transferred logs are in
+`reports/curation/first-batch-v1-logs/`.
+
 The user's model-choice question prompted a current model review. Test the official
 FP8 Qwen3.6-35B-A3B and Qwen3.8-27B checkpoints on the **same** compact v4 prompt
 and inputs, one H100 per model. The new prompt removes repetitive demonstrations

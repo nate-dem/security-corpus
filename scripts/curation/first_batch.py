@@ -15,7 +15,7 @@ import tarfile
 
 from scripts.youtube.download import _directory_lock, _write_json
 from scripts.youtube.profile import _sha256
-from . import evaluate, runtime, score, score_partitions
+from . import cuda_preflight, evaluate, runtime, score, score_partitions
 
 HERE = Path(__file__).resolve().parent
 
@@ -165,12 +165,18 @@ def main(argv=None):
             p.error("Output must be separate from control inputs")
     output.mkdir(parents=True, exist_ok=True)
     with _directory_lock(output):
+        compiler = cuda_preflight.configure_and_check()
         environment = {
             d.metadata["Name"]: d.version
             for d in importlib.metadata.distributions()
             if d.metadata["Name"]
         }
-        config = {**binding, "model": model, "installed_packages": environment}
+        config = {
+            **binding,
+            "model": model,
+            "installed_packages": environment,
+            "cuda_compiler": compiler,
+        }
         config_path = output / "run-config.json"
         if config_path.exists() and json.loads(config_path.read_text()) != config:
             raise ValueError("Run binding changed; choose a new output directory")
