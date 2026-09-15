@@ -14,7 +14,7 @@ from scripts.youtube.download import _write_json
 from scripts.youtube.profile import _sha256
 from scripts.youtube_filter import score as engine
 from scripts.youtube_filter.rubric import LABELS
-from . import policy, review_packet, rubric, score
+from . import policy, review_packet, rubric, rubric_v3, score
 
 
 def reference(packet, path):
@@ -63,11 +63,12 @@ def evaluate(packet_path, reference_path, score_dir=None):
         return result
     summary=json.loads((score_dir/'summary.json').read_text())
     config=json.loads((score_dir/'run-config.json').read_text())
+    active_rubric = rubric_v3 if config.get('prompt_version') == rubric_v3.VERSION else rubric
     config_sha=_sha256(score_dir/'run-config.json')
     if (summary.get('dry_run') is not False or config.get('dry_run') is not False
             or config['packet_sha256']!=packet['packet_sha256'] or summary['packet_sha256']!=packet['packet_sha256']
-            or config['prompt_version']!=rubric.VERSION or summary['run_config_sha256']!=config_sha
-            or config['code']['scripts.curation.rubric']!=_sha256(Path(rubric.__file__))
+            or config['prompt_version']!=active_rubric.VERSION or summary['run_config_sha256']!=config_sha
+            or config['code'][active_rubric.__name__]!=_sha256(Path(active_rubric.__file__))
             or summary['requests_sha256']!=_sha256(score_dir/'requests.jsonl')):
         raise ValueError('Scoring run/configuration does not match the reviewed packet and rubric')
     by_text=defaultdict(list)
@@ -90,7 +91,7 @@ def evaluate(packet_path, reference_path, score_dir=None):
                     or task['key']!=f"{task['kind']}-{task['content_hash']}-{start}-{end}" or task['key'] in seen):
                 raise ValueError('Invalid or repeated scoring span')
             seen.add(task['key'])
-            cached=engine._cached(score_dir/'decisions'/f"{task['key']}.json",task,text[start:end],rubric.parse_response,provenance)
+            cached=engine._cached(score_dir/'decisions'/f"{task['key']}.json",task,text[start:end],active_rubric.parse_response,provenance)
             state=cached or {'parse_status':'unprocessed','labels':None}
             for key in group:
                 by_case[key].append({'start':start,'end':end,**state})

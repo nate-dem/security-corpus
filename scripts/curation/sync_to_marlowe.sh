@@ -20,4 +20,4 @@ printf -v CURATION_REMOTE_QUOTED '%q' "${CURATION_REMOTE_ROOT}/reports/curation/
 ssh "$CURATION_REMOTE_HOST" "mkdir -p -- ${CURATION_REMOTE_QUOTED}"
 rsync -av "$CURATION_LOCAL_INPUT/packet.json" "$CURATION_LOCAL_INPUT/assistant_annotations.json" \
   "$CURATION_REMOTE_HOST:${CURATION_REMOTE_ROOT}/reports/curation/development-v2/"
-echo 'Code and reviewed inputs copied. Ready for scripts/curation/benchmark.sbatch.'
+echo 'Code and reviewed inputs copied. Use scripts/curation/NEXT_RUN.md for the current jobs.'

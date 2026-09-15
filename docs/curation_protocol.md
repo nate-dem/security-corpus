@@ -5,12 +5,11 @@ Retain useful, well-supported research data and accept a smaller public corpus
 when quality or publication terms require it. Historical model and inventory
 outputs remain immutable, including their earlier target wording.
 
-**Current action:** the user delegated example review to the assistant. The
-original 86 examples and three additional YouTube controls are assessed, with
-assistant origin explicitly recorded. Use the
-[current comparison-job commands](../scripts/curation/README.md). The manual
-review instructions below describe the original workflow; no user labeling is
-required to run the current comparison.
+**Current action:** the 89-case v2 comparison is complete. Neither model is ready
+for production selection: see [the verified failures](curation_benchmark_review.md).
+Run [CPU input preparation and the corrected v3 comparison](../scripts/curation/NEXT_RUN.md)
+concurrently. Earlier comparison/manual-review instructions below are historical.
+No user labeling task is pending; assistant origin is explicitly recorded.
 
 **Inventory status:** jobs 485980 and 485981 completed and their reports have been
 reviewed. English candidates contain 7,312,515,096 exact-unique cl100k_base

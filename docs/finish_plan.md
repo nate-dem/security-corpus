@@ -10,11 +10,12 @@ for the remaining integrity and publication findings.
 See [the current commands and curation protocol](curation_protocol.md).
 The completed download/profile jobs and old evidence repair should not be repeated.
 
-**Immediate next job:** [assistant-reviewed 8B/32B comparison](../scripts/curation/README.md).
-The user delegated the review; 89 development cases now have assistant labels
-and supporting excerpts. The revised classifier also checks apparent technical
-errors and unsupported security guarantees. No manual labeling task is pending
-with the user. These references are not independent human accuracy evidence.
+**Immediate next jobs:** [candidate preparation and corrected comparison](../scripts/curation/NEXT_RUN.md).
+The 89-case comparison completed and exposed presentation-induced quality flags,
+scope errors, and repeated concern categories. Neither model passed development
+review. The source-line v3 prompt and resumable bulk-input preparation are ready;
+see [the verified findings](curation_benchmark_review.md). No manual labeling task
+is pending with the user. Assistant references are not independent human evidence.
 
 ## Completed work and current counts
 
@@ -22,8 +23,8 @@ with the user. These references are not independent human accuracy evidence.
 |---|---|---|
 | Existing baseline | 659,147 records, 1,467,709,789 recomputed cl100k_base tokens; stored hashes and token counts match | Resolve two ATT&CK ID collisions and missing CloudTrail provenance; final release assembly and verification |
 | YouTube | All 439 shards prepared; 3,262,750 English rows, including translations; 2,944,120 exact-unique nonblank texts / 7,312,515,096 candidate tokens | Validate production filtering and produce retained output |
-| YouTube classifier | Old pilot reviewed; difficult cases assessed; clean/weak controls added to the new comparison | Run revised model comparison; broader evaluation, scalable production runner and selection |
-| RedSage and Primus | All 1,724 files profiled; exact overlap measured; 80 development examples assistant-reviewed | Run revised comparison; independent evaluation, production filtering, near deduplication, retained output |
+| YouTube classifier | 89-case comparison reviewed; source-line/quality-status correction implemented; bulk input preparation implemented | Run corrected comparison and input preparation; broader evaluation, production GPU runner and selection |
+| RedSage and Primus | All 1,724 files profiled; exact overlap measured; 80 development examples reviewed and model failures diagnosed | Run corrected comparison and bulk preparation; independent evaluation, production filtering, near deduplication, retained output |
 | Release | Baseline preflight complete; draft manifest and dataset card exist | Resolve reported source-policy mismatches and permission/attribution gaps, consolidate final Parquet, validate and publish |
 | GitHub | Implementation checkpoint pushed on codex/corpus-recovery-20260826 at 24c3d16 | Commit subsequent changes incrementally; code license remains a researcher choice |
 
@@ -71,9 +72,10 @@ The current baseline is a retained working corpus, not yet a verified public rel
 
 Steps 1 and release-policy preparation use current local artifacts. Do not
 resubmit the completed English preparation or baseline preflight jobs.
-Assistant review is complete; the GPU comparison is ready. Production scoring
-and near-dedup assembly remain unfinished. No dependency reinstall or download
-is needed for the current review.
+Assistant review and the v2 comparison review are complete. The corrected GPU
+comparison and CPU inference-input preparation can run in parallel. Production
+GPU scoring and near-dedup assembly remain unfinished. No dependency reinstall
+or download is needed for these jobs.
 
 ## Evidence and detailed runbooks
 

@@ -18,7 +18,7 @@ from ingest.utils import compute_content_hash, compute_token_count
 from scripts.youtube.download import _directory_lock, _write_json
 from scripts.youtube.profile import _sha256
 from scripts.youtube_filter import score as engine, rubric as base, rubric_segments
-from . import review_packet, rubric
+from . import review_packet, rubric, rubric_v3
 
 
 def load_packet(path):
@@ -44,6 +44,7 @@ def main(argv=None):
     parser.add_argument('--output-dir',type=Path,required=True)
     parser.add_argument('--dry-run',action='store_true')
     parser.add_argument('--local-files-only',action='store_true')
+    parser.add_argument('--rubric-version',choices=('v2','v3'),default='v2')
     parser.add_argument('--model',default='Qwen/Qwen3-32B')
     parser.add_argument('--model-revision',default='9216db5781bf21249d130ec9da846c4624c16137')
     parser.add_argument('--tensor-parallel-size',type=int,default=2)
@@ -52,6 +53,7 @@ def main(argv=None):
     parser.add_argument('--max-model-len',type=int,default=8192)
     parser.add_argument('--max-output-tokens',type=int,default=1024)
     args=parser.parse_args(argv)
+    active_rubric = rubric_v3 if args.rubric_version == 'v3' else rubric
     if not re.fullmatch('[0-9a-f]{40}',args.model_revision) or args.batch_size<1 or args.tensor_parallel_size<1:
         parser.error('Immutable model revision and positive parallelism required')
     packet=load_packet(args.packet)
@@ -63,9 +65,9 @@ def main(argv=None):
     with _directory_lock(output):
         tokenizer,snapshot=engine.load_tokenizer(args.model,args.model_revision,args.local_files_only)
         config={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}
-        config.update(packet_sha256=packet['packet_sha256'],prompt_version=rubric.VERSION,
+        config.update(packet_sha256=packet['packet_sha256'],prompt_version=active_rubric.VERSION,
             versions=engine._versions(args.dry_run),temperature=0,enable_thinking=False,
-            code={m.__name__:_sha256(Path(m.__file__)) for m in (rubric,review_packet,engine,base,rubric_segments)},
+            code={m.__name__:_sha256(Path(m.__file__)) for m in (active_rubric,rubric,review_packet,engine,base,rubric_segments)},
             runner_sha256=_sha256(Path(__file__)),
             tokenizer_files={n:_sha256(snapshot/n) for n in engine.TOKENIZER_FILES if (snapshot/n).is_file()})
         config_path=output/'run-config.json'
@@ -87,7 +89,7 @@ def main(argv=None):
             group.append(case['case_id'])
             if len(group)>1:
                 continue
-            for span in rubric.make_spans(case['text'],tokenizer,kind,focal_tokens=args.focal_tokens,
+            for span in active_rubric.make_spans(case['text'],tokenizer,kind,focal_tokens=args.focal_tokens,
                     max_model_len=args.max_model_len,max_output_tokens=args.max_output_tokens):
                 key=f"{kind}-{digest}-{span['start']}-{span['end']}"
                 task={**span,'kind':kind,'content_hash':digest,'key':key}
@@ -110,7 +112,7 @@ def main(argv=None):
         provenance['run_config_sha256']=config_sha
         (output/'decisions').mkdir(exist_ok=True)
         states={t['key']:engine._cached(output/'decisions'/f"{t['key']}.json",t,
-            documents[t['content_hash']]['text'][t['start']:t['end']],rubric.parse_response,provenance) for t in tasks}
+            documents[t['content_hash']]['text'][t['start']:t['end']],active_rubric.parse_response,provenance) for t in tasks}
         pending=[t for t in tasks if not states[t['key']] or states[t['key']]['parse_status']!='ok']
         model_load=0.0
         if pending:
@@ -127,7 +129,7 @@ def main(argv=None):
                 sampling=[SamplingParams(temperature=0,max_tokens=args.max_output_tokens,seed=0,
                     structured_outputs=StructuredOutputsParams(json=t['response_schema'])) for t in batch]
                 results,timing=engine.score_batch(llm,sampling,batch,documents,output,args.model,args.model_revision,
-                    rubric.parse_response,rubric.VERSION,config_sha)
+                    active_rubric.parse_response,active_rubric.VERSION,config_sha)
                 states.update({t['key']:r for t,r in zip(batch,results)})
                 metrics['attempted_spans']+=len(batch)
                 metrics['input_tokens']+=timing['input_tokens']

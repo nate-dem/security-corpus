@@ -37,6 +37,7 @@ for CURATION_SIZE in 8 32; do
   CURATION_STATUS=0
   "$CURATION_PYTHON" -u -m scripts.curation.score \
     --packet "$CURATION_INPUT/packet.json" --output-dir "$CURATION_OUTPUT/qwen${CURATION_SIZE}b" \
+    --rubric-version "${CURATION_RUBRIC_VERSION:-v2}" \
     --model "Qwen/Qwen3-${CURATION_SIZE}B" --model-revision "$CURATION_REVISION" \
     --tensor-parallel-size "$CURATION_TP" || CURATION_STATUS=$?
   # Exit 2 denotes unresolved evidence. Still compare it; never relabel as drop.

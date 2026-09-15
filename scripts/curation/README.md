@@ -1,5 +1,10 @@
 # Assistant-reviewed classifier comparison
 
+**Current action:** v2 completed and failed development review. Use
+[NEXT_RUN.md](NEXT_RUN.md) for CPU candidate preparation and the corrected v3
+comparison. Commands below document the completed v2 run; do not repeat it.
+See [the results](../../docs/curation_benchmark_review.md).
+
 The user delegated review to the assistant on 2026-09-14. No manual-labeling task
 is pending with the user. All 86 original development cases were assessed, then
 three contrasting YouTube controls were added, including a clean forensic-triage
