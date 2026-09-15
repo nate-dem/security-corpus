@@ -10,13 +10,14 @@ for the remaining integrity and publication findings.
 See [the current commands and curation protocol](curation_protocol.md).
 The completed download/profile jobs and old evidence repair should not be repeated.
 
-**Immediate next job:** [one-document formatting retry](../scripts/curation/QUALITY_PASS.md).
-Job 487003 finished the 1,015-document source quality recheck. All five
-evaluations and comparisons were verified locally; one of 1,172 responses hit
-an output limit in a JSON whitespace loop. The remaining 1,171 parsed. The
-separate retry uses compact JSON and the cached 27B model; no download or
-environment reinstall is needed. The critic flagged 303 of the 591 previously
-eligible candidates, but still misses some defects. See
+**The quality recheck and formatting retry are complete.** Job 487038's archive,
+raw response, source/prompt bindings and evaluation were verified locally.
+All 1,172 spans across the 1,015-document quality recheck now parse after linking
+the retry; original outputs remain unchanged. The retried transcript remains
+held for review because of corrupted terminology. No setup or retry job is
+pending. The critic flagged 303 of the 591 previously eligible candidates, but
+still misses some defects. The next work is production scoring/selection and
+quality auditing, not another run of the completed comparison. See
 [the verified review](quality_pass_review.md). The two-model comparison from
 job 486937 is documented in [the first-batch review](first_batch_review.md).
 CPU preparation and GPU quality review completed. The prepared inventory contains
@@ -34,7 +35,7 @@ Assistant references are not independent human evidence.
 |---|---|---|
 | Existing baseline | 659,147 records, 1,467,709,789 recomputed cl100k_base tokens; stored hashes and token counts match | Resolve two ATT&CK ID collisions and missing CloudTrail provenance; final release assembly and verification |
 | YouTube | All 439 shards prepared; 3,262,750 English rows, including translations; 2,944,120 exact-unique nonblank texts / 7,312,515,096 candidate tokens | Validate production filtering and produce retained output |
-| YouTube classifier | Full inputs prepared; newer-model comparison and source quality recheck reviewed | Retry one malformed response; validate production configuration and selection |
+| YouTube classifier | Full inputs prepared; newer-model comparison, source quality recheck and formatting retry verified | Validate production configuration, selection and retained-data quality |
 | RedSage and Primus | All 1,724 files prepared; exact overlap measured; development cases, newer-model comparison and source quality recheck reviewed | Address remaining quality errors, independent evaluation, scalable production filtering, near deduplication, retained output |
 | Release | Baseline preflight complete; draft manifest and dataset card exist | Resolve reported source-policy mismatches and permission/attribution gaps, consolidate final Parquet, validate and publish |
 | GitHub | Implementation checkpoints on codex/corpus-recovery-20260826; see Git history for exact revisions | Commit subsequent changes incrementally; code license remains a researcher choice |
@@ -84,9 +85,9 @@ The current baseline is a retained working corpus, not yet a verified public rel
 Steps 1 and release-policy preparation use current local artifacts. Do not
 resubmit the completed English preparation or baseline preflight jobs.
 Assistant review and the v3/critic comparison reviews are complete. The separate
-environment and two pinned FP8 models are installed on Marlowe and working. Run
-only the single-document GPU retry next. Production scoring at scale and
-near-dedup assembly remain unfinished.
+environment and two pinned FP8 models are installed on Marlowe and working;
+the compact-JSON retry is also verified. Do not repeat completed GPU jobs.
+Production scoring at scale and near-dedup assembly remain unfinished.
 
 ## Evidence and detailed runbooks
 

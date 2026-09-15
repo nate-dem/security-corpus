@@ -1,9 +1,40 @@
 # Source quality recheck — 2026-09-15
 
-Job **487003 finished all five packets**, then returned exit code 2 because
-one response remained unresolved. This was an output-generation failure, not
-a CUDA, dependency, or allocation failure. **1,171 of 1,172 spans parsed** across
-1,015 documents. The completed work is available for review.
+Job **487038 completed the one-document retry**, and its transferred artifacts
+have been verified. The quality recheck now has **1,172 of 1,172 spans parsed**
+across 1,015 documents when the explicitly linked retry replaces the failed
+assessment. The original job 487003 remains recorded as failed with exit code 2;
+its files have not been modified. No further formatting retry is needed.
+
+## Verified retry result
+
+The retry archive is 14,955 bytes, SHA-256
+`0eb9a5f2f287de8b40c51cc9342d5ebb2b329dd6f98b0423218d444406266875`.
+All ten archived files match the transferred files byte for byte. The outer
+configuration hash is
+`a747c04b3ce5b98729c9592e086f0b2a5423ac07bc4282dede36efada391fb92`.
+The original packet, source, request, decision and configuration bindings were
+checked; the retry uses the identical source span and task hash. Its raw response
+was re-parsed and exactly reproduces the saved evaluation.
+
+The response ended normally after **277 output tokens**, taking 6.4 seconds of
+generation within the reported 2m07s job. It identifies extensive corruption of
+technical terms in the ES6/TypeScript transcript and labels it `partly_usable`,
+with `damaged_or_missing_content`. The existing policy routes it to
+**`review_required`**. Parsing is resolved; the transcript is not accepted into
+the corpus. The model's summary is not a corrected replacement for the source.
+
+The first-pass and quality-pass evaluations were re-parsed again before applying
+the retry to a separate combined diagnostic report. The other 1,014 document
+assessments are unchanged. Local artifacts:
+
+- `reports/curation/quality-retry-v1/local-review/verification.json`
+- `reports/curation/quality-retry-v1/local-review/combined-cases.jsonl`, SHA-256
+  `1a0084e0a00702e096b006b82f345dd2e2b150a296ba21d4f1261a11202b39a3`
+
+There are no remaining unparsed documents in this quality recheck. The earlier
+finding that 303/591 previously eligible candidates need exclusion or further
+review is unchanged. Complete parsing does not establish classifier accuracy.
 
 ## Verification and failure
 
@@ -40,9 +71,10 @@ with unresolved spans. On the transferred artifacts this is **one document and
 one span**. A separate output directory records original packet/configuration,
 request and decision hashes, and requires identical span keys and task hashes.
 It never overwrites the original run or promotes a failed response to eligible.
-The GPU behavior of the compact setting still needs the Marlowe retry;
-local tests verify configuration, selection, resume, and provenance mechanics.
-See [the current commands](../scripts/curation/QUALITY_PASS.md).
+Job 487038 demonstrates successful GPU execution of the compact setting on the
+previously failing case. Local tests cover configuration, selection, resume,
+and provenance mechanics. The [runbook](../scripts/curation/QUALITY_PASS.md)
+retains the completed commands as historical instructions.
 
 ## Quality findings
 
@@ -60,7 +92,7 @@ The second pass reads the supplied source without seeing the first-pass labels.
 Thus **303 of 591 previously eligible candidates were flagged** by the second
 pass. These are diagnostic routes, not final deletions or retained counts.
 Disagreement between passes remains `review_required` in the combined report.
-The unresolved transcript is also held for review.
+The retried transcript is also held for review because of its damaged content.
 
 On the 137 development controls, second-pass agreement with existing assistant
 references is 104/137, compared with 91/137 for the first pass. Both passes agree
@@ -95,10 +127,10 @@ diagnostic samples, not a representative estimate of source-wide retained yield.
 
 ## What this changes
 
-The next GPU job is a one-document formatting retry, using the already working
-environment and cached model. The completed 1,015-document quality run should
-not be repeated. Its total generation time was about 372.5 seconds, within the
-user-reported 9m36s job; a one-document retry will still incur model startup.
+The formatting retry is complete. The environment and cached model now have
+verified successful execution with compact JSON. The completed 1,015-document
+quality run should not be repeated. Its original generation time was about
+372.5 seconds, with another 6.4 seconds for the retry.
 
 Production scoring, reviewed selection, cross-source exact/near deduplication,
 release assembly and publication checks remain outstanding. The working

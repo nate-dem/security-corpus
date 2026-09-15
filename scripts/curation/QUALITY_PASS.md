@@ -1,4 +1,18 @@
-# Next run: retry one unresolved response
+# Quality pass and retry — completed
+
+Job **487038 completed successfully**, and the transferred archive, raw response
+and original-run bindings have been verified. With the linked retry, all
+**1,172 spans across 1,015 documents** now parse. The retried transcript remains
+`review_required` because of corrupted technical terms. The other completed
+assessments are unchanged. See the [verified review](../../docs/quality_pass_review.md).
+
+**Do not submit these jobs again.** The commands below document completed work.
+No additional environment setup or formatting retry is pending. Remaining work
+is production scoring/selection, quality auditing, deduplication and release
+assembly; see [the project status](../../docs/finish_plan.md). These diagnostic
+results are not final corpus additions.
+
+## Historical commands: one-response retry
 
 Job **487003 finished all five packets**. One of 1,172 responses hit its output
 limit in a carriage-return loop; the other 1,171 parsed. The failed status is
