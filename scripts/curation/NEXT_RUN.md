@@ -1,8 +1,8 @@
 # Run after the v2 comparison
 
-**Update:** v3 reports have been reviewed and CPU preparation is still running.
-Use [GPU_REVIEW.md](GPU_REVIEW.md) for the independent GPU follow-up. Leave the
-CPU job running; the submission commands below describe the prior step.
+**2026-09-15:** preparation and the GPU quality follow-up have completed and their
+transferred reports were reviewed. Use [FIRST_BATCH.md](FIRST_BATCH.md) for current
+commands. The submission commands below describe completed work; do not rerun them.
 
 The transferred v2 comparison exposed false quality flags and scope errors.
 See [the findings](../../docs/curation_benchmark_review.md). Do not repeat the old

@@ -1,4 +1,10 @@
-# GPU work while CPU preparation runs
+# Completed GPU quality review
+
+**2026-09-15:** job 486326 and input preparation job 486312 completed; transferred
+results were checked. Do not rerun the commands below. Use
+[FIRST_BATCH.md](FIRST_BATCH.md) for the next model/workload comparison and
+[the review](../../docs/curation_gpu_review.md) for the findings. The remainder
+records the completed experiment.
 
 The v3 reports are verified. Both models recovered 16 of the 18 assistant-eligible
 cases, but admitted too many weak or damaged examples. See

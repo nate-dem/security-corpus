@@ -1,14 +1,16 @@
-# Quality-first expansion work — 2026-09-14
+# Quality-first expansion work — 2026-09-15
 
 The researcher clarified that 3B tokens is an aspiration, not a release gate.
 Retain useful, well-supported research data and accept a smaller public corpus
 when quality or publication terms require it. Historical model and inventory
 outputs remain immutable, including their earlier target wording.
 
-**Current action:** v3 reports are reviewed and CPU input preparation is still
-running. Use [the independent GPU follow-up](../scripts/curation/GPU_REVIEW.md)
-to test a source-only quality reviewer and additional examples now. Neither model
-is approved for bulk selection; see [the findings](curation_v3_review.md).
+**Current action:** CPU input preparation and GPU quality review completed.
+The assistant reviewed all 48 jointly accepted additional examples; 20 remained
+eligible candidates, 20 needed review and eight lacked sufficient substance.
+Use [the bounded model comparison](../scripts/curation/FIRST_BATCH.md) next.
+Neither old model is approved for bulk selection; see
+[the findings](curation_gpu_review.md).
 Earlier comparison/manual-review instructions below are historical.
 No user labeling task is pending; assistant origin is explicitly recorded.
 

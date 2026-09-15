@@ -18,7 +18,7 @@ from ingest.utils import compute_content_hash, compute_token_count
 from scripts.youtube.download import _directory_lock, _write_json
 from scripts.youtube.profile import _sha256
 from scripts.youtube_filter import score as engine, rubric as base, rubric_segments
-from . import review_packet, rubric, rubric_v3, critic, runtime
+from . import review_packet, rubric, rubric_v3, rubric_v4, critic, runtime
 
 
 def load_packet(path):
@@ -44,7 +44,7 @@ def main(argv=None, model_factory=None):
     parser.add_argument('--output-dir',type=Path,required=True)
     parser.add_argument('--dry-run',action='store_true')
     parser.add_argument('--local-files-only',action='store_true')
-    parser.add_argument('--rubric-version',choices=('v2','v3','critic-v1'),default='v2')
+    parser.add_argument('--rubric-version',choices=('v2','v3','critic-v1','v4'),default='v2')
     parser.add_argument('--model',default='Qwen/Qwen3-32B')
     parser.add_argument('--model-revision',default='9216db5781bf21249d130ec9da846c4624c16137')
     parser.add_argument('--tensor-parallel-size',type=int,default=2)
@@ -52,8 +52,10 @@ def main(argv=None, model_factory=None):
     parser.add_argument('--focal-tokens',type=int,default=4096)
     parser.add_argument('--max-model-len',type=int,default=8192)
     parser.add_argument('--max-output-tokens',type=int,default=1024)
+    parser.add_argument('--language-model-only',action='store_true',help='Skip multimodal encoders on a compatible vLLM runtime')
+    parser.add_argument('--enable-cuda-graphs',action='store_true',help='Use vLLM graph execution; changes the bound runtime configuration')
     args=parser.parse_args(argv)
-    active_rubric = {'v2':rubric,'v3':rubric_v3,'critic-v1':critic}[args.rubric_version]
+    active_rubric = {'v2':rubric,'v3':rubric_v3,'critic-v1':critic,'v4':rubric_v4}[args.rubric_version]
     if not re.fullmatch('[0-9a-f]{40}',args.model_revision) or args.batch_size<1 or args.tensor_parallel_size<1:
         parser.error('Immutable model revision and positive parallelism required')
     packet=load_packet(args.packet)
@@ -123,7 +125,8 @@ def main(argv=None, model_factory=None):
             llm=(model_factory or LLM)(model=args.model,revision=args.model_revision,tokenizer=str(snapshot),tokenizer_revision=args.model_revision,
                 trust_remote_code=False,dtype='bfloat16',max_model_len=args.max_model_len,max_num_seqs=args.batch_size,
                 tensor_parallel_size=args.tensor_parallel_size,gpu_memory_utilization=.85,
-                enable_prefix_caching=True,enforce_eager=True,seed=0)
+                enable_prefix_caching=True,enforce_eager=not args.enable_cuda_graphs,seed=0,
+                **({'language_model_only':True} if args.language_model_only else {}))
             model_load=time.monotonic()-started
             for offset in range(0,len(pending),args.batch_size):
                 batch=pending[offset:offset+args.batch_size]

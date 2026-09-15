@@ -8,7 +8,7 @@ if [[ $# -ne 0 ]]; then echo "Usage: $0 (optional REMOTE_HOST, REMOTE_ROOT)" >&2
 printf -v QUOTED_REMOTE_ROOT '%q' "${REMOTE_ROOT}"
 ssh "${REMOTE_HOST}" "mkdir -p -- ${QUOTED_REMOTE_ROOT}"
 rsync -a --progress --partial \
-  --exclude '.venv/' --exclude 'venv/' --exclude '__pycache__/' \
+  --exclude '.venv*/' --exclude 'venv/' --exclude '__pycache__/' \
   --exclude '*.pyc' --exclude '.DS_Store' --exclude '._*' \
   --exclude '.env' --exclude '.env.*' --exclude '.hf-home/' --exclude '.cache/' \
   --exclude '*.egg-info/' \
