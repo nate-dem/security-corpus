@@ -10,6 +10,14 @@ for the remaining integrity and publication findings.
 See [the current commands and curation protocol](curation_protocol.md).
 The completed download/profile jobs and old evidence repair should not be repeated.
 
+**Ready to run:** [the first production batch](../scripts/curation/PRODUCTION.md).
+The batch runner, candidate Parquet exports and CPU audit are implemented. The
+frozen initial workload covers 13,226 documents / 18,499,051 input tokens from
+four Primus and four YouTube partitions, with two concurrent one-GPU tasks.
+Both existing assessments must agree on eligibility. The dependent CPU job
+checks output integrity and builds a bounded source/route review packet. These
+are provisional candidates; quality review and release assembly are still needed.
+
 **The quality recheck and formatting retry are complete.** Job 487038's archive,
 raw response, source/prompt bindings and evaluation were verified locally.
 All 1,172 spans across the 1,015-document quality recheck now parse after linking
@@ -61,7 +69,8 @@ The current baseline is a retained working corpus, not yet a verified public rel
    Existing language and supporting-topic approvals remain in force. Present
    unresolved boundaries and final selection rules concretely for researcher
    review. Full preparation and resumable partition scoring are implemented;
-   production selection and release assembly are still missing.
+   the first production candidate export and raw-response/output audit are now
+   implemented. Final reviewed selection and release assembly remain pending.
 2. **Run the validated expansion workflow on Marlowe.** Compare the sources by
    quality and complementary contribution. CPU jobs prepare and deduplicate candidates; GPU jobs classify;
    CPU jobs apply the reviewed policy. Measure throughput and retention before
@@ -87,7 +96,8 @@ resubmit the completed English preparation or baseline preflight jobs.
 Assistant review and the v3/critic comparison reviews are complete. The separate
 environment and two pinned FP8 models are installed on Marlowe and working;
 the compact-JSON retry is also verified. Do not repeat completed GPU jobs.
-Production scoring at scale and near-dedup assembly remain unfinished.
+Run the bounded production batch next. Full-scale allocation, retained-data
+quality review and near-dedup assembly remain unfinished.
 
 ## Evidence and detailed runbooks
 

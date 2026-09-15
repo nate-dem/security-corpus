@@ -8,8 +8,9 @@ assessments are unchanged. See the [verified review](../../docs/quality_pass_rev
 
 **Do not submit these jobs again.** The commands below document completed work.
 No additional environment setup or formatting retry is pending. Remaining work
-is production scoring/selection, quality auditing, deduplication and release
-assembly; see [the project status](../../docs/finish_plan.md). These diagnostic
+starts with [the ready production batch](PRODUCTION.md), followed by quality
+auditing, deduplication and release assembly; see
+[the project status](../../docs/finish_plan.md). These diagnostic
 results are not final corpus additions.
 
 ## Historical commands: one-response retry
