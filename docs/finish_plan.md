@@ -10,19 +10,18 @@ for the remaining integrity and publication findings.
 See [the current commands and curation protocol](curation_protocol.md).
 The completed download/profile jobs and old evidence repair should not be repeated.
 
-**Immediate next jobs:** [bounded model comparison retry](../scripts/curation/FIRST_BATCH.md).
-Setup job 486840 completed. Earlier retries resolved CCCL visibility and Ninja
-on PATH. Tasks 486877_0/1 then failed at the early FlashInfer sampler check with
-missing `curand.h`. The launcher now selects vLLM's native random sampler and
-checks native and greedy GPU outputs before model loading. Classification stays
-at temperature zero. Reuse setup with the same two models and one GPU each, with
-new output `first-batch-v4`. No download is needed; full inference remains unverified.
+**Immediate next job:** [single-GPU source quality recheck](../scripts/curation/QUALITY_PASS.md).
+Job 486937 completed both models, and all ten evaluations were re-parsed locally.
+The 27B model recovered more useful controls but still admitted damaged text;
+two output-limit failures remain unresolved. The next pass reviews 1,015 full
+documents with the cached 27B model and a focused source-only critic. No download
+or environment reinstall is needed. See [the findings and compute estimate](first_batch_review.md).
 CPU preparation and GPU quality review completed. The prepared inventory contains
 19,310,285 work-unit texts / 21,020,784,191 candidate tokens. The old 8B/32B pair
 still accepts weak or damaged content; assistant review of 48 jointly accepted
 examples left 20 eligible candidates, 20 needing review and eight excluded.
-Compare the official Qwen3.6-35B-A3B-FP8 and Qwen3.8-27B-FP8 checkpoints on the
-same 137 controls and 4,187 complete candidate documents, one GPU per model.
+The official Qwen3.6-35B-A3B-FP8 and Qwen3.8-27B-FP8 checkpoints have now been
+compared on the same 137 controls and 4,187 complete candidate documents.
 See [the findings](curation_gpu_review.md). No user labeling task is pending.
 Assistant references are not independent human evidence.
 
@@ -32,8 +31,8 @@ Assistant references are not independent human evidence.
 |---|---|---|
 | Existing baseline | 659,147 records, 1,467,709,789 recomputed cl100k_base tokens; stored hashes and token counts match | Resolve two ATT&CK ID collisions and missing CloudTrail provenance; final release assembly and verification |
 | YouTube | All 439 shards prepared; 3,262,750 English rows, including translations; 2,944,120 exact-unique nonblank texts / 7,312,515,096 candidate tokens | Validate production filtering and produce retained output |
-| YouTube classifier | V3/critic runs reviewed; full inputs prepared; resumable partition scoring implemented | Compare newer models on full documents; validate production configuration and selection |
-| RedSage and Primus | All 1,724 files profiled and prepared; exact overlap measured; development cases and 48 jointly accepted cases reviewed | Bounded model comparison, independent evaluation, production filtering, near deduplication, retained output |
+| YouTube classifier | Full inputs prepared; newer-model comparison completed and reviewed | Validate second-pass quality, production configuration and selection |
+| RedSage and Primus | All 1,724 files prepared; exact overlap measured; development cases and newer-model comparison reviewed | Second-pass quality assessment, independent evaluation, scalable production filtering, near deduplication, retained output |
 | Release | Baseline preflight complete; draft manifest and dataset card exist | Resolve reported source-policy mismatches and permission/attribution gaps, consolidate final Parquet, validate and publish |
 | GitHub | Implementation checkpoints on codex/corpus-recovery-20260826; see Git history for exact revisions | Commit subsequent changes incrementally; code license remains a researcher choice |
 
@@ -82,8 +81,9 @@ The current baseline is a retained working corpus, not yet a verified public rel
 Steps 1 and release-policy preparation use current local artifacts. Do not
 resubmit the completed English preparation or baseline preflight jobs.
 Assistant review and the v3/critic comparison reviews are complete. The separate
-environment and two pinned FP8 models are installed on Marlowe; retry only the
-GPU comparison. Production GPU execution and near-dedup assembly remain unfinished.
+environment and two pinned FP8 models are installed on Marlowe and working. Run
+only the single-GPU quality recheck next. Production scoring at scale and
+near-dedup assembly remain unfinished.
 
 ## Evidence and detailed runbooks
 

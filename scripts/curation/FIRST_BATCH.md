@@ -1,6 +1,12 @@
 # Current run: model comparison and first complete partitions
 
-**Retry after job 486877:** both tasks passed the compiler and Ninja checks, then
+**Completed:** job 486937 finished both tasks and its bundles were verified and
+reviewed locally. Do not repeat this comparison. Use
+[QUALITY_PASS.md](QUALITY_PASS.md) for the next single-GPU job and
+[the findings](../../docs/first_batch_review.md) for the comparison and limitations.
+The commands below document the completed experiment.
+
+**Historical retry after job 486877:** both tasks passed the compiler and Ninja checks, then
 the early FlashInfer sampler check failed because system NVCC could not find
 `curand.h`. The launcher now sets `VLLM_USE_FLASHINFER_SAMPLER=0`, vLLM's supported
 native sampling backend. Classification still uses temperature-zero greedy

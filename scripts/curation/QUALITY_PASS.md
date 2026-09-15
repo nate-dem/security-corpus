@@ -1,0 +1,79 @@
+# Next run: source-only quality recheck
+
+First-batch job **486937 completed**. The [review](../../docs/first_batch_review.md)
+prefers Qwen3.8-27B-FP8 for the next assessment, while identifying real errors
+among its eligible candidates. No more environment setup is needed.
+
+## Copy code on the Mac
+
+```bash
+cd /Users/natedemchak/Desktop/security-corpus
+bash scripts/curation/sync_first_batch.sh
+```
+
+This transfers code and the small existing control files. The first-batch packets
+and raw outputs already exist on Marlowe; they are read there directly.
+
+## Submit one GPU job on Marlowe
+
+```bash
+cd /scratch/m000091/natedem/security-corpus
+bash scripts/curation/submit_quality_pass.sh
+```
+
+The submission helper re-parses the prior 27B results, verifies bindings and the
+installed runtime, then submits one job: **1 H100, 8 CPUs, 96 GB RAM, 4-hour cap**.
+It uses the successful native sampler/compiler preflight and cached model. It
+does not need a new CPU preparation job, downloads, an active tmux session or
+additional model installations. The full-pipeline runtime is not yet measured.
+
+The model stays loaded for all five packets:
+
+| Packet | Documents |
+|---|---:|
+| Original development controls | 89 |
+| Previously accepted-case controls | 48 |
+| Primus eligible/review + 12 sampled rejections | 486 |
+| RedSage eligible/review + 12 sampled rejections | 314 |
+| YouTube eligible/review + 12 sampled rejections | 78 |
+| Total | 1,015 |
+
+The `critic-v2` prompt rechecks the complete supplied source, using literal
+commands/definitions and the existing quality dimensions. It receives no prior
+model labels. Four synthetic demonstrations clarify short useful explanations
+versus broken source and mismatched impacts. Output allowance increases to
+1,536 tokens; model revision, precision, temperature zero and native sampler
+remain the same. Raw v4 outputs and historical rubric modules stay intact.
+
+The rejection sample size is a diagnostic workload choice, not a content filter.
+All old uncertain/unparsed documents are included. No document is selected for
+release and no unsampled document is deleted. Agreement between two calls to the
+same model has correlated errors and cannot establish independent accuracy.
+
+Outputs:
+`/scratch/m000091/natedem/curation/quality-pass-v1/qwen38-27b-fp8/`.
+The job writes re-parsed evaluations, first/second-pass comparisons and a small
+review bundle. It exits 2 if any new span remains unresolved, preserving the
+bundle for inspection; a failed span never becomes a keep/drop decision. On
+preemption, resubmit the same command with unchanged code and output directory
+to resume successful span checkpoints.
+
+## Return reports to the Mac
+
+After the job ends:
+
+```bash
+mkdir -p /Users/natedemchak/Desktop/security-corpus/reports/curation/quality-pass-v1
+rsync -av \
+  --include='/*/' --include='/*/summary.json' \
+  --include='/*/bundle-summary.json' --include='/*/review-bundle.tar.gz' \
+  --exclude='*' \
+  natedem@login-01.marlowe.stanford.edu:/scratch/m000091/natedem/curation/quality-pass-v1/ \
+  /Users/natedemchak/Desktop/security-corpus/reports/curation/quality-pass-v1/
+```
+
+If the job fails before creating a bundle, copy its
+`logs/curation/curation-quality-pass-JOBID.log`. The review determines whether
+the second pass catches actual damage while retaining useful text, then informs
+production scoring and the final selection workflow. No user labeling task is
+pending, but assistant development references are not independent human evidence.

@@ -14,7 +14,7 @@ from scripts.youtube.download import _write_json
 from scripts.youtube.profile import _sha256
 from scripts.youtube_filter import score as engine
 from scripts.youtube_filter.rubric import LABELS
-from . import policy, review_packet, rubric, rubric_v3, rubric_v4, critic, score
+from . import policy, review_packet, rubric, rubric_v3, rubric_v4, critic, critic_v2, score
 
 
 def reference(packet, path):
@@ -63,7 +63,7 @@ def evaluate(packet_path, reference_path=None, score_dir=None):
         return result
     summary=json.loads((score_dir/'summary.json').read_text())
     config=json.loads((score_dir/'run-config.json').read_text())
-    active_rubric = {m.VERSION:m for m in (rubric,rubric_v3,critic,rubric_v4)}.get(config.get('prompt_version'))
+    active_rubric = {m.VERSION:m for m in (rubric,rubric_v3,critic,rubric_v4,critic_v2)}.get(config.get('prompt_version'))
     if active_rubric is None:
         raise ValueError('Unknown scoring rubric version')
     config_sha=_sha256(score_dir/'run-config.json')
@@ -71,7 +71,8 @@ def evaluate(packet_path, reference_path=None, score_dir=None):
             or config['packet_sha256']!=packet['packet_sha256'] or summary['packet_sha256']!=packet['packet_sha256']
             or config['prompt_version']!=active_rubric.VERSION or summary['run_config_sha256']!=config_sha
             or config['code'][active_rubric.__name__]!=_sha256(Path(active_rubric.__file__))
-            or (active_rubric in (critic,rubric_v4) and config['code'].get(rubric_v3.__name__)!=_sha256(Path(rubric_v3.__file__)))
+            or (active_rubric in (critic,rubric_v4,critic_v2) and config['code'].get(rubric_v3.__name__)!=_sha256(Path(rubric_v3.__file__)))
+            or (active_rubric is critic_v2 and config['code'].get(rubric_v4.__name__)!=_sha256(Path(rubric_v4.__file__)))
             or summary['requests_sha256']!=_sha256(score_dir/'requests.jsonl')):
         raise ValueError('Scoring run/configuration does not match the reviewed packet and rubric')
     by_text=defaultdict(list)

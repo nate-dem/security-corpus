@@ -53,7 +53,12 @@ are not inherently low quality.
 
 ## Next execution
 
-**Latest, job 486877:** both tasks passed compiler and Ninja checks. The early
+**Current:** job 486937 completed both model tasks. The bundles and raw-response
+evaluations were verified. See [the new comparison review](first_batch_review.md)
+and [the single-GPU quality recheck](../scripts/curation/QUALITY_PASS.md).
+The earlier failures below are historical; do not resubmit their repairs.
+
+**Historical, job 486877:** both tasks passed compiler and Ninja checks. The early
 FlashInfer sampling test then failed with `fatal error: curand.h: No such file
 or directory`, before model loading (41/43 seconds). Logs are in
 `reports/curation/first-batch-v3-logs/`. The system toolkit cannot find the cuRAND
