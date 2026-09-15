@@ -9,7 +9,7 @@ export PYTHONPATH="${CURATION_PROJECT}/src:${CURATION_PROJECT}${PYTHONPATH:+:${P
 CURATION_CHECK_PYTHON="${CURATION_CPU_PYTHON:-${CURATION_PROJECT}/scripts/web_corpora/.venv/bin/python}"
 "$CURATION_CHECK_PYTHON" -m scripts.curation.first_batch --project "$CURATION_PROJECT" \
   --input-dir "${CURATION_PREPARED:-/scratch/m000091/${USER}/curation/inputs-v1}" \
-  --output-dir "${CURATION_FIRST_BATCH_OUTPUT:-/scratch/m000091/${USER}/curation/first-batch-v3}" --check-env
+  --output-dir "${CURATION_FIRST_BATCH_OUTPUT:-/scratch/m000091/${USER}/curation/first-batch-v4}" --check-env
 mkdir -p logs/curation
 if [[ "${1:-}" == --reuse-setup ]]; then
   export PATH="${CURATION_PROJECT}/scripts/curation/.venv-next/bin:${PATH}"

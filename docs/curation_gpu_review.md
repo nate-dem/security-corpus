@@ -53,14 +53,26 @@ are not inherently low quality.
 
 ## Next execution
 
-**Latest, job 486864:** both tasks passed the CUDA header test using system NVCC
+**Latest, job 486877:** both tasks passed compiler and Ninja checks. The early
+FlashInfer sampling test then failed with `fatal error: curand.h: No such file
+or directory`, before model loading (41/43 seconds). Logs are in
+`reports/curation/first-batch-v3-logs/`. The system toolkit cannot find the cuRAND
+development header required by this optional random sampler. The next launcher
+sets `VLLM_USE_FLASHINFER_SAMPLER=0`, a supported vLLM option. The startup check
+verifies actual native dispatch and known outputs for native and greedy sampling
+at batch sizes 2 and 32. Classifier requests stay at temperature zero; model,
+prompt and selection policy are unchanged. Results go to `first-batch-v4`.
+Existing dependencies and model weights are reused. Local regression tests do
+not establish that full GPU inference works; that still requires the Marlowe run.
+
+**Previous, job 486864:** both tasks passed the CUDA header test using system NVCC
 12.9, loaded the models, captured CUDA graphs, and allocated GPU caches. They
 then failed during FlashInfer sampler warm-up with
 `FileNotFoundError: [Errno 2] No such file or directory: 'ninja'`.
 The package was installed, but the launcher did not put `.venv-next/bin` on PATH.
 The correction exposes that directory, checks the selected executable before
 submission, and runs a two-vector GPU sampler check before loading either model.
-The retry writes `first-batch-v3`; v1/v2 remain intact. No corpus classification
+That retry wrote `first-batch-v3`; v1/v2 remain intact. No corpus classification
 results have been produced by these attempts. Detailed logs are in
 `reports/curation/first-batch-v2-logs/`. The Triton artifact warnings were not the
 fatal error: execution continued through graph capture to sampler warm-up.

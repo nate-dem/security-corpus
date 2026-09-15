@@ -60,36 +60,65 @@ def check_ninja():
 
 
 def check_sampler():
-    """Exercise the FlashInfer call that failed during vLLM warm-up."""
+    """Exercise vLLM's native warm-up and greedy paths before model loading.
+
+    The optional FlashInfer random sampler needs cuRAND development headers
+    absent from Marlowe's system toolkit. vLLM 0.29 supports opting out; our
+    temperature-zero classification uses the same greedy argmax either way.
+    Check the selected dispatch, not a directly called fallback that could hide
+    a different backend being selected when the actual engine starts.
+    """
+    if os.environ.get("VLLM_USE_FLASHINFER_SAMPLER") != "0":
+        raise RuntimeError(
+            "Set VLLM_USE_FLASHINFER_SAMPLER=0 before importing vLLM; "
+            "use run_first_batch.sh"
+        )
     import torch
-    from flashinfer.sampling import top_k_top_p_sampling_from_logits
+    from vllm.v1.sample.ops.topk_topp_sampler import TopKTopPSampler
+    from vllm.v1.sample.sampler import Sampler
 
     if not torch.cuda.is_available():
         raise RuntimeError("Sampler preflight requires a GPU allocation")
+    sampler = TopKTopPSampler()
+    if sampler.forward != sampler.forward_native:
+        raise RuntimeError("vLLM did not select the native sampler; stop before model loading")
     print(
-        "Sampler preflight: building/loading FlashInfer and checking two known outputs",
+        "Sampler preflight: checking vLLM native and greedy outputs at batch sizes 2 and 32",
         flush=True,
     )
-    logits = torch.full((2, 128), -100.0, dtype=torch.float32, device="cuda")
-    logits[0, 7] = 1.0
-    logits[1, 99] = 1.0
-    result = top_k_top_p_sampling_from_logits(logits, top_k=1, top_p=1.0)
-    observed = result.cpu().tolist()
-    if observed != [7, 99]:
-        raise RuntimeError(
-            f"FlashInfer sampler preflight returned {observed}, expected [7, 99]"
-        )
-    del logits, result
+    checks = []
+    # Native top-k/top-p dispatch uses PyTorch for small batches and Triton for
+    # batches >= 8. Both are exercised, including our configured batch size 32.
+    for batch_size in (2, 32):
+        expected = [7, 99] * (batch_size // 2)
+        logits = torch.full((batch_size, 128), -100.0, dtype=torch.float32, device="cuda")
+        for i, token in enumerate(expected):
+            logits[i, token] = 1.0
+        k = torch.full((batch_size,), 1, dtype=torch.int32, device="cuda")
+        p = torch.full((batch_size,), 1.0, dtype=torch.float32, device="cuda")
+        greedy = Sampler.greedy_sample(logits).cpu().tolist()
+        result, _ = sampler(logits, generators={}, k=k, p=p)
+        observed = result.cpu().tolist()
+        if observed != expected or greedy != expected:
+            raise RuntimeError(
+                f"Native sampler preflight returned native={observed}, greedy={greedy}; "
+                f"expected {expected}"
+            )
+        checks.append({"batch_size": batch_size, "native": observed, "greedy": greedy})
+        del logits, result, k, p
+    del sampler
     torch.cuda.empty_cache()
     print(
-        "Sampler preflight passed: FlashInfer compiled, loaded and returned [7, 99]",
+        "Sampler preflight passed: native and greedy outputs matched at both batch sizes",
         flush=True,
     )
     return {
-        "version": "flashinfer-sampler-preflight-v1",
-        "flashinfer_version": importlib.metadata.version("flashinfer-python"),
+        "version": "vllm-native-sampler-preflight-v1",
+        "vllm_version": importlib.metadata.version("vllm"),
+        "backend": "forward_native",
+        "VLLM_USE_FLASHINFER_SAMPLER": os.environ["VLLM_USE_FLASHINFER_SAMPLER"],
         "gpu": torch.cuda.get_device_name(0),
-        "observed": observed,
+        "checks": checks,
     }
 
 

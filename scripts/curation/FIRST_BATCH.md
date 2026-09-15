@@ -1,14 +1,15 @@
 # Current run: model comparison and first complete partitions
 
-**Retry after job 486864:** the CCCL compiler fix passed, and both models loaded
-and captured CUDA graphs. They then stopped before classification because
-FlashInfer could not execute `ninja`. The launcher selected the new environment's
-Python but omitted its `bin` directory from `PATH`. Ninja was already installed.
-The launcher now exposes that directory; submission checks the actual executable,
-and GPU startup exercises the FlashInfer sampler before loading model weights.
-The existing CCCL/compiler check remains. No reinstall or model download is needed.
-The retry uses **`first-batch-v3`**; preserve failed v1/v2 outputs. Full classification
-still needs to complete on Marlowe.
+**Retry after job 486877:** both tasks passed the compiler and Ninja checks, then
+the early FlashInfer sampler check failed because system NVCC could not find
+`curand.h`. The launcher now sets `VLLM_USE_FLASHINFER_SAMPLER=0`, vLLM's supported
+native sampling backend. Classification still uses temperature-zero greedy
+decoding. Startup verifies native dispatch and known GPU outputs for both the
+warm-up sampler and greedy decoder before loading model weights. The existing
+CCCL/compiler and Ninja checks remain. No reinstall or model download is needed.
+The retry uses **`first-batch-v4`**; preserve failed v1/v2/v3 outputs. Local tests
+cover routing and failure handling; full GPU inference still needs to complete
+on Marlowe.
 
 Jobs **486312** and **486326** completed. Their reports have been transferred and
 reviewed. Do not repeat preparation or the old 8B/32B diagnostic jobs. See
@@ -51,8 +52,9 @@ bash scripts/curation/submit_first_batch.sh --reuse-setup
 
 The script checks the completed preparation manifest, controls, setup report,
 installed versions, header location and `ninja --version`, then submits only the
-two-task GPU array. The startup sampler check uses two tiny synthetic logits
-vectors and requires the known outputs `[7, 99]`; it does not process corpus data.
+two-task GPU array. The startup sampler check uses synthetic logits at batch sizes
+2 and 32, exercising native PyTorch/Triton paths and greedy decoding. Both must
+return alternating token IDs 7 and 99; it does not process corpus data.
 Compiler, Ninja and sampler details are recorded with the run configuration.
 
 - Comparison: **1 GPU, 8 CPUs, 96 GB RAM per task, at most 4 hours per task**;
@@ -91,13 +93,13 @@ inside an existing run directory.
 After both GPU tasks finish, on the **Mac**:
 
 ```bash
-mkdir -p /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v3
+mkdir -p /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v4
 rsync -av \
   --include='/*/' --include='/*/summary.json' \
   --include='/*/bundle-summary.json' --include='/*/review-bundle.tar.gz' \
   --exclude='*' \
-  natedem@login-01.marlowe.stanford.edu:/scratch/m000091/natedem/curation/first-batch-v3/ \
-  /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v3/
+  natedem@login-01.marlowe.stanford.edu:/scratch/m000091/natedem/curation/first-batch-v4/ \
+  /Users/natedemchak/Desktop/security-corpus/reports/curation/first-batch-v4/
 ```
 
 Bundles contain only the bounded experiment's packets, raw responses, requests,
@@ -138,3 +140,10 @@ Python's [virtual-environment documentation](https://docs.python.org/3/library/v
 distinguishes selecting an interpreter from adding installed executables to PATH.
 FlashInfer's [Ninja launcher](https://github.com/flashinfer-ai/flashinfer/blob/v0.6.18/flashinfer/jit/cpp_ext.py)
 invokes the bare `ninja` command, which requires the latter.
+
+vLLM 0.29's [sampler backend selection](https://github.com/vllm-project/vllm/blob/v0.29.0/vllm/v1/sample/ops/topk_topp_sampler.py)
+supports `VLLM_USE_FLASHINFER_SAMPLER=0`. Its
+[greedy decoding path](https://github.com/vllm-project/vllm/blob/v0.29.0/vllm/v1/sample/sampler.py)
+returns argmax before random sampling when all requests are greedy. This flag
+only changes the random-sampling backend; other FlashInfer operations used by
+the model are unaffected. No general stochastic-output equivalence is claimed.

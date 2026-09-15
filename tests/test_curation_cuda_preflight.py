@@ -143,12 +143,15 @@ def test_launcher_exposes_environment_tools_with_absolute_python(tmp_path):
     bin_dir = scripts / ".venv-next/bin"
     bin_dir.mkdir(parents=True)
     python = bin_dir / "python"
-    python.write_text("#!/bin/sh\ncommand -v ninja\nninja --version\n")
+    python.write_text(
+        '#!/bin/sh\ncommand -v ninja\nninja --version\n'
+        'printenv VLLM_USE_FLASHINFER_SAMPLER\n'
+    )
     python.chmod(0o755)
     ninja = bin_dir / "ninja"
     ninja.write_text("#!/bin/sh\nprintf 'fixture-ninja\\n'\n")
     ninja.chmod(0o755)
-    env = {**os.environ, "PATH": "/usr/bin:/bin"}
+    env = {**os.environ, "PATH": "/usr/bin:/bin", "VLLM_USE_FLASHINFER_SAMPLER": "1"}
     result = subprocess.run(
         ["/bin/bash", str(launcher), "--check-env"],
         env=env,
@@ -156,27 +159,54 @@ def test_launcher_exposes_environment_tools_with_absolute_python(tmp_path):
         text=True,
         check=True,
     )
-    assert result.stdout.splitlines() == [str(ninja), "fixture-ninja"]
+    assert result.stdout.splitlines() == [str(ninja), "fixture-ninja", "0"]
 
 
-@pytest.mark.parametrize("observed", [[7, 99], [7, 98]])
-def test_sampler_preflight_requires_known_gpu_outputs(monkeypatch, observed):
-    assigned = {}
+@pytest.mark.parametrize("failure", [None, "native", "greedy", "dispatch", "gpu"])
+def test_sampler_preflight_requires_native_dispatch_and_known_gpu_outputs(monkeypatch, failure):
+    monkeypatch.setenv("VLLM_USE_FLASHINFER_SAMPLER", "0")
     freed = []
+    batches = []
 
-    class Logits:
+    class Tensor:
+        def __init__(self, shape, value, dtype):
+            self.shape = shape
+            self.value = value
+            self.dtype = dtype
+            self.assigned = {}
+
         def __setitem__(self, index, value):
-            assigned[index] = value
+            self.assigned[index] = value
 
     def full(shape, value, **kwargs):
-        assert shape == (2, 128) and value == -100.0
-        assert kwargs == {"dtype": "float32", "device": "cuda"}
-        return Logits()
+        assert kwargs["device"] == "cuda"
+        return Tensor(shape, value, kwargs["dtype"])
 
-    def sample(logits, **kwargs):
-        assert assigned == {(0, 7): 1.0, (1, 99): 1.0}
-        assert kwargs == {"top_k": 1, "top_p": 1.0}
-        return SimpleNamespace(cpu=lambda: SimpleNamespace(tolist=lambda: observed))
+    def output(logits, broken):
+        expected = [7, 99] * (logits.shape[0] // 2)
+        assert logits.assigned == {(i, token): 1.0 for i, token in enumerate(expected)}
+        if broken:
+            expected[-1] = 98
+        return SimpleNamespace(cpu=lambda: SimpleNamespace(tolist=lambda: expected))
+
+    class NativeSampler:
+        def __init__(self):
+            self.forward = self.forward_cuda if failure == "dispatch" else self.forward_native
+
+        def forward_cuda(self, *args, **kwargs):
+            pytest.fail("FlashInfer must not be called")
+
+        def forward_native(self, logits, generators, k, p):
+            assert logits.shape[1] == 128 and logits.value == -100.0
+            assert logits.dtype == "float32" and generators == {}
+            assert k.shape == p.shape == (logits.shape[0],)
+            assert k.dtype == "int32" and k.value == 1
+            assert p.dtype == "float32" and p.value == 1.0
+            batches.append(logits.shape[0])
+            return output(logits, failure == "native"), None
+
+        def __call__(self, *args, **kwargs):
+            return self.forward(*args, **kwargs)
 
     monkeypatch.setitem(
         sys.modules,
@@ -184,8 +214,9 @@ def test_sampler_preflight_requires_known_gpu_outputs(monkeypatch, observed):
         SimpleNamespace(
             full=full,
             float32="float32",
+            int32="int32",
             cuda=SimpleNamespace(
-                is_available=lambda: True,
+                is_available=lambda: failure != "gpu",
                 get_device_name=lambda _: "fixture H100",
                 empty_cache=lambda: freed.append(True),
             ),
@@ -193,13 +224,43 @@ def test_sampler_preflight_requires_known_gpu_outputs(monkeypatch, observed):
     )
     monkeypatch.setitem(
         sys.modules,
-        "flashinfer.sampling",
-        SimpleNamespace(top_k_top_p_sampling_from_logits=sample),
+        "vllm.v1.sample.ops.topk_topp_sampler",
+        SimpleNamespace(TopKTopPSampler=NativeSampler),
     )
-    monkeypatch.setattr(cuda.importlib.metadata, "version", lambda _: "0.6.18")
-    if observed == [7, 99]:
-        assert cuda.check_sampler()["observed"] == observed
+    monkeypatch.setitem(
+        sys.modules,
+        "vllm.v1.sample.sampler",
+        SimpleNamespace(Sampler=SimpleNamespace(
+            greedy_sample=lambda logits: output(logits, failure == "greedy")
+        )),
+    )
+    monkeypatch.setitem(sys.modules, "flashinfer.sampling", None)
+    monkeypatch.setattr(cuda.importlib.metadata, "version", lambda _: "0.29.0")
+    if failure is None:
+        report = cuda.check_sampler()
+        assert report["backend"] == "forward_native"
+        assert report["VLLM_USE_FLASHINFER_SAMPLER"] == "0"
+        assert report["checks"] == [
+            {"batch_size": n, "native": [7, 99] * (n // 2), "greedy": [7, 99] * (n // 2)}
+            for n in (2, 32)
+        ]
+        assert batches == [2, 32]
         assert freed == [True]
     else:
-        with pytest.raises(RuntimeError, match="expected \\[7, 99\\]"):
+        message = {
+            "native": "expected \\[7, 99\\]", "greedy": "expected \\[7, 99\\]",
+            "dispatch": "did not select the native sampler", "gpu": "requires a GPU",
+        }[failure]
+        with pytest.raises(RuntimeError, match=message):
             cuda.check_sampler()
+
+
+@pytest.mark.parametrize("setting", [None, "1"])
+def test_sampler_preflight_rejects_missing_opt_out_before_vllm_import(monkeypatch, setting):
+    if setting is None:
+        monkeypatch.delenv("VLLM_USE_FLASHINFER_SAMPLER", raising=False)
+    else:
+        monkeypatch.setenv("VLLM_USE_FLASHINFER_SAMPLER", setting)
+    monkeypatch.setitem(sys.modules, "vllm", None)
+    with pytest.raises(RuntimeError, match="Set VLLM_USE_FLASHINFER_SAMPLER=0"):
+        cuda.check_sampler()

@@ -11,11 +11,12 @@ See [the current commands and curation protocol](curation_protocol.md).
 The completed download/profile jobs and old evidence repair should not be repeated.
 
 **Immediate next jobs:** [bounded model comparison retry](../scripts/curation/FIRST_BATCH.md).
-Setup job 486840 completed. The CCCL header fix passed in tasks 486864_0/1; both
-models loaded and captured graphs, then stopped at a missing `ninja` executable
-on PATH. The launcher now exposes the installed environment's executables and
-checks a small GPU sampler call before model loading. Reuse setup with the same
-two models and one GPU each, with new output `first-batch-v3`. No download is needed.
+Setup job 486840 completed. Earlier retries resolved CCCL visibility and Ninja
+on PATH. Tasks 486877_0/1 then failed at the early FlashInfer sampler check with
+missing `curand.h`. The launcher now selects vLLM's native random sampler and
+checks native and greedy GPU outputs before model loading. Classification stays
+at temperature zero. Reuse setup with the same two models and one GPU each, with
+new output `first-batch-v4`. No download is needed; full inference remains unverified.
 CPU preparation and GPU quality review completed. The prepared inventory contains
 19,310,285 work-unit texts / 21,020,784,191 candidate tokens. The old 8B/32B pair
 still accepts weak or damaged content; assistant review of 48 jointly accepted

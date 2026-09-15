@@ -6,11 +6,14 @@ export PYTHONPATH="${CURATION_PROJECT}/src:${CURATION_PROJECT}${PYTHONPATH:+:${P
 export HF_HUB_CACHE="${CURATION_NEXT_MODEL_CACHE:-/scratch/m000091/${USER}/curation-model-cache}"
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=1 VLLM_WORKER_MULTIPROC_METHOD=spawn
+# The optional random sampler needs missing cuRAND headers. Use vLLM's native
+# backend; classification remains temperature-zero greedy decoding.
+export VLLM_USE_FLASHINFER_SAMPLER=0
 CURATION_VENV="${CURATION_PROJECT}/scripts/curation/.venv-next"
 export PATH="${CURATION_VENV}/bin:${PATH}"
 CURATION_PYTHON="${CURATION_VENV}/bin/python"
 CURATION_INPUT="${CURATION_PREPARED:-/scratch/m000091/${USER}/curation/inputs-v1}"
-CURATION_OUTPUT="${CURATION_FIRST_BATCH_OUTPUT:-/scratch/m000091/${USER}/curation/first-batch-v3}"
+CURATION_OUTPUT="${CURATION_FIRST_BATCH_OUTPUT:-/scratch/m000091/${USER}/curation/first-batch-v4}"
 if [[ "${1:-}" == --check-env ]]; then
   exec "$CURATION_PYTHON" -m scripts.curation.first_batch --project "$CURATION_PROJECT" \
     --input-dir "$CURATION_INPUT" --output-dir "$CURATION_OUTPUT" --check-env
