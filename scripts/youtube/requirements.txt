@@ -1,0 +1,2 @@
+# Standalone downloader only: no corpus, PyTorch, CUDA, or tokenizer dependencies.
+huggingface-hub==0.36.0

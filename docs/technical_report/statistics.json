@@ -1,0 +1,194 @@
+{
+  "total_documents": 1474511,
+  "total_tokens": 2808027544,
+  "rows": [
+    {
+      "label": "arXiv papers",
+      "family": "Academic papers",
+      "documents": 63246,
+      "tokens": 908999231,
+      "sources": [
+        "arxiv"
+      ],
+      "token_share_pct": 32.371449950421145,
+      "document_share_pct": 4.289286414275648
+    },
+    {
+      "label": "Primus-FineWeb",
+      "family": "Web documents",
+      "documents": 536414,
+      "tokens": 739086525,
+      "sources": [
+        "primus-fineweb"
+      ],
+      "token_share_pct": 26.320487011576123,
+      "document_share_pct": 36.37911144779523
+    },
+    {
+      "label": "YouTube transcripts",
+      "family": "Video transcripts",
+      "documents": 94116,
+      "tokens": 346597347,
+      "sources": [
+        "youtube-commons"
+      ],
+      "token_share_pct": 12.343089288443247,
+      "document_share_pct": 6.382861843689196
+    },
+    {
+      "label": "RedSage-CFW",
+      "family": "Web documents",
+      "documents": 184930,
+      "tokens": 255090274,
+      "sources": [
+        "redsage-cfw"
+      ],
+      "token_share_pct": 9.084322358057326,
+      "document_share_pct": 12.54178503924352
+    },
+    {
+      "label": "CloudTrail sessions",
+      "family": "Cloud audit logs",
+      "documents": 56043,
+      "tokens": 246135664,
+      "sources": [
+        "cloudtrail-flaws"
+      ],
+      "token_share_pct": 8.765429118596993,
+      "document_share_pct": 3.8007854807458203
+    },
+    {
+      "label": "Stack Overflow",
+      "family": "Technical discussions",
+      "documents": 98174,
+      "tokens": 126140592,
+      "sources": [
+        "stackoverflow"
+      ],
+      "token_share_pct": 4.492142260838165,
+      "document_share_pct": 6.658071726830115
+    },
+    {
+      "label": "Reddit",
+      "family": "Technical discussions",
+      "documents": 62074,
+      "tokens": 99803122,
+      "sources": [
+        "reddit-antivirus",
+        "reddit-asknetsec",
+        "reddit-blueteamsec",
+        "reddit-bugbounty",
+        "reddit-cloudflare",
+        "reddit-computersecurity",
+        "reddit-computerviruses",
+        "reddit-cryptography",
+        "reddit-cyberlaws",
+        "reddit-cybersecurity",
+        "reddit-cybersecurity_help",
+        "reddit-cybersecurityadvice",
+        "reddit-hacking",
+        "reddit-malware",
+        "reddit-netsec",
+        "reddit-netsecstudents",
+        "reddit-phishing",
+        "reddit-reverseengineering",
+        "reddit-security",
+        "reddit-tor",
+        "reddit-vpn"
+      ],
+      "token_share_pct": 3.5542073728319523,
+      "document_share_pct": 4.209802436197492
+    },
+    {
+      "label": "Stack Exchange",
+      "family": "Technical discussions",
+      "documents": 57031,
+      "tokens": 58676087,
+      "sources": [
+        "stackexchange-crypto",
+        "stackexchange-infosec",
+        "stackexchange-reverseengineering",
+        "stackexchange-tor"
+      ],
+      "token_share_pct": 2.089583740920741,
+      "document_share_pct": 3.8677907455420812
+    },
+    {
+      "label": "NVD, CISA KEV and MITRE",
+      "family": "Vulnerability and knowledge bases",
+      "documents": 318777,
+      "tokens": 25820691,
+      "sources": [
+        "capec",
+        "cisa-kev",
+        "mitre-attack",
+        "mitre-cwe",
+        "nvd"
+      ],
+      "token_share_pct": 0.9195312579882585,
+      "document_share_pct": 21.61916730360099
+    },
+    {
+      "label": "Sigma rules",
+      "family": "Detection rules",
+      "documents": 3706,
+      "tokens": 1678011,
+      "sources": [
+        "sigma"
+      ],
+      "token_share_pct": 0.0597576403260523,
+      "document_share_pct": 0.2513375620799031
+    }
+  ],
+  "families": [
+    {
+      "family": "Web documents",
+      "tokens": 994176799,
+      "documents": 721344,
+      "token_share_pct": 35.40480936963345,
+      "document_share_pct": 48.92089648703875
+    },
+    {
+      "family": "Academic papers",
+      "tokens": 908999231,
+      "documents": 63246,
+      "token_share_pct": 32.371449950421145,
+      "document_share_pct": 4.289286414275648
+    },
+    {
+      "family": "Video transcripts",
+      "tokens": 346597347,
+      "documents": 94116,
+      "token_share_pct": 12.343089288443247,
+      "document_share_pct": 6.382861843689196
+    },
+    {
+      "family": "Technical discussions",
+      "tokens": 284619801,
+      "documents": 217279,
+      "token_share_pct": 10.135933374590858,
+      "document_share_pct": 14.735664908569689
+    },
+    {
+      "family": "Cloud audit logs",
+      "tokens": 246135664,
+      "documents": 56043,
+      "token_share_pct": 8.765429118596993,
+      "document_share_pct": 3.8007854807458203
+    },
+    {
+      "family": "Vulnerability and knowledge bases",
+      "tokens": 25820691,
+      "documents": 318777,
+      "token_share_pct": 0.9195312579882585,
+      "document_share_pct": 21.61916730360099
+    },
+    {
+      "family": "Detection rules",
+      "tokens": 1678011,
+      "documents": 3706,
+      "token_share_pct": 0.0597576403260523,
+      "document_share_pct": 0.2513375620799031
+    }
+  ]
+}

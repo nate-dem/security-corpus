@@ -1,0 +1,91 @@
+# CyberOpen
+
+CyberOpen is a cybersecurity corpus for continued pretraining of language models.
+It brings together vulnerability descriptions, detection rules, technical
+discussions, academic papers, operational logs, web documents, and video
+transcripts. The corpus also includes supporting knowledge in operating systems,
+networking, cloud infrastructure, and software engineering.
+
+The corpus contains **{{DOCUMENTS}} documents** and **{{TOKENS}} tokens**, counted
+with `tiktoken`'s `cl100k_base` encoding. Source-specific processing assembles
+related material into self-contained documents with common metadata and
+source-specific fields. Researchers can use these fields to inspect the corpus
+and construct different training mixtures.
+
+{{REPORT_REFERENCE}}
+
+## Load the dataset
+
+Replace `YOUR_ORG/CyberOpen` with the dataset repository ID. Authenticate with
+Hugging Face before loading a private repository.
+
+```python
+from datasets import load_dataset
+
+corpus = load_dataset(
+    "YOUR_ORG/CyberOpen",
+    split="train",
+    streaming=True,
+)
+
+document = next(iter(corpus))
+print(document["source_id"])
+print(document["content"][:500])
+```
+
+CyberOpen has one configuration (`default`) and one split (`train`). No validation
+or test partitions are defined. Documents are plain text with Markdown, code,
+YAML, or JSON where appropriate; they are not formatted as instruction-response
+pairs. To reproduce a specific dataset version, pass its Hub commit hash as
+`revision` when loading.
+
+## Source composition
+
+| Source | Documents | cl100k_base tokens |
+|---|---:|---:|
+{{SOURCE_TABLE}}
+| **Total** | **{{DOCUMENTS}}** | **{{TOKENS}}** |
+
+## Document structure
+
+Stack Exchange questions include their answers and code blocks. Reddit
+discussions retain nested comments. Sigma documents contain rule descriptions
+and complete YAML, while CloudTrail documents contain ordered JSON events
+grouped into sessions. Structured knowledge sources combine related records
+into documents that can be used without reconstructing source-specific joins.
+
+| Field | Description |
+|---|---|
+| `content` | Assembled document text. |
+| `source_id` | Source collection. |
+| `source_record_id`, `record_id` | Source-level and namespaced document identifiers. |
+| `content_length` | Number of `cl100k_base` tokens in the document. |
+| `content_hash` | SHA-256 of the UTF-8 document content. |
+| `title`, `source_url`, `published_at` | Document title, source URL, and publication time, where available. |
+| `ingested_at` | Recorded normalization time. |
+| `license` | Source-specific license declaration or terms label. |
+| `raw` | Serialized source material, where retained. |
+
+Additional fields contain information specific to each source, such as Q&A
+scores and answer counts, filtering assessments, vulnerability severity, rule
+YAML, academic-paper metadata, and CloudTrail session features. The dataset
+configuration declares all {{SCHEMA_FIELDS}} fields. Fields that do not apply to
+a source, or whose values are unavailable, are returned as null.
+
+## Files
+
+Training documents are stored in {{TRAINING_FILES}} Parquet files under
+`data/`. The dataset configuration loads only these files. `SHA256SUMS` contains
+file checksums for verifying downloads.
+
+## Use and limitations
+
+CyberOpen supports research on how training-data composition affects
+cybersecurity capabilities. Corpus construction and dataset statistics alone
+do not establish improvements in trained-model performance. Automated filtering
+can retain weak material or exclude useful material, and near duplicates may
+remain. Filtering scores do not measure factual correctness.
+
+License information is recorded per document in the `license` field. Terms vary
+across sources; a source's license label should not be treated as applying to
+the entire corpus.

@@ -22,14 +22,19 @@ Usage:
 
 import argparse
 import gzip
+import hashlib
 import json
 import logging
 import re
+import sys
 import tarfile
 import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+from ingest.connectors.arxiv.latex_processing import LATEX_NORMALIZER_VERSION  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,7 +44,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 SUPPORTED_SUFFIXES = (".tar.gz", ".tar", ".gz", ".pdf")
-LATEX_NORMALIZER_VERSION = "latex-v2"
 PDF_NORMALIZER_VERSION = "pdf-text-v1"
 MAX_ARCHIVE_MEMBERS = 20_000
 MAX_ARCHIVE_UNPACKED_BYTES = 2 * 1024 * 1024 * 1024
@@ -80,18 +84,15 @@ def _extract_source(archive_path: Path, extract_dir: Path) -> bool:
         # Try as tar.gz / tar first
         if tarfile.is_tarfile(str(archive_path)):
             with tarfile.open(archive_path) as tf:
-                members = tf.getmembers()
-                if len(members) > MAX_ARCHIVE_MEMBERS:
-                    raise ValueError(
-                        f"Archive has {len(members)} members; limit is "
-                        f"{MAX_ARCHIVE_MEMBERS}"
-                    )
-                unpacked_bytes = sum(member.size for member in members if member.isfile())
-                if unpacked_bytes > MAX_ARCHIVE_UNPACKED_BYTES:
-                    raise ValueError(
-                        f"Archive expands to {unpacked_bytes} bytes; limit is "
-                        f"{MAX_ARCHIVE_UNPACKED_BYTES}"
-                    )
+                members = []
+                unpacked_bytes = 0
+                for member in tf:
+                    members.append(member)
+                    unpacked_bytes += member.size if member.isfile() else 0
+                    if len(members) > MAX_ARCHIVE_MEMBERS:
+                        raise ValueError(f"Archive exceeds {MAX_ARCHIVE_MEMBERS} members")
+                    if unpacked_bytes > MAX_ARCHIVE_UNPACKED_BYTES:
+                        raise ValueError(f"Archive exceeds {MAX_ARCHIVE_UNPACKED_BYTES} unpacked bytes")
                 root = extract_dir.resolve()
                 for member in members:
                     if member.issym() or member.islnk() or member.isdev():
@@ -110,7 +111,8 @@ def _extract_source(archive_path: Path, extract_dir: Path) -> bool:
             return True
     except (tarfile.TarError, EOFError, OSError, ValueError) as error:
         logger.warning("Tar extraction failed for %s: %s", archive_path, error)
-        pass
+        # A rejected tar must never be reinterpreted as a gzip-wrapped TeX file.
+        return False
 
     try:
         # Try as plain gzip (single file)
@@ -191,6 +193,8 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
         if archive_path.name.endswith(".pdf")
         else LATEX_NORMALIZER_VERSION
     )
+    with archive_path.open("rb") as source_handle:
+        source_sha256 = hashlib.file_digest(source_handle, "sha256").hexdigest()
 
     # Skip only output produced by the current normalizer. Completed legacy
     # status files are deliberately reprocessed during recovery.
@@ -202,6 +206,10 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
             if (
                 status.get("completed", False)
                 and status.get("normalizer_version") == expected_version
+                and status.get("source_sha256") == source_sha256
+                and (status.get("auto_ignore") or (
+                    tgt / ("main.txt" if expected_version == PDF_NORMALIZER_VERSION else "main.tex")
+                ).is_file())
             ):
                 return (arxiv_id, 0, 1, 0)
         except Exception:
@@ -213,6 +221,8 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "completed": False,
             "normalizer_version": PDF_NORMALIZER_VERSION,
+            "source_sha256": source_sha256,
+            "source_filename": archive_path.name,
             "source_format": "pdf",
             "pdf_extracted": False,
             "errors": [],
@@ -223,7 +233,9 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
                 status["errors"].append("PDF text extraction produced empty content")
                 write_status_json(tgt, status)
                 return (arxiv_id, 0, 0, 1)
-            (tgt / "main.txt").write_text(text, encoding="utf-8")
+            temporary_text = tgt / "main.txt.tmp"
+            temporary_text.write_text(text, encoding="utf-8")
+            temporary_text.replace(tgt / "main.txt")
             status["pdf_extracted"] = True
             status["completed"] = True
             write_status_json(tgt, status)
@@ -238,6 +250,8 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "completed": False,
         "normalizer_version": LATEX_NORMALIZER_VERSION,
+        "source_sha256": source_sha256,
+        "source_filename": archive_path.name,
         "source_format": "latex",
         "tex_merged": False,
         "errors": [],
@@ -257,6 +271,8 @@ def _normalize_one(args: tuple) -> tuple[str, int, int, int]:
                 "completed": True,
                 "auto_ignore": True,
                 "normalizer_version": LATEX_NORMALIZER_VERSION,
+                "source_sha256": source_sha256,
+                "source_filename": archive_path.name,
             })
             return (arxiv_id, 0, 1, 0)
 
@@ -280,7 +296,7 @@ def main():
 
     if not downloads_dir.is_dir():
         logger.error("Downloads directory not found: %s", downloads_dir)
-        return
+        return 2
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -309,7 +325,7 @@ def main():
 
     if not tasks:
         logger.info("Nothing to normalize.")
-        return
+        return 2
 
     processed = skipped = failed = 0
     workers = args.workers
@@ -331,7 +347,8 @@ def main():
         "Done: processed=%d, skipped=%d, failed=%d",
         processed, skipped, failed,
     )
+    return 2 if failed else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

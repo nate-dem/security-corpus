@@ -1,131 +1,132 @@
-# Security Corpus
+# CyberOpen
 
-Reproducible ingestion, normalization, and filtering code for a cybersecurity
-continued-pretraining corpus. Records are stored as Parquet documents with
-stable IDs, SHA-256 content hashes, `cl100k_base` token counts, source URLs,
-and per-record license labels.
+<p align="center"><img src="assets/cyberopen-logo.png" alt="CyberOpen logo" width="150"></p>
 
-This recovery branch contains only corpus work. SecurityClip, benchmarks, and
-YouTube have been archived outside the repository. RegMix, FineWeb, the unused
-logistic-regression filter, BRON, and GitHub Advisory code are not part of the
-current release.
+CyberOpen is a cybersecurity corpus for continued pretraining of language models.
+It combines vulnerability descriptions, detection rules, practitioner discussions,
+academic papers, operational logs, web documents, and video transcripts, including
+supporting knowledge in operating systems, networking, cloud infrastructure, and
+software engineering.
 
-## Recovery status
+The corpus contains **1,474,511 documents** and **2,808,027,544 tokens**, counted
+with `tiktoken`'s `cl100k_base` encoding. Documents have common identity,
+provenance, license, hash, and token-count fields, together with source-specific
+metadata for constructing different training mixtures.
 
-The laptop checkpoints are preserved, but the publishable corpus is not yet
-finished. The current reproducible restart points are:
+- [Technical report](docs/technical_report/CyberOpen.pdf)
+- [Report LaTeX and figures](docs/technical_report/)
+- [Dataset card and source statistics](docs/dataset_card.md)
+- [Filtering methods](docs/filtering.md)
+- [Dataset packaging and loading](docs/dataset_packaging.md)
 
-| Checkpoint | Records | Tokens | Status |
-|---|---:|---:|---|
-| QA/social exact-deduplicated universe | 1,617,344 | 1,128,832,782 | Full Qwen re-score required |
-| Recovered full papers | 63,340 | 1,299,306,873 | Legacy checkpoint; re-extract and re-score citation abstracts |
-| Structured/artifact sources | 408,596 | 275,145,829 | Structurally cleaned; source-policy decisions remain |
+## Corpus composition
 
-These counts are inputs, not a final corpus total. They must not be quoted as a
-released token count until Qwen filtering, paper re-extraction, artifact
-transformation, exact deduplication, and license review are complete.
+| Source group | Documents | Tokens |
+|---|---:|---:|
+| arXiv papers | 63,246 | 908,999,231 |
+| Primus-FineWeb | 536,414 | 739,086,525 |
+| YouTube transcripts | 94,116 | 346,597,347 |
+| RedSage-CFW | 184,930 | 255,090,274 |
+| CloudTrail sessions | 56,043 | 246,135,664 |
+| Stack Overflow | 98,174 | 126,140,592 |
+| Reddit | 62,074 | 99,803,122 |
+| Stack Exchange | 57,031 | 58,676,087 |
+| NVD, CISA KEV and MITRE | 318,777 | 25,820,691 |
+| Sigma rules | 3,706 | 1,678,011 |
+| **Total** | **1,474,511** | **2,808,027,544** |
 
-Machine-readable recovery reports live under `reports/recovery/`:
+The repository contains the code and documentation. Training Parquet files are
+distributed separately; they are not stored in Git.
 
-- `arxiv/audit.json` inventories paper checkpoints and restart IDs.
-- `structured-v1/manifest.json` records structural cleaning and source counts.
-- `data/filtering/v4/manifest.json` records the QA universe and Qwen queue.
+## Document construction
 
-## Sources in scope
+Questions and answers are combined into complete discussion documents while
+preserving code blocks. Reddit discussions retain nested comment structure.
+Sigma documents include complete rule YAML, and CloudTrail sessions contain
+ordered JSON events. Structured knowledge sources resolve related records during
+ingestion so each document can be used without reconstructing source-specific
+joins.
 
-- NVD and CISA Known Exploited Vulnerabilities
-- MITRE ATT&CK, CWE, and CAPEC
-- Sigma detection rules
-- flaws.cloud CloudTrail sessions
-- Stack Overflow and four Stack Exchange sites
-- security-focused Reddit communities
-- arXiv cs.CR papers and citation-expanded arXiv papers
+Normalization and training-data selection are separate. Selection uses source
+rules, model assessments, and duplicate checks; scores and decisions are stored
+separately from normalized documents. Details and limitations are described in
+the technical report.
 
-YouTube is deliberately deferred. BRON and GitHub Advisory are also deferred.
+## Installation
 
-## Install and test
-
-Python 3.11 or newer is required. Runtime dependencies are pinned in
-`pyproject.toml`; the immutable `cl100k_base` vocabulary is packaged locally so
-token counts do not depend on a runtime download.
+Python 3.11 or newer is required. Install the ingestion package and test tools:
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
-pytest
+python -m pip install -e '.[dev]'
 ```
 
-For local Qwen/vLLM scoring on a compatible GPU environment:
+CPU web filtering and near-duplicate detection have separate pinned dependencies:
 
 ```bash
-pip install -e ".[qwen]"
+python -m pip install -r scripts/web_semantic/requirements.txt
+python -m pip install -r scripts/near_dedup/requirements.txt
 ```
 
-## Core workflows
+GPU classification uses separate environments: the Q&A classifier dependencies
+are in the `qwen` extra, and transcript runtime dependencies are in
+`scripts/curation/requirements-next.txt`. Hugging Face packaging dependencies are
+isolated in `scripts/release/requirements-huggingface.txt` so they do not replace
+the ingestion or model-runtime versions.
 
-List and run registered ingestion sources:
+## Code organization
+
+| Location | Purpose |
+|---|---|
+| `src/ingest/` | Streaming readers, source connectors, document assembly, and Parquet writers. |
+| `src/classify/`, `scripts/classify/` | Q&A and abstract classification, response parsing, and score sidecars. |
+| `scripts/arxiv/` | Paper metadata, citation expansion, downloads, and full-text normalization. |
+| `scripts/youtube/`, `scripts/web_corpora/` | Source acquisition, profiling, and preparation. |
+| `scripts/curation_single/` | Transcript relevance, utility, and language assessment. |
+| `scripts/curation/`, `scripts/youtube_filter/` | Shared scoring, parser, model-runtime, and preparation dependencies. |
+| `scripts/web_filter/`, `scripts/web_semantic/` | Web text-quality checks and logistic regression scoring. |
+| `scripts/near_dedup/` | MinHash candidate retrieval, verified Jaccard comparisons, and duplicate lineage. |
+| `scripts/youtube_finalize/`, `scripts/youtube_snapshot/` | Assemble completed transcript outputs, audit, and deduplicate additions. |
+| `scripts/release/` | Canonical export, metadata normalization, source-term records, integrity checks, and Hub packaging. |
+| `tests/` | Fixture-based tests for assembly, filtering, deduplication, finalization, and upload configuration. |
+
+List the available ingestion commands:
 
 ```bash
 python scripts/ingest.py list
-python scripts/ingest.py nvd
-python scripts/ingest.py stackexchange infosec
 ```
 
-Rebuild the policy-neutral structured checkpoint:
+Pipeline stages expose their arguments through `--help`, for example:
 
 ```bash
-python scripts/build_structured_checkpoint.py --overwrite
+python -m scripts.curation_single.run --help
+python -m scripts.web_semantic.train --help
+python -m scripts.near_dedup.run --help
+python -m scripts.youtube_finalize.finalize --help
 ```
 
-Rebuild the exact-deduplicated Qwen inputs:
+Configure input/output locations and scheduler settings for your environment.
+Set `PROJECT_DIR` to the repository root and `CYBEROPEN_WORK_DIR` to a storage
+directory for large intermediate outputs; the latter defaults to `data/` under
+the repository. Set your Slurm account with `SBATCH_ACCOUNT` and adapt partition
+and resource requests to your cluster. Evidence restoration accepts
+`CYBEROPEN_WEB_AUDIT` and `CYBEROPEN_FINALIZED` for the completed audit directories.
+The source inventories and frozen model/selection configurations must correspond
+to the artifacts being processed; checksum mismatches intentionally stop a run.
+
+## Validation
 
 ```bash
-python scripts/classify/build_qa_qwen_universe.py --overwrite
-python scripts/classify/build_citation_qwen_universe.py --overwrite
+python -m pytest -m 'not data_quality'
 ```
 
-Audit recovered paper work and generate Marlowe restart lists:
+Tests marked `data_quality` require local corpus data. Packaging validation checks
+file hashes, schema fields, source totals, and the files selected by Hugging Face
+Datasets; see [dataset packaging](docs/dataset_packaging.md).
 
-```bash
-python scripts/arxiv/audit_recovery.py --overwrite
-```
+## Source terms
 
-The filtering protocol and Slurm commands are documented in
-[`docs/filtering.md`](docs/filtering.md). The bounded transfer, scoring,
-re-extraction, and laptop-checkpoint procedure is in
-[`docs/marlowe_recovery.md`](docs/marlowe_recovery.md). No script submits a
-cluster job.
-
-Audit the exact Parquet files proposed for publication:
-
-```bash
-python scripts/release/audit_source_licenses.py PATH [PATH ...] \
-  --output reports/release/source_license_audit.json
-```
-
-The command exits nonzero when any records need permission, institutional
-review, or license-metadata repair. See
-[`docs/source_licenses.md`](docs/source_licenses.md).
-
-## Data contract
-
-Every normalized record has these common fields:
-
-- `source_id`, `source_record_id`, `record_id`
-- `content`, `title`, `content_length`, `content_hash`
-- `ingested_at`, `published_at`, `source_url`, `license`
-
-Source-family subclasses add queryable fields for vulnerabilities, knowledge
-bases, Q&A threads, academic papers, detection rules, and CloudTrail sessions.
-Quality decisions are sidecars keyed by `(source_id, record_id, content_hash)`;
-normalized source Parquet is immutable.
-
-## Publication boundary
-
-Code correctness and data-redistribution permission are separate questions.
-The `license` column preserves source-level terms, but it is not legal advice or
-a grant of redistribution rights. A Hugging Face release must include a source
-card, attribution/provenance, license grouping, and any exclusions required by
-the final license review. A repository code license must also be chosen before
-the public GitHub release.
+Each document carries a source-specific `license` value. The corpus combines
+materials with different terms; a source's license label does not apply to the
+whole collection. See [source-license metadata](docs/source_licenses.md).

@@ -26,9 +26,14 @@ import json
 import os
 from pathlib import Path
 import shutil
+import sys
 from typing import Any
 
 import duckdb
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+from classify.io import publish_outputs  # noqa: E402
+from classify.qwen import QWEN_PROMPT_VERSIONS, QwenTask  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -153,12 +158,6 @@ def _prepare_targets(targets: dict[str, Path], *, overwrite: bool) -> None:
     if existing and not overwrite:
         rendered = "\n".join(f"  {path}" for path in existing)
         raise FileExistsError(f"Refusing to replace existing QA outputs:\n{rendered}")
-    if overwrite:
-        for path in existing:
-            if path.is_dir():
-                shutil.rmtree(path)
-            else:
-                path.unlink()
 
 
 def _register_inputs(
@@ -209,9 +208,17 @@ def _register_inputs(
         raise ValueError(
             "Qwen decision sidecar is missing columns: " + ", ".join(missing_decision)
         )
-    if "qwen_model_revision" in decision_columns:
+    provenance_columns = {"qwen_model_revision", "qwen_model", "qwen_prompt_version",
+                          "qwen_task", "qwen_scored_at", "qwen_should_keep"}
+    if provenance_columns <= decision_columns:
         revision_expression = (
-            "qwen_model_revision IS NOT NULL AND trim(qwen_model_revision) <> ''"
+            "coalesce(regexp_full_match(qwen_model_revision, '[0-9a-f]{40}') "
+            "AND qwen_model = 'Qwen/Qwen3-8B' "
+            "AND qwen_model_revision = 'b968826d9c46dd6066d109eabc6255188de91218' "
+            f"AND qwen_prompt_version = '{QWEN_PROMPT_VERSIONS[QwenTask.QA]}' "
+            "AND qwen_task = 'qa' AND qwen_should_keep IS NOT NULL "
+            "AND try_cast(qwen_scored_at AS TIMESTAMPTZ) IS NOT NULL "
+            "AND qwen_parse_status IN ('ok', 'extracted_json'), false)"
         )
     else:
         revision_expression = "false"
@@ -233,7 +240,7 @@ def _materialize_ranked_records(connection: duckdb.DuckDBPyConnection) -> None:
             record_id,
             content_hash,
             min(qwen_parse_status) AS qwen_parse_status,
-            bool_or(has_immutable_model_revision) AS has_immutable_model_revision
+            bool_and(has_immutable_model_revision) AND count(*) = 1 AS has_immutable_model_revision
         FROM normalized_decisions
         WHERE source_id IS NOT NULL
           AND record_id IS NOT NULL
@@ -488,8 +495,7 @@ def _publish_outputs(temporary_root: Path, targets: dict[str, Path]) -> None:
         temporary_root / "qa_exact_duplicates.parquet": targets["duplicates"],
         temporary_root / "manifest.json": targets["manifest"],
     }
-    for source, destination in mapping.items():
-        source.rename(destination)
+    publish_outputs(mapping)
     shutil.rmtree(temporary_root)
 
 

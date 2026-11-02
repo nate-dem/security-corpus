@@ -1,0 +1,3 @@
+# The existing web-semantic environment already supplies NumPy/SciPy/PyArrow.
+# Pin the tested small MinHash implementation; do not change the scoring stack.
+datasketch==1.6.5

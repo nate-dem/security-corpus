@@ -15,9 +15,13 @@ import json
 import os
 from pathlib import Path
 import shutil
+import sys
 from typing import Any
 
 import duckdb
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from classify.io import publish_outputs  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -125,8 +129,7 @@ def main() -> None:
             encoding="utf-8",
         )
         connection.close()
-        _publish(temporary_output, args.output)
-        _publish(temporary_report, args.report)
+        publish_outputs({temporary_output: args.output, temporary_report: args.report})
     except Exception:
         connection.close()
         shutil.rmtree(temporary_output, ignore_errors=True)
@@ -157,11 +160,6 @@ def _discover_inputs(root: Path) -> dict[str, list[Path]]:
 def _prepare_destination(path: Path, *, overwrite: bool) -> None:
     if path.exists() and not overwrite:
         raise FileExistsError(f"Refusing to replace existing path: {path}")
-    if path.exists():
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
     path.parent.mkdir(parents=True, exist_ok=True)
 
 

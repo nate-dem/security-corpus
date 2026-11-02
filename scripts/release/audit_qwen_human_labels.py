@@ -107,12 +107,19 @@ def _build_report(
     labeled = sum(int(row[3]) for row in confusion)
     agreements = sum(int(row[3]) for row in confusion if row[1] == row[2])
     issues = {
+        "empty_review": int(total_records == 0),
         "duplicate_keys": int(duplicate_keys),
         "incomplete_manual_labels": int(incomplete_labels),
         "invalid_qwen_labels": int(invalid_qwen_labels),
         "blank_reviewers": int(blank_reviewers),
         "missing_or_invalid_reviewed_at": int(invalid_dates),
     }
+    issues["blank_keys"] = int(connection.execute("""
+        SELECT count(*) FROM audit
+        WHERE source_id IS NULL OR trim(source_id) = ''
+           OR record_id IS NULL OR trim(record_id) = ''
+           OR content_hash IS NULL OR trim(content_hash) = ''
+    """).fetchone()[0])
     return {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "input": input_path.resolve().as_posix(),

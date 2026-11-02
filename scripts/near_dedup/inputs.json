@@ -1,0 +1,877 @@
+{
+  "baseline_evidence_sha256": "afa9f4055145fb25fd4bf5f84f17f77fddc72e63a231e1250dd27593f9a6f7f0",
+  "baseline_files": [
+    {
+      "bytes": 9389119,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-antivirus/part-00000.parquet",
+      "recomputed_tokens": 5841338,
+      "records": 4774,
+      "sha256": "5381dbee3dd4000271827c04fa99af8ad25ac3a69cc464c1ba62ee157dd89760",
+      "sources": {
+        "reddit-antivirus": {
+          "records": 4774,
+          "tokens": 5841338
+        }
+      },
+      "stored_tokens": 5841338
+    },
+    {
+      "bytes": 25240587,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-asknetsec/part-00000.parquet",
+      "recomputed_tokens": 14210930,
+      "records": 9660,
+      "sha256": "30f6892ddfe06ebac6e6e378d6f39b68dbf40e09b8636f7071231a9ac2e25e69",
+      "sources": {
+        "reddit-asknetsec": {
+          "records": 9660,
+          "tokens": 14210930
+        }
+      },
+      "stored_tokens": 14210930
+    },
+    {
+      "bytes": 667978,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-blueteamsec/part-00000.parquet",
+      "recomputed_tokens": 341016,
+      "records": 299,
+      "sha256": "f6a2dff3d26461268ffbc3a693634b00a24e9136a9e9408810bae758f99ad885",
+      "sources": {
+        "reddit-blueteamsec": {
+          "records": 299,
+          "tokens": 341016
+        }
+      },
+      "stored_tokens": 341016
+    },
+    {
+      "bytes": 2977582,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-bugbounty/part-00000.parquet",
+      "recomputed_tokens": 1657943,
+      "records": 1532,
+      "sha256": "9c1fc8281543146ba333168a4310b2dc4e60e82978a190b5b8ee0e502f976b57",
+      "sources": {
+        "reddit-bugbounty": {
+          "records": 1532,
+          "tokens": 1657943
+        }
+      },
+      "stored_tokens": 1657943
+    },
+    {
+      "bytes": 1321717,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-cloudflare/part-00000.parquet",
+      "recomputed_tokens": 771414,
+      "records": 601,
+      "sha256": "defe1ef2e74bf4e2c0b0255575c82e96c61d45708d82a031336a31bf4ffdd6d1",
+      "sources": {
+        "reddit-cloudflare": {
+          "records": 601,
+          "tokens": 771414
+        }
+      },
+      "stored_tokens": 771414
+    },
+    {
+      "bytes": 1282197,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-computersecurity/part-00000.parquet",
+      "recomputed_tokens": 677185,
+      "records": 606,
+      "sha256": "671ad24b4bbc37a525bf784d88bf4ee81ca874719babc8b823f190a15996024d",
+      "sources": {
+        "reddit-computersecurity": {
+          "records": 606,
+          "tokens": 677185
+        }
+      },
+      "stored_tokens": 677185
+    },
+    {
+      "bytes": 2476461,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-computerviruses/part-00000.parquet",
+      "recomputed_tokens": 1468016,
+      "records": 1359,
+      "sha256": "f42eb998f500d8a51f98b45aa40583af5a40645e91467d9d2e5ed989f09f73bf",
+      "sources": {
+        "reddit-computerviruses": {
+          "records": 1359,
+          "tokens": 1468016
+        }
+      },
+      "stored_tokens": 1468016
+    },
+    {
+      "bytes": 8073085,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-cryptography/part-00000.parquet",
+      "recomputed_tokens": 4764171,
+      "records": 3309,
+      "sha256": "eddb7cf2fab08363ae0d30f4446b4877950b7e8b3c30ac8a65b811fcd5171a8d",
+      "sources": {
+        "reddit-cryptography": {
+          "records": 3309,
+          "tokens": 4764171
+        }
+      },
+      "stored_tokens": 4764171
+    },
+    {
+      "bytes": 176536,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-cyberlaws/part-00000.parquet",
+      "recomputed_tokens": 85818,
+      "records": 44,
+      "sha256": "3d29f121299f4fd04e9c3bce452f7d18a420f9c839b57b5e5189d390d3723271",
+      "sources": {
+        "reddit-cyberlaws": {
+          "records": 44,
+          "tokens": 85818
+        }
+      },
+      "stored_tokens": 85818
+    },
+    {
+      "bytes": 44799644,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-cybersecurity/part-00000.parquet",
+      "recomputed_tokens": 25833577,
+      "records": 10753,
+      "sha256": "e5569ba1f37f41fe290099d4c20be5a501428960fbbd6b43ff55360241c065f6",
+      "sources": {
+        "reddit-cybersecurity": {
+          "records": 10753,
+          "tokens": 25833577
+        }
+      },
+      "stored_tokens": 25833577
+    },
+    {
+      "bytes": 9663359,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-cybersecurity_help/part-00000.parquet",
+      "recomputed_tokens": 7140953,
+      "records": 4880,
+      "sha256": "32ce05f134d50f389ce3499fdef9e0e288573852d4671bef2f39d4f77022d584",
+      "sources": {
+        "reddit-cybersecurity_help": {
+          "records": 4880,
+          "tokens": 7140953
+        }
+      },
+      "stored_tokens": 7140953
+    },
+    {
+      "bytes": 1458569,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-cybersecurityadvice/part-00000.parquet",
+      "recomputed_tokens": 798219,
+      "records": 621,
+      "sha256": "79f782a63ee87fe7bc657b403bf68c792ebb7fd896b678a2692b613f6bc425c4",
+      "sources": {
+        "reddit-cybersecurityadvice": {
+          "records": 621,
+          "tokens": 798219
+        }
+      },
+      "stored_tokens": 798219
+    },
+    {
+      "bytes": 20625843,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-hacking/part-00000.parquet",
+      "recomputed_tokens": 12271418,
+      "records": 6993,
+      "sha256": "e68dfcde059ab47ba521e578de8582ec5e1afe8e7ee9a8ce36c6bbd8fbeaa6fe",
+      "sources": {
+        "reddit-hacking": {
+          "records": 6993,
+          "tokens": 12271418
+        }
+      },
+      "stored_tokens": 12271418
+    },
+    {
+      "bytes": 2527675,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-malware/part-00000.parquet",
+      "recomputed_tokens": 1444121,
+      "records": 1174,
+      "sha256": "4eb30e07525ad0237196c425381d124560a972dcadedb0762ba5075775b71cc9",
+      "sources": {
+        "reddit-malware": {
+          "records": 1174,
+          "tokens": 1444121
+        }
+      },
+      "stored_tokens": 1444121
+    },
+    {
+      "bytes": 6187684,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-netsec/part-00000.parquet",
+      "recomputed_tokens": 3731059,
+      "records": 1153,
+      "sha256": "a521bc39490f2ee2b75f9abad9da764562eaa68b413b1b1761f3bff01f25d792",
+      "sources": {
+        "reddit-netsec": {
+          "records": 1153,
+          "tokens": 3731059
+        }
+      },
+      "stored_tokens": 3731059
+    },
+    {
+      "bytes": 3280795,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-netsecstudents/part-00000.parquet",
+      "recomputed_tokens": 1831192,
+      "records": 1344,
+      "sha256": "f149fbbb973ab03f194f0c47e323a9c55f121d377fd7a5ba96e16b9b294fe978",
+      "sources": {
+        "reddit-netsecstudents": {
+          "records": 1344,
+          "tokens": 1831192
+        }
+      },
+      "stored_tokens": 1831192
+    },
+    {
+      "bytes": 2628888,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-phishing/part-00000.parquet",
+      "recomputed_tokens": 1521497,
+      "records": 1211,
+      "sha256": "f2c792fcf087e838b12cc4d806cc5601d03f0fcd8820a040af2c24a562016383",
+      "sources": {
+        "reddit-phishing": {
+          "records": 1211,
+          "tokens": 1521497
+        }
+      },
+      "stored_tokens": 1521497
+    },
+    {
+      "bytes": 1899050,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-reverseengineering/part-00000.parquet",
+      "recomputed_tokens": 1132953,
+      "records": 518,
+      "sha256": "b8903e64163bed5bc40d389d496a22956f97d27c5a272c721385abdd8149a15b",
+      "sources": {
+        "reddit-reverseengineering": {
+          "records": 518,
+          "tokens": 1132953
+        }
+      },
+      "stored_tokens": 1132953
+    },
+    {
+      "bytes": 4665157,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-security/part-00000.parquet",
+      "recomputed_tokens": 2564342,
+      "records": 2061,
+      "sha256": "c9951fd9655087228a974d9c509a8c1b26b94c218845e10daf229e224345ec3c",
+      "sources": {
+        "reddit-security": {
+          "records": 2061,
+          "tokens": 2564342
+        }
+      },
+      "stored_tokens": 2564342
+    },
+    {
+      "bytes": 12319815,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-tor/part-00000.parquet",
+      "recomputed_tokens": 7554522,
+      "records": 5907,
+      "sha256": "f5cc9a67f6336f5a220df18a0e2bed47af251eded0dbcf8273703b3302be1dde",
+      "sources": {
+        "reddit-tor": {
+          "records": 5907,
+          "tokens": 7554522
+        }
+      },
+      "stored_tokens": 7554522
+    },
+    {
+      "bytes": 7052590,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=reddit-vpn/part-00000.parquet",
+      "recomputed_tokens": 4161438,
+      "records": 3275,
+      "sha256": "81d49e8160d8ecc84adf63f1c5168e9720b4096e4957dfee681d04c7862f4fbf",
+      "sources": {
+        "reddit-vpn": {
+          "records": 3275,
+          "tokens": 4161438
+        }
+      },
+      "stored_tokens": 4161438
+    },
+    {
+      "bytes": 29423369,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=stackexchange-crypto/part-00000.parquet",
+      "recomputed_tokens": 16722872,
+      "records": 16456,
+      "sha256": "0658c58093e948b062b36d4596016db8c6480e76dd9c0326449ce31401f5d2d0",
+      "sources": {
+        "stackexchange-crypto": {
+          "records": 16456,
+          "tokens": 16722872
+        }
+      },
+      "stored_tokens": 16722872
+    },
+    {
+      "bytes": 70386517,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=stackexchange-infosec/part-00000.parquet",
+      "recomputed_tokens": 36096276,
+      "records": 35394,
+      "sha256": "b4536279800d1a07724924a25128598d1e04bfa8bf0d31fa4c0ddeb62302c182",
+      "sources": {
+        "stackexchange-infosec": {
+          "records": 35394,
+          "tokens": 36096276
+        }
+      },
+      "stored_tokens": 36096276
+    },
+    {
+      "bytes": 6584309,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=stackexchange-reverseengineering/part-00000.parquet",
+      "recomputed_tokens": 4571347,
+      "records": 3369,
+      "sha256": "f9949baa5f2ce7664906dc8b42004343ba454d0127b23d9b6e1e1a3c16830793",
+      "sources": {
+        "stackexchange-reverseengineering": {
+          "records": 3369,
+          "tokens": 4571347
+        }
+      },
+      "stored_tokens": 4571347
+    },
+    {
+      "bytes": 2362136,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=stackexchange-tor/part-00000.parquet",
+      "recomputed_tokens": 1285592,
+      "records": 1812,
+      "sha256": "f58ce67bf32be614c54a67aca864d53f3e8f911ddbe3889ec58c9013bde17619",
+      "sources": {
+        "stackexchange-tor": {
+          "records": 1812,
+          "tokens": 1285592
+        }
+      },
+      "stored_tokens": 1285592
+    },
+    {
+      "bytes": 207998302,
+      "project_relative_path": "data/filtering/v3/qwen_qa_kept/source_id=stackoverflow/part-00000.parquet",
+      "recomputed_tokens": 126140592,
+      "records": 98174,
+      "sha256": "c3eaed9a6f36669721055b1877c796c38f539877adfd73d1a91a5b046c27d643",
+      "sources": {
+        "stackoverflow": {
+          "records": 98174,
+          "tokens": 126140592
+        }
+      },
+      "stored_tokens": 126140592
+    },
+    {
+      "bytes": 315968241,
+      "project_relative_path": "data/final-no-chunk/academic_papers/arxiv_citation_qwen_kept_full.parquet",
+      "recomputed_tokens": 247649077,
+      "records": 17067,
+      "sha256": "7675ad9c37369d12e2d19cb8b64d4a8254adede1cad7f5246dbed4bab3bf4460",
+      "sources": {
+        "arxiv": {
+          "records": 17067,
+          "tokens": 247649077
+        }
+      },
+      "stored_tokens": 247649077
+    },
+    {
+      "bytes": 908843112,
+      "project_relative_path": "data/final-no-chunk/academic_papers/arxiv_cs_cr_full.parquet",
+      "recomputed_tokens": 661806017,
+      "records": 46273,
+      "sha256": "7c6d9d4baf80034b7d381f107e9eee1f4017a7974cfd20c95d6b2568587605e4",
+      "sources": {
+        "arxiv": {
+          "records": 46273,
+          "tokens": 661806017
+        }
+      },
+      "stored_tokens": 661806017
+    },
+    {
+      "bytes": 163665230,
+      "project_relative_path": "data/final-no-chunk/normalized/source_id=cloudtrail-flaws/part-00000.parquet",
+      "recomputed_tokens": 246135664,
+      "records": 56043,
+      "sha256": "40f56cd5605de30bd5d8dee12a7df7a0356812d803659eb73e49197a64de8bf6",
+      "sources": {
+        "cloudtrail-flaws": {
+          "records": 56043,
+          "tokens": 246135664
+        }
+      },
+      "stored_tokens": 246135664
+    },
+    {
+      "bytes": 4869777,
+      "project_relative_path": "data/final-no-chunk/normalized/source_id=sigma/part-00000.parquet",
+      "recomputed_tokens": 1678011,
+      "records": 3706,
+      "sha256": "1adcf5e86b1ec87ce8de6d56a0d9e6dd833d2b86805a6c71d717e684e61be805",
+      "sources": {
+        "sigma": {
+          "records": 3706,
+          "tokens": 1678011
+        }
+      },
+      "stored_tokens": 1678011
+    },
+    {
+      "bytes": 1386022,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=capec/part-00000.parquet",
+      "recomputed_tokens": 68938,
+      "records": 556,
+      "sha256": "7db0a055eafafceb3a2e12380b8821013476c83e36ebe5b201dee2ddd2ed9478",
+      "sources": {
+        "capec": {
+          "records": 556,
+          "tokens": 68938
+        }
+      },
+      "stored_tokens": 68938
+    },
+    {
+      "bytes": 641838,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=cisa-kev/part-00000.parquet",
+      "recomputed_tokens": 52045,
+      "records": 1481,
+      "sha256": "fdeb8edead7e89d9ed25e477eed2a587d8624a54bdfac99448be71849c41a620",
+      "sources": {
+        "cisa-kev": {
+          "records": 1481,
+          "tokens": 52045
+        }
+      },
+      "stored_tokens": 52045
+    },
+    {
+      "bytes": 2817645,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=mitre-attack/part-00000.parquet",
+      "recomputed_tokens": 331272,
+      "records": 1741,
+      "sha256": "b1dc8b1edd89c9d71061305033aca5659d1befa700e43a79d62c883396c2fdde",
+      "sources": {
+        "mitre-attack": {
+          "records": 1741,
+          "tokens": 331272
+        }
+      },
+      "stored_tokens": 331272
+    },
+    {
+      "bytes": 229834,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=mitre-attack/part-00001.parquet",
+      "recomputed_tokens": 25052,
+      "records": 169,
+      "sha256": "b7e75f741bcb0622a70b478577f28c10fc81103bacadd1450701a3127598db91",
+      "sources": {
+        "mitre-attack": {
+          "records": 169,
+          "tokens": 25052
+        }
+      },
+      "stored_tokens": 25052
+    },
+    {
+      "bytes": 334267,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=mitre-attack/part-00002.parquet",
+      "recomputed_tokens": 33043,
+      "records": 262,
+      "sha256": "977b6d350f321b5f059a1a01ccdb98cee009c1d028c64e7395f1370661f195eb",
+      "sources": {
+        "mitre-attack": {
+          "records": 262,
+          "tokens": 33043
+        }
+      },
+      "stored_tokens": 33043
+    },
+    {
+      "bytes": 15748,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=mitre-attack/part-00003.parquet",
+      "recomputed_tokens": 796,
+      "records": 6,
+      "sha256": "f7f69f36cd6cedce8d18ca12f1d2859cc81510baaf2f5929e92c4045935feef5",
+      "sources": {
+        "mitre-attack": {
+          "records": 6,
+          "tokens": 796
+        }
+      },
+      "stored_tokens": 796
+    },
+    {
+      "bytes": 4567879,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=mitre-cwe/part-00000.parquet",
+      "recomputed_tokens": 103783,
+      "records": 1286,
+      "sha256": "bfc1d34f8574f4833b7483c3b4f5d30cbaafec193c30c7df1d153ff1db07f872",
+      "sources": {
+        "mitre-cwe": {
+          "records": 1286,
+          "tokens": 103783
+        }
+      },
+      "stored_tokens": 103783
+    },
+    {
+      "bytes": 4796490,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00000.parquet",
+      "recomputed_tokens": 267527,
+      "records": 6663,
+      "sha256": "53327e4274f769c2f7d2c9a7fde27de6d7fb6ba929ddef3eb62dd21938e52489",
+      "sources": {
+        "nvd": {
+          "records": 6663,
+          "tokens": 267527
+        }
+      },
+      "stored_tokens": 267527
+    },
+    {
+      "bytes": 1654049,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00001.parquet",
+      "recomputed_tokens": 73242,
+      "records": 1504,
+      "sha256": "4ba2f7df246af1f7406e1df7dc1fec7ae025b20072acf9bc5f2fa50bd131a565",
+      "sources": {
+        "nvd": {
+          "records": 1504,
+          "tokens": 73242
+        }
+      },
+      "stored_tokens": 73242
+    },
+    {
+      "bytes": 3321777,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00002.parquet",
+      "recomputed_tokens": 133536,
+      "records": 2644,
+      "sha256": "56d6bd247de4909ca2a8c1cf46da8b837a83d0e07789153687deb0a20cf70bf1",
+      "sources": {
+        "nvd": {
+          "records": 2644,
+          "tokens": 133536
+        }
+      },
+      "stored_tokens": 133536
+    },
+    {
+      "bytes": 5082342,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00003.parquet",
+      "recomputed_tokens": 242916,
+      "records": 4627,
+      "sha256": "479d13e27fa3e2de186010ccdea9736b3220af4e065e56623b13774e1f691c4d",
+      "sources": {
+        "nvd": {
+          "records": 4627,
+          "tokens": 242916
+        }
+      },
+      "stored_tokens": 242916
+    },
+    {
+      "bytes": 7384609,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00004.parquet",
+      "recomputed_tokens": 418245,
+      "records": 6990,
+      "sha256": "25e50cd676f86a46b57b493c4202b7f5c0cad14522c5e8639129f7fa168e8a41",
+      "sources": {
+        "nvd": {
+          "records": 6990,
+          "tokens": 418245
+        }
+      },
+      "stored_tokens": 418245
+    },
+    {
+      "bytes": 7401127,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00005.parquet",
+      "recomputed_tokens": 386427,
+      "records": 6458,
+      "sha256": "c4c8bb805960d6220cdf67a5b4f7a866c621e13eb3452095f6dd82cdf37076c2",
+      "sources": {
+        "nvd": {
+          "records": 6458,
+          "tokens": 386427
+        }
+      },
+      "stored_tokens": 386427
+    },
+    {
+      "bytes": 8409168,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00006.parquet",
+      "recomputed_tokens": 396662,
+      "records": 7004,
+      "sha256": "1e35dd14a946942e692daf0d7d5739254d142645c55cb1e6edc0a6e5b6c33065",
+      "sources": {
+        "nvd": {
+          "records": 7004,
+          "tokens": 396662
+        }
+      },
+      "stored_tokens": 396662
+    },
+    {
+      "bytes": 9641337,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00007.parquet",
+      "recomputed_tokens": 306138,
+      "records": 4917,
+      "sha256": "0d85b66357182acb85bae98d0bfebd0f682f8efcdc2f37a41269d92bec165f53",
+      "sources": {
+        "nvd": {
+          "records": 4917,
+          "tokens": 306138
+        }
+      },
+      "stored_tokens": 306138
+    },
+    {
+      "bytes": 10001891,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00008.parquet",
+      "recomputed_tokens": 317702,
+      "records": 5073,
+      "sha256": "b44f09a7aa0ff6dc14885647a0679af88bf96bac16bc2c38aa3b050cf93552ba",
+      "sources": {
+        "nvd": {
+          "records": 5073,
+          "tokens": 317702
+        }
+      },
+      "stored_tokens": 317702
+    },
+    {
+      "bytes": 9654211,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00009.parquet",
+      "recomputed_tokens": 278101,
+      "records": 4518,
+      "sha256": "c1eacd74c22d7bd6af60014e4cb07a70bc5f88548248a470853039f2ca1d623f",
+      "sources": {
+        "nvd": {
+          "records": 4518,
+          "tokens": 278101
+        }
+      },
+      "stored_tokens": 278101
+    },
+    {
+      "bytes": 10704389,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00010.parquet",
+      "recomputed_tokens": 331379,
+      "records": 5296,
+      "sha256": "7d1c561f800c851bc123c1e5a3013feb97008043ec1541022b0c699ce93f5f52",
+      "sources": {
+        "nvd": {
+          "records": 5296,
+          "tokens": 331379
+        }
+      },
+      "stored_tokens": 331379
+    },
+    {
+      "bytes": 10199710,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00011.parquet",
+      "recomputed_tokens": 384221,
+      "records": 6117,
+      "sha256": "90ff847404d5ae78a7efac92f9241a624f5ebe6777130e75df8988261dbc6ced",
+      "sources": {
+        "nvd": {
+          "records": 6117,
+          "tokens": 384221
+        }
+      },
+      "stored_tokens": 384221
+    },
+    {
+      "bytes": 9351211,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00012.parquet",
+      "recomputed_tokens": 515082,
+      "records": 8319,
+      "sha256": "44a43cb7374902dbe20687a29eab6b749c795b4d459ab4bae3c9000e6e7e8cf8",
+      "sources": {
+        "nvd": {
+          "records": 8319,
+          "tokens": 515082
+        }
+      },
+      "stored_tokens": 515082
+    },
+    {
+      "bytes": 8856882,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00013.parquet",
+      "recomputed_tokens": 573861,
+      "records": 7987,
+      "sha256": "7ded45eb3102a900d2ec5d99fe9dd141ebb44a5cb5cf746dd67b14d3f31bbd99",
+      "sources": {
+        "nvd": {
+          "records": 7987,
+          "tokens": 573861
+        }
+      },
+      "stored_tokens": 573861
+    },
+    {
+      "bytes": 10762549,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00014.parquet",
+      "recomputed_tokens": 660921,
+      "records": 9152,
+      "sha256": "320f2380d2427ee50313f7c529012e6791d140d496cf2cd37f56d0ba6d3d0d1a",
+      "sources": {
+        "nvd": {
+          "records": 9152,
+          "tokens": 660921
+        }
+      },
+      "stored_tokens": 660921
+    },
+    {
+      "bytes": 15720242,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00015.parquet",
+      "recomputed_tokens": 1080341,
+      "records": 14088,
+      "sha256": "94a41a2cdb2b0fdc0cf750265089be5411353d6a305de4572ba02c7642364337",
+      "sources": {
+        "nvd": {
+          "records": 14088,
+          "tokens": 1080341
+        }
+      },
+      "stored_tokens": 1080341
+    },
+    {
+      "bytes": 16925893,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00016.parquet",
+      "recomputed_tokens": 1077531,
+      "records": 15340,
+      "sha256": "fd36eb93d56a881edcb1f68d61223f4ff897720bc0a1b7f26384e12dd74541d8",
+      "sources": {
+        "nvd": {
+          "records": 15340,
+          "tokens": 1077531
+        }
+      },
+      "stored_tokens": 1077531
+    },
+    {
+      "bytes": 19335571,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00017.parquet",
+      "recomputed_tokens": 1114601,
+      "records": 15076,
+      "sha256": "b122d529f1f55213c4fd3d4b9ca54725dfdda5a4d808aedbe1ffbeffb6d2c2f5",
+      "sources": {
+        "nvd": {
+          "records": 15076,
+          "tokens": 1114601
+        }
+      },
+      "stored_tokens": 1114601
+    },
+    {
+      "bytes": 25678867,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00018.parquet",
+      "recomputed_tokens": 1278817,
+      "records": 18422,
+      "sha256": "db448b038b00f4677a5855eac143e08e658f8f79cfd80cc81f42ca82433ba0d7",
+      "sources": {
+        "nvd": {
+          "records": 18422,
+          "tokens": 1278817
+        }
+      },
+      "stored_tokens": 1278817
+    },
+    {
+      "bytes": 30444745,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00019.parquet",
+      "recomputed_tokens": 1768565,
+      "records": 20966,
+      "sha256": "d8bd6bcceac9050053ec5de93774ec976161b83a50b36e8a55d46d5d9b4ed927",
+      "sources": {
+        "nvd": {
+          "records": 20966,
+          "tokens": 1768565
+        }
+      },
+      "stored_tokens": 1768565
+    },
+    {
+      "bytes": 32149252,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00020.parquet",
+      "recomputed_tokens": 2289552,
+      "records": 24479,
+      "sha256": "2315546bb89de7f5b6c2ac396c0e2cac8af4cbc773ef8241cb925f5d507b93f0",
+      "sources": {
+        "nvd": {
+          "records": 24479,
+          "tokens": 2289552
+        }
+      },
+      "stored_tokens": 2289552
+    },
+    {
+      "bytes": 34322447,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00021.parquet",
+      "recomputed_tokens": 2522010,
+      "records": 28555,
+      "sha256": "300bbe6ea9461d6187dea7d1a756d97ad7193f1fbbb7a5fe753e8dffba2dbd31",
+      "sources": {
+        "nvd": {
+          "records": 28555,
+          "tokens": 2522010
+        }
+      },
+      "stored_tokens": 2522010
+    },
+    {
+      "bytes": 43544888,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00022.parquet",
+      "recomputed_tokens": 3641345,
+      "records": 36328,
+      "sha256": "c0dcf97e1e6c246af9e2fdbe6380a69558920b0713076308f5552c2cf2ce16dd",
+      "sources": {
+        "nvd": {
+          "records": 36328,
+          "tokens": 3641345
+        }
+      },
+      "stored_tokens": 3641345
+    },
+    {
+      "bytes": 42619185,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00023.parquet",
+      "recomputed_tokens": 3868684,
+      "records": 40466,
+      "sha256": "22f697043442e0e0f9bbe74ac608585b010c845b63b77f2fb1c91e7bf40cb394",
+      "sources": {
+        "nvd": {
+          "records": 40466,
+          "tokens": 3868684
+        }
+      },
+      "stored_tokens": 3868684
+    },
+    {
+      "bytes": 14169994,
+      "project_relative_path": "data/training-clean-v2/normalized/source_id=nvd/part-00024.parquet",
+      "recomputed_tokens": 1278884,
+      "records": 12289,
+      "sha256": "e89d6a4e6bcf1be2add1556b6d7101b868816719b0b26779a1a2353f0d83afc9",
+      "sources": {
+        "nvd": {
+          "records": 12289,
+          "tokens": 1278884
+        }
+      },
+      "stored_tokens": 1278884
+    }
+  ],
+  "baseline_records": 659147,
+  "baseline_tokens": 1467709789,
+  "selected_config_sha256": "3b9b6a1d482a8bf6c794792bfa91e26b99b75e649a77305162e78f80d3433629",
+  "selected_summary_sha256": "f985820bfda39d7d71d1f8ed2530365a1623f6456d001fbe148bd8bc3a1233b1"
+}

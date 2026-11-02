@@ -1,0 +1,71 @@
+{
+  "checked_on": "2026-10-21",
+  "scope": "Source-term research, not legal clearance. Current pages do not prove historical record-level rights. Collection licenses are distinct from individual-content licenses. Fair use is not a license.",
+  "sources": {
+    "nvd": {
+      "published_terms": "NIST data terms plus CVE Terms of Use where applicable",
+      "urls": ["https://www.nist.gov/open/copyright-fair-use-and-licensing-statements-srd-data-software-and-technical-series-publications", "https://www.cve.org/Resources/Media/Archives/OldWebsite/about/termsofuse.html"],
+      "action": "Identify NIST-authored versus contributed CVE content; preserve applicable copyright/license notices and attribution. CVE link is an official archive. Do not blanket-license all contributions as public domain."
+    },
+    "cisa-kev": {
+      "published_terms": "CC0-1.0",
+      "urls": ["https://raw.githubusercontent.com/cisagov/kev-data/main/LICENSE"],
+      "action": "Bind the catalog/version to the official CC0 statement; distinguish linked third-party works and protected marks. Preserve original row labels separately."
+    },
+    "mitre-attack": {
+      "published_terms": "MITRE ATT&CK custom terms",
+      "urls": ["https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/LICENSE.txt"],
+      "action": "Bind the ingested release to its license and include MITRE copyright and permission notices; current master is evidence of current terms only."
+    },
+    "mitre-cwe": {
+      "published_terms": "MITRE CWE Terms of Use",
+      "urls": ["https://cwe.mitre.org/about/termsofuse.html"],
+      "action": "Preserve the applicable MITRE copyright designation and license notice; bind the source release."
+    },
+    "capec": {
+      "published_terms": "MITRE CAPEC Terms of Use",
+      "urls": ["https://capec.mitre.org/about/termsofuse.html"],
+      "action": "Preserve the applicable MITRE copyright designation and license notice; bind the source release."
+    },
+    "sigma": {
+      "published_terms": "DRL-1.1 for current SigmaHQ rules",
+      "urls": ["https://raw.githubusercontent.com/SigmaHQ/sigma/master/LICENSE", "https://raw.githubusercontent.com/SigmaHQ/Detection-Rule-License/main/LICENSE.Detection.Rules.md"],
+      "action": "Resolve legacy LGPL-2.1 label against the actual ingested revision. Preserve rule authors, rule/source URI, and DRL text or link where applicable."
+    },
+    "stackexchange": {
+      "published_terms": "CC-BY-SA-2.5 / CC-BY-SA-3.0 / CC-BY-SA-4.0, per contribution revision",
+      "urls": ["https://stackoverflow.com/help/licensing", "https://creativecommons.org/licenses/by-sa/4.0/legalcode.en"],
+      "action": "Recover each question/answer revision's authors, attribution URLs and license. A question date or thread-wide CC-BY-SA-4.0 label cannot establish all component rights. Preserve ShareAlike obligations."
+    },
+    "reddit": {
+      "published_terms": "No public bulk-redistribution license established",
+      "urls": ["https://redditinc.com/policies/user-agreement"],
+      "action": "Obtain applicable permission/agreement or a reviewed legal basis for this public redistribution; a user's grant to Reddit is not a general grant to this project."
+    },
+    "cloudtrail-flaws": {
+      "published_terms": "NOASSERTION",
+      "urls": [],
+      "action": "Locate the original log publisher's license or permission. Public availability and the legacy Public Domain (flaws.cloud) label are insufficient evidence."
+    },
+    "arxiv": {
+      "published_terms": "Per paper/version; preserve the exact supplied license",
+      "urls": ["https://info.arxiv.org/help/license/index.html"],
+      "action": "Bind the extracted paper version to its license, authors, title and source URL. The default arXiv license is not a general third-party republication grant. Review NC, ND, SA and legacy public-domain labels separately. Metadata CC0 does not license full text."
+    },
+    "primus-fineweb": {
+      "published_terms": "ODC-By-1.0 (database)",
+      "urls": ["https://huggingface.co/datasets/trendmicro-ailab/Primus-FineWeb", "https://opendatacommons.org/licenses/by/1-0/"],
+      "action": "Restore page URL and original page license/permission evidence. ODC-By does not license individual underlying web-page copyright. Source inventory has no supplied page-license values."
+    },
+    "redsage-cfw": {
+      "published_terms": "ODC-By-1.0 (database)",
+      "urls": ["https://huggingface.co/datasets/RISys-Lab/RedSage-CFW", "https://opendatacommons.org/licenses/by/1-0/"],
+      "action": "Restore page URL and original page license/permission evidence. ODC-By does not license individual underlying web-page copyright. Source inventory has no supplied page-license values."
+    },
+    "youtube-commons": {
+      "published_terms": "Dataset card CC-BY-4.0; underlying video grant must be checked separately",
+      "urls": ["https://huggingface.co/datasets/PleIAs/YouTube-Commons", "https://support.google.com/youtube/answer/2797468?hl=en", "https://creativecommons.org/licenses/by/4.0/legalcode.en"],
+      "action": "Restore video URL/ID, channel identity, title and original license string from the exact selected row. Verify the applicable license version and attribution/changes. A generic reuse-allowed string does not establish a historical version; missing licenses remain unresolved."
+    }
+  }
+}

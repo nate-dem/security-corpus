@@ -1,0 +1,11 @@
+# CPU bag-of-words classifier; no torch, CUDA, transformers, or GPU downloads.
+# scikit-learn supplies bounded-memory text hashing and linear classification.
+scikit-learn==1.7.2
+numpy==2.2.6
+scipy==1.15.3
+joblib==1.5.2
+threadpoolctl==3.6.0
+pyarrow==23.0.1
+duckdb==1.5.2
+tiktoken==0.12.0
+huggingface-hub==0.36.0

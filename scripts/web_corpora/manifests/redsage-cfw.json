@@ -1,0 +1,767 @@
+{
+  "files": [
+    {
+      "hash": "d0478bc5d040cb9dda3406966c0c80f98755a1a3",
+      "hash_algorithm": "git_blob_sha1",
+      "path": "README.md",
+      "size": 10579
+    },
+    {
+      "hash": "059106dd7d2ff2c02b8ec6a219583ad9cf5cc9e16f4f85f794ae5308cb779ae3",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00000-of-00026.parquet",
+      "size": 270116744
+    },
+    {
+      "hash": "a674ab1d828c3d39f02fc8fba19ec59b7f57306f891b5b9423f7701a0e4db3fb",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00001-of-00026.parquet",
+      "size": 281583984
+    },
+    {
+      "hash": "c3f104c95d79ebb329e08b66c4e662a43abec90fc42656b13c474e7a3bf54af4",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00002-of-00026.parquet",
+      "size": 280079107
+    },
+    {
+      "hash": "1d5e57d84b0261c509bd2c9d85af57d45e03bd6e22e9e77a0680c3675eececd5",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00003-of-00026.parquet",
+      "size": 277619724
+    },
+    {
+      "hash": "1eda9e8692c48e565e6222af2762945b0ba100bdf22ca63fa1e8a3d21019acdf",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00004-of-00026.parquet",
+      "size": 279809156
+    },
+    {
+      "hash": "4474a8f4a06af38ca3165e9fab073f372f9e72c35d501f7babaa458a3f61b4d1",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00005-of-00026.parquet",
+      "size": 282051856
+    },
+    {
+      "hash": "d5d9159d29105c05f524d657c33cb8223a6a409cdc4644a680363bd6c4b640ff",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00006-of-00026.parquet",
+      "size": 280129121
+    },
+    {
+      "hash": "475f7681ff024259be436a753f0fb90d110eac213230b88394578c02ea9767e1",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00007-of-00026.parquet",
+      "size": 281003295
+    },
+    {
+      "hash": "d5261061b7c6ef51ecad2af5300967ae701f07e127516b0a541737b573da8d8e",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00008-of-00026.parquet",
+      "size": 281988738
+    },
+    {
+      "hash": "5748dcda18fe30f2fa7aafed214e6d7f58aa5c61bdce3b22cdfce1306f57083e",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00009-of-00026.parquet",
+      "size": 279614384
+    },
+    {
+      "hash": "1726a94eb9854b36443de023cc659e2296db795af7d08c758fdd8ad1720f2a12",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00010-of-00026.parquet",
+      "size": 279908339
+    },
+    {
+      "hash": "ebbae1bde08b7ecb593641ca1c49b26dd75f5373a15ee5cf6b137d3460d63dd7",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00011-of-00026.parquet",
+      "size": 280900486
+    },
+    {
+      "hash": "36473291e8d9eaa4907f4b3fe7680ab0bf6636d90e3cee4f10fa73cb9a45b4ba",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00012-of-00026.parquet",
+      "size": 279934586
+    },
+    {
+      "hash": "b91f0c32df27ce75c2d0cf854dbcc04a67c48118dcb89436e4bda0d0049b7728",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00013-of-00026.parquet",
+      "size": 280705351
+    },
+    {
+      "hash": "d0c112a1ef43ab2d556798e7dc05e1788781fbf6cb0cd6b153a18c0c66caa659",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00014-of-00026.parquet",
+      "size": 273054958
+    },
+    {
+      "hash": "c8d981c91a41508441d40816f3c8da1e3121e22e068d0f8ccf4402bc1acf4972",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00015-of-00026.parquet",
+      "size": 275772635
+    },
+    {
+      "hash": "3599224d558a967cf49d58882163af09b75e8c012f3aaabe5e74e5d6df8a4e98",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00016-of-00026.parquet",
+      "size": 277499028
+    },
+    {
+      "hash": "c66396f02865bbeeeda0de38d49325ecf666b96a6d6a75434fde0bc7b1d2c0eb",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00017-of-00026.parquet",
+      "size": 275720433
+    },
+    {
+      "hash": "8bda10c451b35347ab5be0bc204808bc0d5371057e7de34f071962ba4da97f5d",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00018-of-00026.parquet",
+      "size": 279453795
+    },
+    {
+      "hash": "4db43b63b703ffc934332cdcf961f887aac27128051072ec882440a46ba5c4de",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00019-of-00026.parquet",
+      "size": 275421563
+    },
+    {
+      "hash": "657f638efb7490e38d05f53e0a07b919bec85f653e54f3842d894b1956fdb196",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00020-of-00026.parquet",
+      "size": 275026847
+    },
+    {
+      "hash": "515734952c20bef78d29b3011444010bab25d333aa4853c6a34b7cd72fc4de16",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00021-of-00026.parquet",
+      "size": 277211425
+    },
+    {
+      "hash": "0256d1a23f2e6b6b6b75e644a4d6e58e0f9ec00c921280a72b7e7abc9373b232",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00022-of-00026.parquet",
+      "size": 276276360
+    },
+    {
+      "hash": "11ac4aff728565823849ada087c7b0066e068fe0ba24fe19bda29490a43250ac",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00023-of-00026.parquet",
+      "size": 274412704
+    },
+    {
+      "hash": "23ff478685f82023a757bc7ca368eeab70b6bc23334801e9ec536a4bcb6312eb",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00024-of-00026.parquet",
+      "size": 276065481
+    },
+    {
+      "hash": "24d2a43397d6c1a2b7a244c6e639bf95f36f34847411af3aa2f172bd291e2238",
+      "hash_algorithm": "sha256",
+      "path": "chunk_1/train-00025-of-00026.parquet",
+      "size": 274121399
+    },
+    {
+      "hash": "df37ada8d2c36aa3514e60091b4e73aa2ddb884639df1e0de091ff5671abd409",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00000-of-00025.parquet",
+      "size": 275415688
+    },
+    {
+      "hash": "4ee2b956b171dac1f7a1c3296b5b52e93099914ef71da116e48d28822a9adb2a",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00001-of-00025.parquet",
+      "size": 275265251
+    },
+    {
+      "hash": "493f7f8559582e4ba49fe0f92af595d93164cfba1cef7d27f49ada0bc188f763",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00002-of-00025.parquet",
+      "size": 274573717
+    },
+    {
+      "hash": "565e62669ce1eed4961255352b4e09b4e61a8dd9e848188183b8b406cc82c1a1",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00003-of-00025.parquet",
+      "size": 275719288
+    },
+    {
+      "hash": "7eb4552ed7489697a55873d19c8745089fe3cc457d72b3b9b8b931c20d3d6b52",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00004-of-00025.parquet",
+      "size": 278809021
+    },
+    {
+      "hash": "7d0136ea12d2f967444b8daf5b21a257b307ea1ea2ffeb1df1669c2690ad7371",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00005-of-00025.parquet",
+      "size": 277976033
+    },
+    {
+      "hash": "d9cca263950f179dd8514eecef72d5918020d2d1609ff7720253aaa7604a672d",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00006-of-00025.parquet",
+      "size": 279331124
+    },
+    {
+      "hash": "9c0c5326ff83a936e3b59e845f0b914eac22aec8e1da9cf0cd447f303c51611e",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00007-of-00025.parquet",
+      "size": 277847216
+    },
+    {
+      "hash": "f6ca6709da1df37d233b79b59e6b4836e7d883fc0e07dc65543319423cf020b1",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00008-of-00025.parquet",
+      "size": 277908520
+    },
+    {
+      "hash": "527a8e14bf1f22270e212166480922e0b622248171f987efe965a8576d937758",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00009-of-00025.parquet",
+      "size": 275364886
+    },
+    {
+      "hash": "be8de68d6ce1063bad3138ce8cf304f50b9bf4c3ce22e89691c14386e422d82a",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00010-of-00025.parquet",
+      "size": 281627021
+    },
+    {
+      "hash": "149543756e9f25914e11a6c4f612bbaf672bc761c38d42c4bbe9fe460e2e1b79",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00011-of-00025.parquet",
+      "size": 281964099
+    },
+    {
+      "hash": "aa5b46222b56d80b78c63cc66bedf2747ee5b16d41ba4cea635f3224b4438d03",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00012-of-00025.parquet",
+      "size": 279808779
+    },
+    {
+      "hash": "4494124320ccdaf6b0ae82469064ac95d86b4bbc298a252d73847a5df94a21bc",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00013-of-00025.parquet",
+      "size": 280260568
+    },
+    {
+      "hash": "41ece7eefff21873b693c125cee8421a2dcde2f736a1273479969debd465730c",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00014-of-00025.parquet",
+      "size": 276826146
+    },
+    {
+      "hash": "a60ba7df2f1ba341303d83207a408216124d396cddbd51114fcee0ef7795260f",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00015-of-00025.parquet",
+      "size": 278064926
+    },
+    {
+      "hash": "cd682fe7240f8e5309f463d71d99e55a909bea5b2adf7d8f55b821f44b23dfb8",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00016-of-00025.parquet",
+      "size": 275525241
+    },
+    {
+      "hash": "7ad10284d36deb219092c586ed14a12806719b4ec541a346033a131928884349",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00017-of-00025.parquet",
+      "size": 279340189
+    },
+    {
+      "hash": "b2f42523133099de28f4f5d297fc958eb72ae0c005ad91aeb89806c24edd9c7a",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00018-of-00025.parquet",
+      "size": 276521243
+    },
+    {
+      "hash": "a352140b5eda979d79d730c006207d497c356bebbf920942d630a343dbb16f47",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00019-of-00025.parquet",
+      "size": 277673678
+    },
+    {
+      "hash": "73b6b135cf3bfa2e090ca25c1851ad9de52995e010a92aecd9ae566ec55f0a60",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00020-of-00025.parquet",
+      "size": 279054793
+    },
+    {
+      "hash": "ed4213137d026f1fc52d28eb11da545faa46573025ff6a8d9722cfb4f673a3f5",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00021-of-00025.parquet",
+      "size": 278989629
+    },
+    {
+      "hash": "236508d67c92bf8e81e2e1c6452d7148c1474f8ab8b1ac0af9a0b456f0fd2837",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00022-of-00025.parquet",
+      "size": 279267474
+    },
+    {
+      "hash": "c9142d3ffddeb5b5c238f451fff7ef61d7de06302c91010988c93db377a7242e",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00023-of-00025.parquet",
+      "size": 277025458
+    },
+    {
+      "hash": "a2000c4670d664285a2ae90b1a91d4374faf3c43de975b92d56e69940bb16648",
+      "hash_algorithm": "sha256",
+      "path": "chunk_2/train-00024-of-00025.parquet",
+      "size": 276779361
+    },
+    {
+      "hash": "b231a039a0a577ff35a41fac9f33257011c92038a494df296c191401d9dee3f8",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00000-of-00025.parquet",
+      "size": 271614575
+    },
+    {
+      "hash": "f034a4d93299942408a957d2793776a03c4e53a17781363b630a397f4af93234",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00001-of-00025.parquet",
+      "size": 266636996
+    },
+    {
+      "hash": "2e777257474c9004ba8e2fdcb56511eed757464643eb63ea9a9bfde9aec4975f",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00002-of-00025.parquet",
+      "size": 272753582
+    },
+    {
+      "hash": "0b299db4162fd910d844e414df1cc965b701aa99f6e450dfd3da456782d103d3",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00003-of-00025.parquet",
+      "size": 272556429
+    },
+    {
+      "hash": "67d7431f622a51df25a707fee64e3cd7cf4daf585bad81e04a4db5c269821b65",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00004-of-00025.parquet",
+      "size": 270579639
+    },
+    {
+      "hash": "b13f4d01a84dbec541c4de8af75e47caae3e0fe6ed2bf3787d6d5bb92d84cc1c",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00005-of-00025.parquet",
+      "size": 269942966
+    },
+    {
+      "hash": "aacd30490f220ca9918966ede7c0ab068de04ebbd9578e65487a5824dd03f77d",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00006-of-00025.parquet",
+      "size": 271305465
+    },
+    {
+      "hash": "efce8454c5c1b3b9f8ceba512c61819b4a13ff9284f3d2b16c47d5b1101c95d4",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00007-of-00025.parquet",
+      "size": 274297300
+    },
+    {
+      "hash": "6f93b90716354e27c2b6e972cf68a266bd24864eff9ec87b256db8b85205e968",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00008-of-00025.parquet",
+      "size": 270967553
+    },
+    {
+      "hash": "f4e257f51cdef8c1dc84baed9692ccf3ac93104248be5d8c3133e0122fad489b",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00009-of-00025.parquet",
+      "size": 271580540
+    },
+    {
+      "hash": "d69e133dbe30243b3910670e317f1d7f777a5b19cf160fb7b440c6ac01623ec5",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00010-of-00025.parquet",
+      "size": 272679302
+    },
+    {
+      "hash": "1ca296a80fd079e5c96ad9ad1508b285cacb6be1903b7db629b9bac61b5385e0",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00011-of-00025.parquet",
+      "size": 270991684
+    },
+    {
+      "hash": "70bb5227db40d0cb4dbcc3875974c6066af4e902f01e712b48ab77d6c0e14792",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00012-of-00025.parquet",
+      "size": 271597917
+    },
+    {
+      "hash": "c3e6d6c7237217026601dbb45011cde45f0e1efad23a23555a403108265f04e7",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00013-of-00025.parquet",
+      "size": 275022154
+    },
+    {
+      "hash": "e3db2c4390603892085f77834b561635473305efd78e799583fe67c00ef5910b",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00014-of-00025.parquet",
+      "size": 277323782
+    },
+    {
+      "hash": "8a5c9db62a2fc6174d60e51c0c180c4ac520f6ab6d721e21ad647f6f79ee4e52",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00015-of-00025.parquet",
+      "size": 272054050
+    },
+    {
+      "hash": "aa8ffb918b0fd60475dc3161ec7dbdd2e258a7beb7c2ca55ed68f1e35255b52c",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00016-of-00025.parquet",
+      "size": 275283950
+    },
+    {
+      "hash": "9cc88cf09705026c13b9c8f2b428ef5f30fa676edd6956e8d357387e4c9dd347",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00017-of-00025.parquet",
+      "size": 275316403
+    },
+    {
+      "hash": "c330b95e6c1c7de78274d94f351ae696c46a2902897d0c88e8e66b3d9eeb3a92",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00018-of-00025.parquet",
+      "size": 272187396
+    },
+    {
+      "hash": "996dc06189dd8da3dea87b5ae95fcbbae21bef21d11a8a84d0ff75d2df80b1bf",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00019-of-00025.parquet",
+      "size": 280029697
+    },
+    {
+      "hash": "feb0e697b47b0c9bf9e08ebe1b5bff3e8d96e2f5eda6f5989718d3ec8a23efe0",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00020-of-00025.parquet",
+      "size": 274528084
+    },
+    {
+      "hash": "eb6b968c6ccaf7f9a0b32ad6d0e0b04076fb8a811ddc0466482a29b9730340db",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00021-of-00025.parquet",
+      "size": 279202063
+    },
+    {
+      "hash": "523a00f074badfd0b28e07fd464836ce57d46db89339a6ce72dea26fc81a710b",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00022-of-00025.parquet",
+      "size": 277317053
+    },
+    {
+      "hash": "a33fc86b9b7ac7f83235a42d4db4cdf6aa29253d8935e20aaf7698f8f9426d2c",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00023-of-00025.parquet",
+      "size": 279367617
+    },
+    {
+      "hash": "0cb4a4b1e1ea4f8e1e67b0b5d8843b6518d8d1930ecd3b2ed35f518d121079c8",
+      "hash_algorithm": "sha256",
+      "path": "chunk_3/train-00024-of-00025.parquet",
+      "size": 273228797
+    },
+    {
+      "hash": "aa5f9a449a7bced39ea8630ed54a7c2fa7bacf70403e9cf3d4f4eb6bebc6baa4",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00000-of-00025.parquet",
+      "size": 277783874
+    },
+    {
+      "hash": "3673d9e076686f27cbc6404d2c41577399971e54dda31b463015fa301d346c16",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00001-of-00025.parquet",
+      "size": 278232368
+    },
+    {
+      "hash": "c297d99ac2bdcfd1686a24eb531c00c0d8a7402540d57c4b180de78a0bc5e75d",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00002-of-00025.parquet",
+      "size": 273300355
+    },
+    {
+      "hash": "ea5857baf974026774348cdf88413354ad7e2c5282e642f1e8b73a2f213c37e1",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00003-of-00025.parquet",
+      "size": 271723458
+    },
+    {
+      "hash": "6883ab09431db65e8b9a05d3f776d1681a94796178d10d94937e4b2caa94b283",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00004-of-00025.parquet",
+      "size": 276653119
+    },
+    {
+      "hash": "6c2883fa926f07e4ba106fcd6ac02d0612df251e3e0ba66c9b204b30bbb701d1",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00005-of-00025.parquet",
+      "size": 276490970
+    },
+    {
+      "hash": "9cb5054c7bf81744db6833c5d688af7042aa3f3fa397fb196bbf33140dda98f1",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00006-of-00025.parquet",
+      "size": 275082754
+    },
+    {
+      "hash": "868107a86ec66f7f1fd26c9c9a365a046ef8a30dfe8910a1c99d6e81c2dd5a72",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00007-of-00025.parquet",
+      "size": 277435978
+    },
+    {
+      "hash": "ce60717d1e301720f59b204bf633fdab6529fa5416bb6646b76f78dae13f7ec9",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00008-of-00025.parquet",
+      "size": 276146617
+    },
+    {
+      "hash": "6cc8fcdcb226cd510935977cb50ed91164f8b7e8555b2ff64538f68f12a3e3a3",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00009-of-00025.parquet",
+      "size": 272737054
+    },
+    {
+      "hash": "2de14e6f4d3f9734f040bd6923fe72f4edb201c859472852d915ebeb2205299a",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00010-of-00025.parquet",
+      "size": 274659984
+    },
+    {
+      "hash": "5f059529ca4b099e71f09d29aef89c47a12ecf3667ca078897416bbc1f1a7187",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00011-of-00025.parquet",
+      "size": 272852028
+    },
+    {
+      "hash": "6335021a03864dbd44dc520b38e69b125827f370267b9f676bd38ad39cb951e2",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00012-of-00025.parquet",
+      "size": 275192395
+    },
+    {
+      "hash": "d5c5f119647dbd513a1b676bc9d13911b269bb82e98ee28b448e45460c737e0c",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00013-of-00025.parquet",
+      "size": 277419305
+    },
+    {
+      "hash": "812dd225d66e98e878b60ae79003313687e71784e692434f3fb7541ab18ce422",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00014-of-00025.parquet",
+      "size": 278374533
+    },
+    {
+      "hash": "fc3fb0103244037bcd41b9ae5d1413a6858a53542545d137797b9dd5374c3f49",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00015-of-00025.parquet",
+      "size": 273975210
+    },
+    {
+      "hash": "542cecd33b46d70541a009442bdac26dd5bc9dc3e04b5b191f2f61dc8f237e92",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00016-of-00025.parquet",
+      "size": 274810522
+    },
+    {
+      "hash": "d783cf33bdcbee4f7d93121150ea1a33315a6ca6d570b8166fc43937ab7c7f8a",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00017-of-00025.parquet",
+      "size": 282314768
+    },
+    {
+      "hash": "b71413015810a1e826f5133c497104ce7b342e2279200d898f4f0efcfcccb24e",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00018-of-00025.parquet",
+      "size": 273270339
+    },
+    {
+      "hash": "1e943bfea00b63774c8a4000d98472d84535543ea95bc11468c1c2918055fde4",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00019-of-00025.parquet",
+      "size": 275607234
+    },
+    {
+      "hash": "d5393bd2768a92268e3e098a96c0bff3f7ba4c53feb1990cf4c104897e5a2695",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00020-of-00025.parquet",
+      "size": 277069767
+    },
+    {
+      "hash": "6e7138eb004a4659a8ffc980e14f582fb65e0503796e7c69670f153d6a999782",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00021-of-00025.parquet",
+      "size": 275268592
+    },
+    {
+      "hash": "087c37fbe50aa5ded98658d0bda87c2bb79f24cf6fc0dc979ebebba451936043",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00022-of-00025.parquet",
+      "size": 274775084
+    },
+    {
+      "hash": "e3f403b89146430c6c33172ab45a9417751e95701ea0f1f179dedc1f52477f1e",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00023-of-00025.parquet",
+      "size": 268985091
+    },
+    {
+      "hash": "5a5035e131ec91b2114ad74604c8293eb1935cd762b8b65020672694439c9804",
+      "hash_algorithm": "sha256",
+      "path": "chunk_4/train-00024-of-00025.parquet",
+      "size": 268578654
+    },
+    {
+      "hash": "d0feab54716d2b7b8064ce91e82127a513947d42026e51dfa414f745fe4cafbe",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00000-of-00024.parquet",
+      "size": 274614540
+    },
+    {
+      "hash": "d059ca4e2cfa066f75f3ecf4d7554719b6de9b3dfc0430f7d45e2d99aab32cf9",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00001-of-00024.parquet",
+      "size": 275082727
+    },
+    {
+      "hash": "776315c94180e2e9d30ed20ff357b9f2f1a05e185147248d900f7e88709d7e2b",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00002-of-00024.parquet",
+      "size": 276335196
+    },
+    {
+      "hash": "3aad6dd489f4bea6e69f264fb8c857b83099e4b54f3807123e706af4f0d868dd",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00003-of-00024.parquet",
+      "size": 277587311
+    },
+    {
+      "hash": "9d752211071f8a8421c74271cb8b57b1ee921bd7f85b75a582039c2bd96a5c2c",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00004-of-00024.parquet",
+      "size": 275471895
+    },
+    {
+      "hash": "de3ed59ad7f589d583e4ae71acb5076f4b7346883d44abc75bfcba81bbbdadee",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00005-of-00024.parquet",
+      "size": 283586926
+    },
+    {
+      "hash": "3039f762cfc3454fd862ed9432746500b10ba9a3c6328a02b3108e8e82b03f38",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00006-of-00024.parquet",
+      "size": 282324743
+    },
+    {
+      "hash": "edea7b62f1e77c565d2cf9c8153d70dae47f9a4bbda0e1dd5128d691aa801ef3",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00007-of-00024.parquet",
+      "size": 275413790
+    },
+    {
+      "hash": "9fe36c3cf893476196765ee12ebeed29e99c316faf19d3f18fdf40e1bae2be79",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00008-of-00024.parquet",
+      "size": 282680778
+    },
+    {
+      "hash": "cb1155f7bd6fe2e842139f7c36047a5775627bc1c1b1da166a47fc03ba168567",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00009-of-00024.parquet",
+      "size": 273486729
+    },
+    {
+      "hash": "36d0dc40263d4a7664d77018583168600345ec48b0355f09d3c78154d749ae25",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00010-of-00024.parquet",
+      "size": 279379201
+    },
+    {
+      "hash": "47cd1943ad2371bec03b1079b920a8167b7fde85c3993b144611989397e54689",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00011-of-00024.parquet",
+      "size": 281296094
+    },
+    {
+      "hash": "f808f46f228b4436cd39d9deaab46101e06f0947a3ee1eab207617b655f762d4",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00012-of-00024.parquet",
+      "size": 281502199
+    },
+    {
+      "hash": "136f04f3201f8708e8d93c9e5f793bc6d0abf24aec5824f03edb208c0b3f739f",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00013-of-00024.parquet",
+      "size": 276706711
+    },
+    {
+      "hash": "5c32f4dfad7e40b1b537b3f9db761d69e954cb1ffd52335193efe885dabb2783",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00014-of-00024.parquet",
+      "size": 280868320
+    },
+    {
+      "hash": "24ee7b11ff45b6a18cc024fae92f7cf908ee4a3bf19cd5b19ed9bddecee3891b",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00015-of-00024.parquet",
+      "size": 282517483
+    },
+    {
+      "hash": "1136e9cfa24d74ff66a2ebb55e1d946d5663c64947af25fd9e7cc886f8c3c0d7",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00016-of-00024.parquet",
+      "size": 283672580
+    },
+    {
+      "hash": "22dbf1949268e75102e3b63ea90e597499aa1ed413cfd896df7359c7f3b63d0a",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00017-of-00024.parquet",
+      "size": 284206419
+    },
+    {
+      "hash": "986dd4fe29ec95d42db13cd31155ed7991ff077932cdba1d91067b52afb391d6",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00018-of-00024.parquet",
+      "size": 282039313
+    },
+    {
+      "hash": "0d7a312608cbaba34620989555d6b6036dd13427b71bd871f67035ad0cc788bd",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00019-of-00024.parquet",
+      "size": 286376144
+    },
+    {
+      "hash": "b09df5c48c624b13f54699c397ca903de4f7ad3118eea084217672dc3058f653",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00020-of-00024.parquet",
+      "size": 285302851
+    },
+    {
+      "hash": "fbebe490a08ecc5d91c6e4a41ca4a314a17780761c441017a8159c328d07dd88",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00021-of-00024.parquet",
+      "size": 284042716
+    },
+    {
+      "hash": "da17c95b4ed75bb35d7ce6403805a8d37745d702accb52fa91bb2535a5536907",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00022-of-00024.parquet",
+      "size": 284112034
+    },
+    {
+      "hash": "8ff5dab815ab28068a650b8d805cf73c4a960189405ac731525e78a4a7b6bf11",
+      "hash_algorithm": "sha256",
+      "path": "chunk_5/train-00023-of-00024.parquet",
+      "size": 285818717
+    }
+  ],
+  "format_version": 1,
+  "inventory_checked_at": "2026-09-11",
+  "repo_id": "RISys-Lab/RedSage-CFW",
+  "revision": "52b393cb49c59789c5cae272acc0dbc58c0831ff",
+  "selection": "All .parquet payloads and README.md at the pinned revision; no row filters",
+  "source": "redsage-cfw",
+  "total_bytes": 34623961891
+}

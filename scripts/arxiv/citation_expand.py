@@ -9,7 +9,7 @@ Three phases:
 Usage:
     python scripts/arxiv/citation_expand.py \\
         --metadata-dir data/arxiv/raw/metadata/cs_CR \\
-        --s2-data-dir /Volumes/SECURITY/semantic_scholar \\
+        --s2-data-dir data/semantic_scholar \\
         --output-file data/arxiv/raw/metadata/citations/discovered_ids.txt \\
         --api-key $S2_API_KEY
 """
@@ -46,7 +46,7 @@ def parse_args():
     )
     p.add_argument(
         "--s2-data-dir",
-        default="/Volumes/SECURITY/semantic_scholar",
+        default="data/semantic_scholar",
         help="Directory for Semantic Scholar bulk data",
     )
     p.add_argument(

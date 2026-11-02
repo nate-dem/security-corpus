@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import re
-from typing import Any
+from typing import Any, Callable
 
 
 SIMPLE_INCLUDE_RE = re.compile(
@@ -30,6 +30,11 @@ VERBATIM_BEGIN_RE = re.compile(
 )
 VERBATIM_END_TEMPLATE = r"\\end\{%s\}"
 MAIN_FILENAMES = ("main.tex", "paper.tex", "article.tex", "manuscript.tex")
+LATEX_NORMALIZER_VERSION = "latex-v3"
+TEX_LITERAL_RE = re.compile(
+    r"%|\\begin\{(?P<environment>comment|verbatim\*?|Verbatim|lstlisting|minted)\}"
+    r"|\\verb\*?(?P<delimiter>[^a-zA-Z\s])"
+)
 
 
 @dataclass
@@ -55,7 +60,7 @@ def find_main_file(tex_dir: Path) -> Path:
     for path in sorted(project_root.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in {".tex", ".pdflatex"}:
             continue
-        text = path.read_text(encoding="utf-8", errors="ignore")
+        text = _transform_tex(path.read_text(encoding="utf-8", errors="ignore"), lambda text: text)
         has_class = r"\documentclass" in text or r"\documentstyle" in text
         has_document = r"\begin{document}" in text
         if not has_class:
@@ -120,33 +125,50 @@ def inline_file(
         diagnostics.includes_inlined += 1
         return inline_file(target, root, seen, diagnostics)
 
-    return INCLUDE_RE.sub(replace, content)
+    try:
+        return _transform_tex(content, lambda plain: INCLUDE_RE.sub(replace, plain))
+    finally:
+        # Only ancestors are cycles. A later include may legitimately reuse a file.
+        seen.remove(current)
 
 
 def clean_latex(text: str) -> str:
     """Remove comments outside verbatim-like environments and normalize whitespace."""
-    text = COMMENT_ENVIRONMENT_RE.sub("", text)
-    output: list[str] = []
-    offset = 0
-    while offset < len(text):
-        verbatim = VERBATIM_BEGIN_RE.search(text, offset)
-        plain_end = verbatim.start() if verbatim else len(text)
-        output.append(_strip_tex_comments(text[offset:plain_end]))
-        if verbatim is None:
-            break
-        environment = verbatim.group("name")
-        end_match = re.search(
-            VERBATIM_END_TEMPLATE % re.escape(environment),
-            text[verbatim.end() :],
-        )
-        if end_match is None:
-            output.append(text[verbatim.start() :])
-            break
-        absolute_end = verbatim.end() + end_match.end()
-        output.append(text[verbatim.start() : absolute_end])
-        offset = absolute_end
-    cleaned = "".join(output).replace("\r\n", "\n").replace("\r", "\n")
-    return BLANK_LINES_RE.sub("\n\n", cleaned).strip() + "\n"
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    return _transform_tex(text, lambda plain: BLANK_LINES_RE.sub("\n\n", plain)).strip() + "\n"
+
+
+def _transform_tex(text: str, transform: Callable[[str], str]) -> str:
+    """Apply a transform only to active TeX, leaving code literals untouched."""
+    output = []
+    start = cursor = 0
+    while match := TEX_LITERAL_RE.search(text, cursor):
+        if match.group(0) == "%":
+            backslashes = 0
+            index = match.start() - 1
+            while index >= 0 and text[index] == "\\":
+                backslashes += 1
+                index -= 1
+            if backslashes % 2:
+                cursor = match.end()
+                continue
+            output.append(transform(text[start:match.start()]))
+            end = text.find("\n", match.end())
+            if end < 0:
+                start = len(text)
+                break
+            start = cursor = end
+            continue
+        output.append(transform(text[start:match.start()]))
+        environment = match.group("environment")
+        closing = r"\end{" + environment + "}" if environment else match.group("delimiter")
+        end = text.find(closing, match.end())
+        end = len(text) if end < 0 else end + len(closing)
+        if environment != "comment":
+            output.append(text[match.start():end])
+        start = cursor = end
+    output.append(transform(text[start:]))
+    return "".join(output)
 
 
 def merge_project(source_dir: Path, out_file: Path) -> MergeDiagnostics:
@@ -190,7 +212,9 @@ def process_project(args: tuple[Path, str, str, Path]) -> tuple[int, int, int]:
     status_file = target / "status.json"
     if status_file.exists():
         try:
-            if json.loads(status_file.read_text(encoding="utf-8")).get("completed"):
+            prior = json.loads(status_file.read_text(encoding="utf-8"))
+            if (prior.get("completed") and prior.get("normalizer_version") == LATEX_NORMALIZER_VERSION
+                    and (prior.get("auto_ignore") or (target / "main.tex").is_file())):
                 return (0, 1, 0)
         except (json.JSONDecodeError, OSError):
             pass
@@ -203,7 +227,7 @@ def process_project(args: tuple[Path, str, str, Path]) -> tuple[int, int, int]:
                 "aid": arxiv_id,
                 "auto_ignore": True,
                 "completed": True,
-                "normalizer_version": "latex-v2",
+                "normalizer_version": LATEX_NORMALIZER_VERSION,
                 "timestamp": timestamp,
             },
         )
@@ -213,7 +237,7 @@ def process_project(args: tuple[Path, str, str, Path]) -> tuple[int, int, int]:
         "aid": arxiv_id,
         "completed": False,
         "errors": [],
-        "normalizer_version": "latex-v2",
+        "normalizer_version": LATEX_NORMALIZER_VERSION,
         "source_format": "latex",
         "tex_merged": False,
         "timestamp": timestamp,

@@ -432,6 +432,11 @@ def test_iter_records_includes_citation_papers():
     assert "2401.00005" in ids
 
 
+def test_iter_records_respects_current_selection_over_cached_papers():
+    records = list(ArxivConnector(allowed_ids={"2401.00001"}).iter_records(FIXTURES))
+    assert [row["arxiv_id"] for row in records] == ["2401.00001"]
+
+
 def test_normalize_citation_paper():
     connector = ArxivConnector()
     records = list(connector.iter_records(FIXTURES))

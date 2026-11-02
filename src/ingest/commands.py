@@ -95,7 +95,20 @@ def _ingest_simple(args: argparse.Namespace) -> int:
             print(plan.missing_hint)
         return 1
 
-    count = ingest_and_store(input_path, source=plan.source, output_dir=output_dir)
+    if plan.source == "arxiv" and args.id_file is not None:
+        from ingest.connectors.arxiv.connector import ArxivConnector
+
+        allowed_ids = {
+            line.strip() for line in args.id_file.read_text().splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        }
+        if not allowed_ids:
+            raise ValueError("The arXiv --id-file is empty")
+        connector = ArxivConnector(allowed_ids=allowed_ids)
+        records = (connector.normalize(row) for row in connector.iter_records(input_path))
+        count = write_parquet(records, output_dir, source=plan.source, input_path=input_path)
+    else:
+        count = ingest_and_store(input_path, source=plan.source, output_dir=output_dir)
     print(f"{plan.label}: {count} records")
     return 0
 
@@ -174,7 +187,7 @@ def _ingest_stackoverflow(args: argparse.Namespace) -> int:
 
     if not args.archive_path.exists():
         print(f"Archive not found: {args.archive_path}")
-        print("Make sure the flash drive is mounted at /Volumes/SECURITY/")
+        print("Supply the data dump location with --archive-path.")
         return 1
 
     connector = StackOverflowConnector()
@@ -293,6 +306,9 @@ def build_parser() -> argparse.ArgumentParser:
             aliases=list(plan.aliases),
             help=f"Ingest {plan.label}.",
         )
+        if plan.source == "arxiv":
+            source_parser.add_argument("--id-file", type=_path_arg,
+                                      help="Explicit selected paper IDs; excludes stale cached papers.")
         source_parser.add_argument(
             "--input",
             type=_path_arg,
@@ -321,7 +337,7 @@ def build_parser() -> argparse.ArgumentParser:
     so_parser.add_argument(
         "--archive-path",
         type=_path_arg,
-        default=Path("/Volumes/SECURITY/stackoverflow/raw/stackoverflow.com.7z"),
+        default=Path("data/stackoverflow/raw/stackoverflow.com.7z"),
     )
     so_parser.add_argument(
         "--output-dir",
@@ -331,7 +347,7 @@ def build_parser() -> argparse.ArgumentParser:
     so_parser.add_argument(
         "--intermediate-dir",
         type=_path_arg,
-        default=Path("/Volumes/SECURITY/stackoverflow/intermediate"),
+        default=Path("data/stackoverflow/intermediate"),
     )
     so_parser.set_defaults(handler=_ingest_stackoverflow)
 

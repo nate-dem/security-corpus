@@ -9,9 +9,13 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import sys
 from typing import Any, Sequence
 
 import duckdb
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+from classify.validation import decision_issues  # noqa: E402
 
 
 VALID_PARSE_STATUSES = {"ok", "extracted_json"}
@@ -129,6 +133,7 @@ def _validate_inputs(connection: duckdb.DuckDBPyConnection) -> None:
         for label, sql in checks.items()
     }
     failures = {label: count for label, count in failures.items() if count}
+    failures.update(decision_issues(connection))
     if failures:
         rendered = ", ".join(f"{label}={count}" for label, count in failures.items())
         raise ValueError(

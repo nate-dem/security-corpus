@@ -396,6 +396,8 @@ def _parse_failure(parse_failure_should_keep: bool | None) -> QwenParsedResponse
 def _coerce_score(value: Any) -> int | None:
     if isinstance(value, bool):
         return None
+    if not isinstance(value, (int, str)):
+        return None
     try:
         score = int(value)
     except (TypeError, ValueError):

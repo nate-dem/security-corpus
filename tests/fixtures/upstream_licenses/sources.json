@@ -1,0 +1,35 @@
+{
+  "description": "Synthetic fixtures, not source-license evidence.",
+  "sources": [
+    {
+      "source": "youtube-commons",
+      "repo_id": "test/youtube-commons",
+      "dataset_revision": "test-youtube-commons-revision",
+      "license": "CC-BY-4.0",
+      "license_scope": "upstream_dataset_declaration",
+      "card_url": "https://example.com/youtube-commons",
+      "card_file": "youtube-commons.md",
+      "card_sha256": "b476551759483288f9a9452bdb6aef0972c45c1d10d5151235d274b9f9b7362f"
+    },
+    {
+      "source": "primus-fineweb",
+      "repo_id": "test/primus-fineweb",
+      "dataset_revision": "test-primus-fineweb-revision",
+      "license": "ODC-By-1.0",
+      "license_scope": "upstream_database",
+      "card_url": "https://example.com/primus-fineweb",
+      "card_file": "primus-fineweb.json",
+      "card_sha256": "40315138ce32288a6d39593e61422edc2dc634d1235c03fbce006042cc5babfd"
+    },
+    {
+      "source": "redsage-cfw",
+      "repo_id": "test/redsage-cfw",
+      "dataset_revision": "test-redsage-cfw-revision",
+      "license": "ODC-By-1.0",
+      "license_scope": "upstream_database",
+      "card_url": "https://example.com/redsage-cfw",
+      "card_file": "redsage-cfw.json",
+      "card_sha256": "975afdd4aa53958ed9d0271d60f08619fcfca9d6f15e0494b772f7e4990b6b89"
+    }
+  ]
+}

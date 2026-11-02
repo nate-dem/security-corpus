@@ -33,6 +33,8 @@ def _decision_row(source_id: str, record_id: str, keep: bool) -> dict:
         "qwen_model": "Qwen/Qwen3-8B",
         "qwen_model_revision": REVISION,
         "qwen_prompt_version": "test",
+        "qwen_scored_at": "2026-09-09T00:00:00+00:00",
+        "qwen_task": "qa",
     }
 
 

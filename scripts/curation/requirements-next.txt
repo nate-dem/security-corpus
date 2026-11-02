@@ -1,0 +1,11 @@
+# Separate Linux x86_64 environment. Preserve scripts/youtube_filter/.venv.
+# Marlowe's transferred GPU log reports driver 580.173.02 / CUDA 13.0.
+# vLLM's official 0.29.0 PyPI wheel uses CUDA 13.0.
+vllm==0.29.0
+torch==2.13.0
+transformers==5.10.4
+huggingface-hub==1.28.0
+jinja2==3.1.6
+duckdb==1.5.2
+pyarrow==23.0.1
+tiktoken==0.12.0
