@@ -16,7 +16,9 @@ metadata for constructing different training mixtures.
 - [Technical report](docs/technical_report/CyberOpen.pdf)
 - [Report LaTeX and figures](docs/technical_report/)
 - [Dataset card and source statistics](docs/dataset_card.md)
+- [Dataset on Hugging Face](https://huggingface.co/datasets/cyberopen-research/CyberOpen)
 - [Filtering methods](docs/filtering.md)
+- [Filtering metadata and selection policy](docs/filtering_metadata.md)
 - [Dataset packaging and loading](docs/dataset_packaging.md)
 
 ## Corpus composition
@@ -43,9 +45,8 @@ distributed separately; they are not stored in Git.
 Questions and answers are combined into complete discussion documents while
 preserving code blocks. Reddit discussions retain nested comment structure.
 Sigma documents include complete rule YAML, and CloudTrail sessions contain
-ordered JSON events. Structured knowledge sources resolve related records during
-ingestion so each document can be used without reconstructing source-specific
-joins.
+ordered JSON events. Structured knowledge sources retain normalized descriptions,
+source identifiers, and metadata.
 
 Normalization and training-data selection are separate. Selection uses source
 rules, model assessments, and duplicate checks; scores and decisions are stored

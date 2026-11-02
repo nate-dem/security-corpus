@@ -7,10 +7,17 @@ import re
 
 
 RELEASE_FILES = {"README.md", ".gitattributes", "SHA256SUMS", "technical_report.pdf"}
+FILTERING_FILES = {
+    f"metadata/filtering/{name}" for name in (
+        "README.md", "selection-policy.json", "web-records.parquet",
+        "youtube-records.parquet", "youtube-spans.parquet",
+    )
+}
 
 
 def allowed_release_path(relative):
-    return relative in RELEASE_FILES or re.fullmatch(r"data/\d{3}/\d{6}\.parquet", relative) is not None
+    return (relative in RELEASE_FILES | FILTERING_FILES
+            or re.fullmatch(r"data/\d{3}/\d{6}\.parquet", relative) is not None)
 
 
 def sha(path):

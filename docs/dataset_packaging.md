@@ -1,7 +1,8 @@
 # Dataset packaging and loading
 
 The dataset repository contains the training Parquet files, dataset card, file
-configuration, and download checksums. Corpus archives, local build manifests,
+configuration, filtering metadata, and download checksums. Corpus archives, local
+build manifests,
 audit databases, excluded examples, and development notes are not uploaded.
 The technical report is maintained separately in this code repository.
 
@@ -42,6 +43,51 @@ upload folder. It is used to verify the prepared package:
 Verification streams every record through Hugging Face Datasets and compares
 source document/token totals with the completed corpus.
 
+## Prepare filtering metadata
+
+The [filtering metadata guide](filtering_metadata.md) describes the retained web
+and transcript assessments. Export the research fields from the original bound
+filtering tables using:
+
+```bash
+.venv-hf/bin/python -m scripts.release.prepare_filtering_supplement \
+  --source /path/to/filtering-tables \
+  --web-model /path/to/web-classifier/model.json \
+  --youtube-configs /path/to/transcript-scoring/parts \
+  --dataset-revision 8da37a61b56b4228fc299ff795299288cf5a4c69 \
+  --output data/huggingface/CyberOpen/metadata/filtering
+```
+
+The destination must be new. The exporter verifies input checksums and recorded
+rubric/configuration identities, then preserves the original values and row
+order for an explicit set of research fields. It removes execution metadata and
+embedded Arrow metadata. It does not rerun filtering or change the training
+documents. The exported `selection-policy.json` records the rules, model
+identifiers, transcript rubric and inference settings.
+
+After adding this supplement, regenerate the package checksums before uploading:
+
+```python
+import hashlib
+from pathlib import Path
+
+package = Path("data/huggingface/CyberOpen")
+lines = []
+for path in sorted(package.rglob("*")):
+    relative = path.relative_to(package)
+    if (not path.is_file() or str(relative) == "SHA256SUMS"
+            or relative.parts[0] == ".cache" or path.name == ".DS_Store"):
+        continue
+    with path.open("rb") as stream:
+        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+    lines.append(f"{digest}  {relative}\n")
+(package / "SHA256SUMS").write_text("".join(lines))
+```
+
+The uploader accepts only the named final supplement files and the training
+package files. The default dataset configuration continues to select only
+`data/*/*.parquet`; metadata tables are downloaded separately.
+
 ## Upload privately
 
 Authenticate using an account with write access to the destination organization:
@@ -62,7 +108,7 @@ members need read access to view and download a private dataset.
 ```python
 from datasets import load_dataset
 
-corpus = load_dataset('YOUR_ORG/CyberOpen', split='train', streaming=True)
+corpus = load_dataset('cyberopen-research/CyberOpen', split='train', streaming=True)
 for document in corpus:
     text = document['content']
     source = document['source_id']

@@ -35,6 +35,8 @@ represented separately from eligible documents.
 
 Implementation: `scripts/curation_single/rubric.py`, `score.py`, and `run.py`.
 The model revision and inference settings are recorded in each run configuration.
+The published passage assessments, rubric and inference settings are described
+in the [filtering metadata guide](filtering_metadata.md).
 
 ## Web documents
 
@@ -53,6 +55,9 @@ usability predictor is diagnostic and does not determine retention. The scores
 do not measure factual correctness.
 
 Implementation: `scripts/web_filter/run.py` and `scripts/web_semantic/`.
+Per-document scores for retained web records are available in the filtering
+metadata supplement. These tables do not include the rejected candidate
+population or independent human-review labels.
 
 ## Duplicate handling
 

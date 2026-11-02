@@ -51,8 +51,8 @@ pairs. To reproduce a specific dataset version, pass its Hub commit hash as
 Stack Exchange questions include their answers and code blocks. Reddit
 discussions retain nested comments. Sigma documents contain rule descriptions
 and complete YAML, while CloudTrail documents contain ordered JSON events
-grouped into sessions. Structured knowledge sources combine related records
-into documents that can be used without reconstructing source-specific joins.
+grouped into sessions. Structured knowledge sources retain normalized
+descriptions, source identifiers, and metadata.
 
 | Field | Description |
 |---|---|

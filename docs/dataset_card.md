@@ -162,18 +162,18 @@ related material into self-contained documents with common metadata and
 source-specific fields. Researchers can use these fields to inspect the corpus
 and construct different training mixtures.
 
-The accompanying technical report describes source selection, filtering, deduplication, and dataset analysis.
+The [technical report](technical_report/CyberOpen.pdf) describes source selection, filtering, deduplication, and dataset analysis.
 
 ## Load the dataset
 
-Replace `YOUR_ORG/CyberOpen` with the dataset repository ID. Authenticate with
+Authenticate with
 Hugging Face before loading a private repository.
 
 ```python
 from datasets import load_dataset
 
 corpus = load_dataset(
-    "YOUR_ORG/CyberOpen",
+    "cyberopen-research/CyberOpen",
     split="train",
     streaming=True,
 )
@@ -237,8 +237,8 @@ pairs. To reproduce a specific dataset version, pass its Hub commit hash as
 Stack Exchange questions include their answers and code blocks. Reddit
 discussions retain nested comments. Sigma documents contain rule descriptions
 and complete YAML, while CloudTrail documents contain ordered JSON events
-grouped into sessions. Structured knowledge sources combine related records
-into documents that can be used without reconstructing source-specific joins.
+grouped into sessions. Structured knowledge sources retain normalized
+descriptions, source identifiers, and metadata.
 
 | Field | Description |
 |---|---|
@@ -263,6 +263,20 @@ a source, or whose values are unavailable, are returned as null.
 Training documents are stored in 10,621 Parquet files under
 `data/`. The dataset configuration loads only these files. `SHA256SUMS` contains
 file checksums for verifying downloads.
+
+## Filtering metadata
+
+The [filtering metadata supplement](https://huggingface.co/datasets/cyberopen-research/CyberOpen/blob/main/metadata/filtering/README.md) provides
+original automated assessments for 721,344 retained web documents and 94,116
+retained YouTube transcripts, including 138,208 passage assessments. The tables
+contain scores, labels, model-generated explanations and research provenance,
+linked to training documents by `record_id` and `content_hash`.
+
+The supplement includes a field guide, selection rules and the transcript
+classification rubric and inference settings. It covers retained documents;
+it does not contain the full rejected candidate population or human-review
+labels. These files are stored under `metadata/filtering/` and are separate
+from the default training-data configuration.
 
 ## Use and limitations
 
